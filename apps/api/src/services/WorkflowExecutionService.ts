@@ -27,6 +27,9 @@ import {QueueService} from './QueueService.js';
 // had completed; the step it came from has handled it, so those pass it up untouched.
 const handledFailures = new WeakSet<object>();
 
+/** A saved webhook response is copied into every later step's context, so keep it small. */
+const WEBHOOK_SAVED_RESPONSE_MAX_BYTES = 64 * 1024;
+
 type StepConfig = Prisma.JsonValue;
 type StepResult = Record<string, unknown>;
 type WorkflowExecutionWithRelations = WorkflowExecution & {contact: Contact; workflow: Workflow};
@@ -827,7 +830,7 @@ export class WorkflowExecutionService {
       const actualValue = this.resolveField(parsed.field, fieldData);
 
       for (const branch of parsed.branches) {
-        if (this.evaluateCondition(actualValue, branch.operator, branch.value)) {
+        if (this.evaluateCondition(actualValue, branch.operator, branch.value, parsed.field === 'contact.email')) {
           return {
             field: parsed.field,
             mode: 'multi',
@@ -853,7 +856,7 @@ export class WorkflowExecutionService {
     const operator = 'operator' in parsed ? parsed.operator : 'equals';
     const value = 'value' in parsed ? parsed.value : undefined;
     const actualValue = this.resolveField(field, fieldData);
-    const result = this.evaluateCondition(actualValue, operator, value);
+    const result = this.evaluateCondition(actualValue, operator, value, field === 'contact.email');
 
     return {
       field,
@@ -1101,7 +1104,7 @@ export class WorkflowExecutionService {
     _stepExecution: WorkflowStepExecution,
     config: StepConfig,
   ): Promise<StepResult> {
-    const {url, method, headers, body} = WorkflowStepConfigSchemas.webhook.parse(config);
+    const {url, method, headers, body, saveResponseAs} = WorkflowStepConfigSchemas.webhook.parse(config);
 
     // Prepare webhook payload
     const contact = execution.contact;
@@ -1172,12 +1175,27 @@ export class WorkflowExecutionService {
       parsedResponse = responseData;
     }
 
+    const responseSaved =
+      saveResponseAs !== undefined &&
+      response.ok &&
+      Buffer.byteLength(responseData, 'utf8') <= WEBHOOK_SAVED_RESPONSE_MAX_BYTES;
+
+    if (responseSaved) {
+      const updatedContext = {...executionContext, [saveResponseAs]: parsedResponse};
+      await prisma.workflowExecution.update({
+        where: {id: execution.id},
+        data: {context: toPrismaJson(updatedContext)},
+      });
+      execution.context = updatedContext as WorkflowExecutionWithRelations['context'];
+    }
+
     return {
       url: renderedUrl,
       method,
       statusCode: response.status,
       success: response.ok,
       response: parsedResponse,
+      ...(saveResponseAs !== undefined ? {savedAs: responseSaved ? saveResponseAs : null} : {}),
     };
   }
 
@@ -1412,7 +1430,17 @@ export class WorkflowExecutionService {
   /**
    * Helper: Evaluate condition
    */
-  private static evaluateCondition(actualValue: unknown, operator: string, expectedValue: unknown): boolean {
+  private static evaluateCondition(
+    actualValue: unknown,
+    operator: string,
+    expectedValue: unknown,
+    caseInsensitive = false,
+  ): boolean {
+    // Email comparisons ignore case, the same as SegmentService (see @plunk/shared operators)
+    if (caseInsensitive && typeof actualValue === 'string' && typeof expectedValue === 'string') {
+      return this.evaluateCondition(actualValue.toLowerCase(), operator, expectedValue.toLowerCase());
+    }
+
     switch (operator) {
       case 'equals':
         // equals can match null/undefined if expectedValue is also null/undefined

@@ -7,7 +7,7 @@ import {DomainService} from '../services/DomainService.js';
 import {TemplateService} from '../services/TemplateService.js';
 import {CatchAsync} from '../utils/asyncHandler.js';
 import {parseListSort} from '../utils/listSort.js';
-import {assertValidTemplateSyntax} from '../utils/templateValidation.js';
+import {assertValidReplyTo, assertValidTemplateSyntax} from '../utils/templateValidation.js';
 
 @Controller('templates')
 export class Templates {
@@ -89,6 +89,7 @@ export class Templates {
 
     // Verify domain ownership and verification
     await DomainService.verifyEmailDomain(from, auth.projectId!);
+    assertValidReplyTo(replyTo);
 
     const template = await TemplateService.create(auth.projectId!, {
       name,
@@ -126,6 +127,7 @@ export class Templates {
     if (from) {
       await DomainService.verifyEmailDomain(from, auth.projectId!);
     }
+    assertValidReplyTo(replyTo);
 
     const template = await TemplateService.update(auth.projectId!, templateId, {
       name,
@@ -208,6 +210,36 @@ export class Templates {
     const template = await TemplateService.duplicate(auth.projectId!, templateId);
 
     return res.status(201).json(template);
+  }
+
+  /**
+   * POST /templates/:id/test
+   * Send a test email for a template
+   */
+  @Post(':id/test')
+  @Middleware([requireAuth, requireEmailVerified])
+  @CatchAsync
+  public async sendTest(req: Request, res: Response, _next: NextFunction) {
+    const auth = res.locals.auth;
+    const {id} = req.params;
+    const {email, subject, body, from, fromName, replyTo} = req.body;
+
+    if (!id) {
+      return res.status(400).json({error: 'Template ID is required'});
+    }
+
+    if (!email) {
+      return res.status(400).json({error: 'Email address is required'});
+    }
+
+    // Optional draft fields let the test send use what is currently in the
+    // editor rather than the last saved version.
+    await TemplateService.sendTest(auth.projectId!, id, email, {subject, body, from, fromName, replyTo});
+
+    return res.json({
+      success: true,
+      message: `Test email sent to ${email}`,
+    });
   }
 
   /**

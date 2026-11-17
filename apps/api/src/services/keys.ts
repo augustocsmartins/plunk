@@ -21,6 +21,12 @@ export const Keys = {
     passwordChangeRateLimit(userId: string): string {
       return `auth:password_change_rate:${userId}`;
     },
+    loginFailuresByEmail(email: string): string {
+      return `auth:login_failures:email:${email.toLowerCase()}`;
+    },
+    loginFailuresByIp(ip: string): string {
+      return `auth:login_failures:ip:${ip}`;
+    },
   },
   RateLimit: {
     /** Per-project token bucket for an API endpoint group. See middleware/rateLimit.ts. */
@@ -120,6 +126,15 @@ export const Keys = {
      */
     sentProgress(campaignId: string): string {
       return `campaign:sent_progress:${campaignId}`;
+    },
+
+    /**
+     * Set while a SENDING campaign is known to be unable to finalize on its own -- nothing
+     * in flight, fewer emails than recipients -- so the stalled-campaign sweep recounts it
+     * once an hour rather than on every run. Expires on its own.
+     */
+    finalizeBackoff(campaignId: string): string {
+      return `campaign:finalize_backoff:${campaignId}`;
     },
 
     /**
