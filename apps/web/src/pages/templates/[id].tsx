@@ -26,6 +26,7 @@ import {
 import type {Template} from '@plunk/db';
 import {DashboardLayout} from '../../components/DashboardLayout';
 import {EmailSettings} from '../../components/EmailSettings';
+import {TrackingOverrideSelect} from '../../components/TrackingOverrideSelect';
 import {EmailEditor} from '../../components/EmailEditor';
 import {network} from '../../lib/network';
 import {useChangeTracking} from '../../lib/hooks/useChangeTracking';
@@ -73,6 +74,7 @@ export default function TemplateEditorPage() {
         fromName: template.fromName || '',
         replyTo: template.replyTo || '',
         type: template.type,
+        tracking: template.tracking,
       });
     }
   }, [template, editedTemplate]);
@@ -87,7 +89,8 @@ export default function TemplateEditorPage() {
       editedTemplate.from !== template.from ||
       (editedTemplate.fromName || '') !== (template.fromName || '') ||
       (editedTemplate.replyTo || '') !== (template.replyTo || '') ||
-      editedTemplate.type !== template.type
+      editedTemplate.type !== template.type ||
+      (editedTemplate.tracking ?? null) !== template.tracking
     );
   }, [editedTemplate, template]);
 
@@ -108,6 +111,7 @@ export default function TemplateEditorPage() {
         fromName: editedTemplate.fromName || null,
         replyTo: editedTemplate.replyTo || null,
         type: editedTemplate.type,
+        tracking: editedTemplate.tracking ?? null,
       });
 
       // Silent save - no toast notification
@@ -295,6 +299,12 @@ export default function TemplateEditorPage() {
                 onFromNameChange={value => setEditedTemplate({...editedTemplate, fromName: value})}
                 onReplyToChange={value => setEditedTemplate({...editedTemplate, replyTo: value})}
                 fromNamePlaceholder={activeProject?.name || 'Your Company'}
+              />
+
+              <TrackingOverrideSelect
+                value={editedTemplate.tracking ?? null}
+                onChange={tracking => setEditedTemplate({...editedTemplate, tracking})}
+                appliesTo="template"
               />
             </CardContent>
           </Card>

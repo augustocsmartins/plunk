@@ -88,6 +88,7 @@ export class TemplateService {
       fromName?: string | null;
       replyTo?: string | null;
       type?: Template['type'];
+      tracking?: boolean | null;
     },
   ): Promise<Template> {
     return prisma.template.create({
@@ -101,6 +102,7 @@ export class TemplateService {
         fromName: data.fromName,
         replyTo: data.replyTo,
         type: data.type ?? 'MARKETING',
+        tracking: data.tracking,
       },
     });
   }
@@ -120,6 +122,7 @@ export class TemplateService {
       fromName?: string | null;
       replyTo?: string | null;
       type?: Template['type'];
+      tracking?: boolean | null;
     },
   ): Promise<Template> {
     // Verify template exists and belongs to project
@@ -261,6 +264,7 @@ export class TemplateService {
         fromName: template.fromName,
         replyTo: template.replyTo,
         type: template.type,
+        tracking: template.tracking,
       },
     });
   }
