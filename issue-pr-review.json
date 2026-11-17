@@ -432,14 +432,15 @@
       "docker-compose.local.yml"
     ],
     "envFile": ".env.local (ignored, generated secrets; AWS SES placeholders)",
-    "dashboard": "http://app.localhost:8088",
-    "api": "http://api.localhost:8088",
+    "dashboard": "http://app.localhost:9000",
+    "api": "http://app.localhost:9000/api",
     "smtpHostPorts": [
       2465,
       2587
     ],
     "emailDelivery": "Requires real AWS SES credentials and configuration sets.",
-    "imageId": "sha256:3bb9877ad461661e41e28fc4bb9e1f1d475d9d456c02447a3a89d762712717e7",
-    "runtime": "Final image healthy; API health, dashboard, landing and docs return HTTP 200; seven PM2 processes online with zero restarts; browser chunks contain the local API URI with no upstream API placeholder."
+    "imageId": "sha256:3180b1250748b8323576c4aa5f6f2329324a1132feb0d9ff76b5fbfde632a819",
+    "runtime": "Final image healthy; API health, dashboard, landing and docs return HTTP 200; seven PM2 processes online with zero restarts; browser chunks contain the local API URI with no upstream API placeholder.",
+    "sessionFix": "2026-11-17: host-only cookies for .localhost and same-origin local API proxy. 18 cookie tests passed; Chrome login, authenticated fetch and navigation persisted the session. Temporary browser test account deleted."
   }
 }

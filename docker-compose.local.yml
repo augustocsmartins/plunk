@@ -4,6 +4,9 @@ services:
     image: plunk:local-fixes
     build:
       context: .
+    environment:
+      # *.localhost subdomains are separate browser sites. Use one origin for sessions.
+      API_URI: ${DASHBOARD_URI:-http://app.localhost:9000}/api
     extra_hosts:
       - "api.localhost:127.0.0.1"
       - "app.localhost:127.0.0.1"

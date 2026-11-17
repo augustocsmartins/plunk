@@ -85,6 +85,13 @@ Configure `.env.local` with the same variables as the self-hosting example, then
 docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.local.yml up -d --build
 ```
 
+For local HTTP access, the override routes API requests through `${DASHBOARD_URI}/api` on the
+same origin as the dashboard. For example, with `DASHBOARD_URI=http://app.localhost:9000`, the
+API is `http://app.localhost:9000/api`. Browsers treat different `.localhost` subdomains as
+separate sites and reject cookies scoped to `.localhost`; the same-origin proxy and a
+host-only session cookie allow login without HTTPS. After changing the API address,
+force-reload the dashboard to discard cached JavaScript with the old address.
+
 This builds `plunk:local-fixes` from the checked-out source. The nginx-enabled image requires
 `SERVICE=all`. API and worker always run; SMTP and wiki can be disabled as described above.
 AWS SES credentials and configuration sets are required for real email delivery.

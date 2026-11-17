@@ -14,7 +14,7 @@ import {Keys} from './keys.js';
  * to a public suffix such as ".com.br" or ".co.uk", which browsers reject.
  * e.g., "http://api.example.com" -> ".example.com"
  * e.g., "http://api.example.com.br" -> ".example.com.br"
- * e.g., "http://api.localhost" -> ".localhost"
+ * e.g., "http://api.localhost" -> no domain (host-only cookie)
  * e.g., "http://app.plunk.local" -> ".plunk.local"
  * e.g., "http://localhost" or an IP address -> no domain
  */
@@ -26,9 +26,10 @@ function getCookieDomain(): string | undefined {
   try {
     const {hostname} = new URL(API_URI);
 
-    // *.localhost is a reserved TLD, so share the cookie across all of it
+    // Browsers reject a Domain=localhost cookie from a subdomain. Keep it
+    // host-only; local HTTP deployments should proxy the API on the dashboard origin.
     if (hostname.endsWith('.localhost')) {
-      return '.localhost';
+      return undefined;
     }
 
     // Private suffixes (e.g. up.railway.app) are included, since browsers reject cookies scoped to them too
