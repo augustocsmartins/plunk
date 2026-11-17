@@ -67,6 +67,7 @@ Dockerfile*
 docker
 !docker/nginx
 !docker/*.sh
+!docker/ecosystem.config.cjs
 .dockerignore
 
 # Misc

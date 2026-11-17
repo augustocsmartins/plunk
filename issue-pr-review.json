@@ -1,0 +1,445 @@
+{
+  "reviewDate": "2026-11-16",
+  "upstream": "https://github.com/useplunk/plunk",
+  "baseCommit": "06c8f4bded56bbe29d19435d90ef55d14e23037b",
+  "branch": "fix/github-issues-and-docker",
+  "pullRequests": [
+    {
+      "number": 592,
+      "url": "https://github.com/useplunk/plunk/pull/592",
+      "title": "build(deps): bump next from 16.4.1 to 16.4.5",
+      "status": "merged",
+      "notes": "Integrated with local conflict resolution and validation."
+    },
+    {
+      "number": 591,
+      "url": "https://github.com/useplunk/plunk/pull/591",
+      "title": "fix: allow a Reply-To email on any domain",
+      "status": "merged",
+      "notes": "Integrated with local conflict resolution and validation."
+    },
+    {
+      "number": 590,
+      "url": "https://github.com/useplunk/plunk/pull/590",
+      "title": "feat(workflows): let WEBHOOK steps save their response for later steps",
+      "status": "merged",
+      "notes": "Integrated with local conflict resolution and validation."
+    },
+    {
+      "number": 585,
+      "url": "https://github.com/useplunk/plunk/pull/585",
+      "title": "chore(next): release 0.19.0",
+      "status": "deferred",
+      "notes": "Release metadata belongs to upstream release management; this fork retains its source version."
+    },
+    {
+      "number": 584,
+      "url": "https://github.com/useplunk/plunk/pull/584",
+      "title": "feat(workflows): add a HOLD step for evergreen sequences",
+      "status": "deferred",
+      "notes": "Deferred: adds HOLD/HELD lifecycle states and bulk workflow release semantics; not included in this corrections batch."
+    },
+    {
+      "number": 583,
+      "url": "https://github.com/useplunk/plunk/pull/583",
+      "title": "fix(workflows): look up a delay's next step when it ends",
+      "status": "merged",
+      "notes": "Integrated with local conflict resolution and validation."
+    },
+    {
+      "number": 582,
+      "url": "https://github.com/useplunk/plunk/pull/582",
+      "title": "fix(segments): count contacts without the field as outside a referenced dynamic segment",
+      "status": "merged",
+      "notes": "Integrated with local conflict resolution and validation."
+    },
+    {
+      "number": 574,
+      "url": "https://github.com/useplunk/plunk/pull/574",
+      "title": "feat(analytics): add global analytics dashboard across projects",
+      "status": "merged",
+      "notes": "Integrated with local conflict resolution and validation."
+    },
+    {
+      "number": 570,
+      "url": "https://github.com/useplunk/plunk/pull/570",
+      "title": "fix(web): keep template picker open through selection",
+      "status": "merged",
+      "notes": "Integrated with local conflict resolution and validation."
+    },
+    {
+      "number": 569,
+      "url": "https://github.com/useplunk/plunk/pull/569",
+      "title": "fix(api): finalize campaigns whose remaining sends fail, and report failed recipients",
+      "status": "merged",
+      "notes": "Integrated with local conflict resolution and validation."
+    },
+    {
+      "number": 561,
+      "url": "https://github.com/useplunk/plunk/pull/561",
+      "title": "fix(contacts): import dotted CSV columns as fields filters can reach",
+      "status": "merged",
+      "notes": "Integrated with local conflict resolution and validation."
+    },
+    {
+      "number": 543,
+      "url": "https://github.com/useplunk/plunk/pull/543",
+      "title": "feat(web): align images in the visual email editor",
+      "status": "merged",
+      "notes": "Integrated with local conflict resolution and validation."
+    },
+    {
+      "number": 540,
+      "url": "https://github.com/useplunk/plunk/pull/540",
+      "title": "feat(workflows): let email waits count only the execution's own emails",
+      "status": "merged",
+      "notes": "Integrated with local conflict resolution and validation."
+    },
+    {
+      "number": 534,
+      "url": "https://github.com/useplunk/plunk/pull/534",
+      "title": "fix(analytics): measure open and click rates against tracked emails",
+      "status": "deferred",
+      "notes": "Deferred: infers tracking from the current project mode, which does not account for the per-send/template/campaign overrides integrated from PR 433 or historical mode changes."
+    },
+    {
+      "number": 522,
+      "url": "https://github.com/useplunk/plunk/pull/522",
+      "title": "feat: capture email with project recipient suppression rules",
+      "status": "deferred",
+      "notes": "Deferred: adds a SUPPRESSED terminal state; needs explicit reconciliation with PR 569 campaign finalization and recipient counters."
+    },
+    {
+      "number": 512,
+      "url": "https://github.com/useplunk/plunk/pull/512",
+      "title": "fix(workflows): compare contact.email case-insensitively in conditions",
+      "status": "merged",
+      "notes": "Integrated with local conflict resolution and validation."
+    },
+    {
+      "number": 499,
+      "url": "https://github.com/useplunk/plunk/pull/499",
+      "title": "feat(auth): rate limit login attempts",
+      "status": "merged",
+      "notes": "Integrated with local conflict resolution and validation."
+    },
+    {
+      "number": 433,
+      "url": "https://github.com/useplunk/plunk/pull/433",
+      "title": "feat: per-template, per-campaign and per-send tracking overrides",
+      "status": "merged",
+      "notes": "Integrated with local conflict resolution and validation."
+    },
+    {
+      "number": 378,
+      "url": "https://github.com/useplunk/plunk/pull/378",
+      "title": "feat: add copy-to-clipboard button for template IDs on templates list\u2026",
+      "status": "adapted",
+      "notes": "Adapted clipboard action to the current table dropdown; original card layout no longer exists."
+    },
+    {
+      "number": 362,
+      "url": "https://github.com/useplunk/plunk/pull/362",
+      "title": "fix(editor): preserve custom HTML by blocking lossy visual conversion",
+      "status": "deferred",
+      "notes": "Deferred: head contains unrelated lint/security/agent-tooling changes and a substantially changed editor implementation; not applied as a single PR."
+    },
+    {
+      "number": 347,
+      "url": "https://github.com/useplunk/plunk/pull/347",
+      "title": "fix: Handle dots in custom field names for segments, workflows, and templates",
+      "status": "deferred",
+      "notes": "Deferred: targets the removed pre-Liquid template renderer and changes segment JSON paths to flat-only; needs an adaptation preserving existing nested fields. PR 561 addresses new CSV imports only."
+    },
+    {
+      "number": 339,
+      "url": "https://github.com/useplunk/plunk/pull/339",
+      "title": "feat: Workflow execution snapshotting for safe live editing",
+      "status": "deferred",
+      "notes": "Deferred: execution snapshots conflict with the live graph semantics of PR 583; needs a deliberate workflow versioning design."
+    },
+    {
+      "number": 331,
+      "url": "https://github.com/useplunk/plunk/pull/331",
+      "title": "feat: add send test email for templates and use draft content",
+      "status": "merged",
+      "notes": "Integrated with local conflict resolution and validation."
+    },
+    {
+      "number": 283,
+      "url": "https://github.com/useplunk/plunk/pull/283",
+      "title": "Add project list and detail endpoints",
+      "status": "merged",
+      "notes": "Integrated with local conflict resolution and validation."
+    }
+  ],
+  "issues": [
+    {
+      "number": 568,
+      "url": "https://github.com/useplunk/plunk/issues/568",
+      "title": "Campaign stays in SENDING forever when remaining sends fail (SES daily quota exceeded); sent/failed counts inconsistent across UI",
+      "status": "addressed",
+      "notes": "PR 569: failed-send finalization, failure counts/reasons, sweep, consistent live sent counts."
+    },
+    {
+      "number": 558,
+      "url": "https://github.com/useplunk/plunk/issues/558",
+      "title": "[Feature Request] Global Analytics Dashboard Across All Projects",
+      "status": "addressed",
+      "notes": "PR 574: global analytics dashboard and membership-scoped endpoints."
+    },
+    {
+      "number": 555,
+      "url": "https://github.com/useplunk/plunk/issues/555",
+      "title": "Workflow Builder > Email Template dropdown does not select",
+      "status": "addressed",
+      "notes": "PR 570: focus-based picker dismissal with DOM regression tests."
+    },
+    {
+      "number": 537,
+      "url": "https://github.com/useplunk/plunk/issues/537",
+      "title": "`WAIT_FOR_EVENT` on `email.open` / `email.click` resumes on engagement with any email of the contact; no way to wait for the email the workflow sent",
+      "status": "addressed",
+      "notes": "PR 540: waits scoped to emails from the same workflow execution."
+    },
+    {
+      "number": 533,
+      "url": "https://github.com/useplunk/plunk/issues/533",
+      "title": "Dashboard and Analytics open/click rates count untracked emails when Email tracking is \"Marketing only\"",
+      "status": "deferred",
+      "notes": "Not changed in this batch; no resolution claimed."
+    },
+    {
+      "number": 494,
+      "url": "https://github.com/useplunk/plunk/issues/494",
+      "title": "Editor strips normal style tags like highlights",
+      "status": "partial",
+      "notes": "PR 543 preserves image alignment only; arbitrary styles/highlight conversion remains outside the editor schema."
+    },
+    {
+      "number": 488,
+      "url": "https://github.com/useplunk/plunk/issues/488",
+      "title": "Contact search is CPU-bound and degrades linearly with project size",
+      "status": "partial",
+      "notes": "Base already builds trigram and ordered contact indexes concurrently; uncapped first-page COUNT remains."
+    },
+    {
+      "number": 484,
+      "url": "https://github.com/useplunk/plunk/issues/484",
+      "title": "Replay the original response for idempotent retries",
+      "status": "deferred",
+      "notes": "Not changed in this batch; no resolution claimed."
+    },
+    {
+      "number": 461,
+      "url": "https://github.com/useplunk/plunk/issues/461",
+      "title": "Contacts Export Feature",
+      "status": "deferred",
+      "notes": "Not changed in this batch; no resolution claimed."
+    },
+    {
+      "number": 457,
+      "url": "https://github.com/useplunk/plunk/issues/457",
+      "title": "Are there other channels?",
+      "status": "deferred",
+      "notes": "Not changed in this batch; no resolution claimed."
+    },
+    {
+      "number": 448,
+      "url": "https://github.com/useplunk/plunk/issues/448",
+      "title": "Feature request: API endpoints for scheduling emails and dynamic short campaign workflows",
+      "status": "partial",
+      "notes": "Base already has scheduled transactional delivery and campaign scheduling APIs; recurrence/short windows not added."
+    },
+    {
+      "number": 447,
+      "url": "https://github.com/useplunk/plunk/issues/447",
+      "title": "Proposal: per-step analytics for workflows (sent / delivered / open rate / click rate)",
+      "status": "deferred",
+      "notes": "Not changed in this batch; no resolution claimed."
+    },
+    {
+      "number": 436,
+      "url": "https://github.com/useplunk/plunk/issues/436",
+      "title": "Migration 20260615120000 can abort the upgrade or silently drop static-segment memberships",
+      "status": "addressed",
+      "notes": "Corrected historical contact-normalization membership deduplication; PostgreSQL regression test. Existing lost memberships need backup recovery."
+    },
+    {
+      "number": 435,
+      "url": "https://github.com/useplunk/plunk/issues/435",
+      "title": "Yahoo Mail iOS fails to launch Apple eSIM provisioning links after Plunk click tracking redirect",
+      "status": "deferred",
+      "notes": "SES/Yahoo iOS redirect behavior requires an external device and real email delivery; per-email tracking can now be disabled via PR 433."
+    },
+    {
+      "number": 432,
+      "url": "https://github.com/useplunk/plunk/issues/432",
+      "title": "Per-email tracking override on /v1/send",
+      "status": "addressed",
+      "notes": "PR 433: per-send, template and campaign tracking overrides."
+    },
+    {
+      "number": 420,
+      "url": "https://github.com/useplunk/plunk/issues/420",
+      "title": "Verify Domain fails with error : \"The security token included in the request is invalid.\"",
+      "status": "deferred",
+      "notes": "Reported failure is invalid AWS credentials; real SES credentials are required for domain verification."
+    },
+    {
+      "number": 399,
+      "url": "https://github.com/useplunk/plunk/issues/399",
+      "title": "Generic OIDC auth support",
+      "status": "deferred",
+      "notes": "Not changed in this batch; no resolution claimed."
+    },
+    {
+      "number": 398,
+      "url": "https://github.com/useplunk/plunk/issues/398",
+      "title": "Support for Plaintext and HTML Emails in one Email",
+      "status": "deferred",
+      "notes": "Not changed in this batch; no resolution claimed."
+    },
+    {
+      "number": 370,
+      "url": "https://github.com/useplunk/plunk/issues/370",
+      "title": "Double Opt-In + `/v1/track`-Subscription State: Backend required",
+      "status": "deferred",
+      "notes": "Not changed in this batch; no resolution claimed."
+    },
+    {
+      "number": 357,
+      "url": "https://github.com/useplunk/plunk/issues/357",
+      "title": "Sign webhooks",
+      "status": "deferred",
+      "notes": "Not changed in this batch; no resolution claimed."
+    },
+    {
+      "number": 353,
+      "url": "https://github.com/useplunk/plunk/issues/353",
+      "title": "Localized templates with nested variants and locale dropdown",
+      "status": "deferred",
+      "notes": "Not changed in this batch; no resolution claimed."
+    },
+    {
+      "number": 346,
+      "url": "https://github.com/useplunk/plunk/issues/346",
+      "title": "Custom fields with dots in names break segment filtering, workflow conditions, and template rendering",
+      "status": "partial",
+      "notes": "PR 561 fixes newly imported CSV dotted column names by converting dots to underscores; existing flat dotted API fields and legacy templates remain unresolved."
+    },
+    {
+      "number": 315,
+      "url": "https://github.com/useplunk/plunk/issues/315",
+      "title": "ECS/Fargate deployment: privileged ports, no way to disable optional services, NGINX_PORT undocumented",
+      "status": "addressed",
+      "notes": "Configurable wiki/SMTP ports, optional services, HTTP publication, explicit public URL build constants, docs."
+    },
+    {
+      "number": 303,
+      "url": "https://github.com/useplunk/plunk/issues/303",
+      "title": "Connect social provider with existing account",
+      "status": "deferred",
+      "notes": "Not changed in this batch; no resolution claimed."
+    },
+    {
+      "number": 294,
+      "url": "https://github.com/useplunk/plunk/issues/294",
+      "title": "Campaign marked as sent, but ~50% failed hours later",
+      "status": "deferred",
+      "notes": "Not changed in this batch; no resolution claimed."
+    },
+    {
+      "number": 271,
+      "url": "https://github.com/useplunk/plunk/issues/271",
+      "title": "API endpoint for retrieving project information",
+      "status": "addressed",
+      "notes": "PR 283 plus session authentication without requiring X-Project-Id; authorization regression tests."
+    },
+    {
+      "number": 267,
+      "url": "https://github.com/useplunk/plunk/issues/267",
+      "title": "White-label / Agency Mode (Custom Branding, CSS, Domains, Tracking)",
+      "status": "deferred",
+      "notes": "Not changed in this batch; no resolution claimed."
+    },
+    {
+      "number": 266,
+      "url": "https://github.com/useplunk/plunk/issues/266",
+      "title": "Support for multiple SES zones",
+      "status": "deferred",
+      "notes": "Not changed in this batch; no resolution claimed."
+    },
+    {
+      "number": 258,
+      "url": "https://github.com/useplunk/plunk/issues/258",
+      "title": "Suppressions",
+      "status": "deferred",
+      "notes": "Not changed in this batch; no resolution claimed."
+    },
+    {
+      "number": 246,
+      "url": "https://github.com/useplunk/plunk/issues/246",
+      "title": "Add translations for contact-facing pages",
+      "status": "partial",
+      "notes": "Base already includes several contact-facing locales, including recent lt/lv/et; no arbitrary translation set added."
+    },
+    {
+      "number": 243,
+      "url": "https://github.com/useplunk/plunk/issues/243",
+      "title": "Add ability to duplicate workflows",
+      "status": "already-implemented",
+      "notes": "Base already implements WorkflowService.duplicate and its UI."
+    },
+    {
+      "number": 239,
+      "url": "https://github.com/useplunk/plunk/issues/239",
+      "title": "Wait for event should offer branching",
+      "status": "deferred",
+      "notes": "Not changed in this batch; no resolution claimed."
+    },
+    {
+      "number": 237,
+      "url": "https://github.com/useplunk/plunk/issues/237",
+      "title": "Reusable ui components in emails",
+      "status": "deferred",
+      "notes": "Not changed in this batch; no resolution claimed."
+    },
+    {
+      "number": 236,
+      "url": "https://github.com/useplunk/plunk/issues/236",
+      "title": "Dynamic segments based on events occurrence count in time range",
+      "status": "deferred",
+      "notes": "Not changed in this batch; no resolution claimed."
+    }
+  ],
+  "validation": {
+    "mainSuite": "90 files / 1828 tests passed",
+    "migrationRegression": "1 test passed",
+    "backendBuild": "passed",
+    "webTypecheck": "passed",
+    "lint": "0 errors; pre-existing warnings remain",
+    "additionalAuthorizationTests": "3 tests passed",
+    "total": "1832 passing tests across the main suite and two additional regression files",
+    "finalBackendBuild": "passed",
+    "finalApiLint": "passed",
+    "pm2Configuration": "default services, optional service flags, custom ports and collisions checked"
+  },
+  "docker": {
+    "image": "plunk:local-fixes",
+    "composeFiles": [
+      "docker-compose.yml",
+      "docker-compose.local.yml"
+    ],
+    "envFile": ".env.local (ignored, generated secrets; AWS SES placeholders)",
+    "dashboard": "http://app.localhost:8088",
+    "api": "http://api.localhost:8088",
+    "smtpHostPorts": [
+      2465,
+      2587
+    ],
+    "emailDelivery": "Requires real AWS SES credentials and configuration sets.",
+    "imageId": "sha256:3bb9877ad461661e41e28fc4bb9e1f1d475d9d456c02447a3a89d762712717e7",
+    "runtime": "Final image healthy; API health, dashboard, landing and docs return HTTP 200; seven PM2 processes online with zero restarts; browser chunks contain the local API URI with no upstream API placeholder."
+  }
+}

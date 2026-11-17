@@ -344,6 +344,7 @@ COPY --from=builder --chown=plunk:nodejs /app/apps/wiki/openapi.local.json ./app
 # ============================================
 
 # Copy nginx configuration templates and setup script
+COPY --chown=plunk:nodejs docker/ecosystem.config.cjs /app/docker/ecosystem.config.cjs
 COPY --chown=plunk:nodejs docker/nginx/ /app/docker/nginx/
 RUN chmod +x /app/docker/nginx/setup-nginx.sh
 

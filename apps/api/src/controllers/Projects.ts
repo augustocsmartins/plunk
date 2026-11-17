@@ -4,12 +4,22 @@ import {MembershipSchemas, UtilitySchemas} from '@plunk/shared';
 
 import {prisma} from '../database/prisma.js';
 import {HttpException} from '../exceptions/index.js';
-import {requireAuth, requireEmailVerified} from '../middleware/auth.js';
+import {isAuthenticated, requireAuth, requireEmailVerified} from '../middleware/auth.js';
 import {DomainService} from '../services/DomainService.js';
 import {MembershipService} from '../services/MembershipService.js';
 import {ProjectService} from '../services/ProjectService.js';
 import {SecurityService} from '../services/SecurityService.js';
 import {CatchAsync} from '../utils/asyncHandler.js';
+
+// Project metadata can be read before a dashboard user has selected a project.
+export const authenticateProjectMetadata = (req: Request, res: Response, next: NextFunction) => {
+  if (req.headers.authorization) return requireAuth(req, res, next);
+  try {
+    return isAuthenticated(req, res, next);
+  } catch (error) {
+    return next(error);
+  }
+};
 
 @Controller('projects')
 export class Projects {
@@ -18,7 +28,7 @@ export class Projects {
    * GET /projects
    */
   @Get('')
-  @Middleware([requireAuth])
+  @Middleware([authenticateProjectMetadata])
   @CatchAsync
   private async list(req: Request, res: Response, _next: NextFunction) {
     const auth = res.locals.auth;
@@ -338,7 +348,7 @@ export class Projects {
    * Note: This must come after all specific routes like :id/setup-state, :id/security, etc.
    */
   @Get(':id')
-  @Middleware([requireAuth])
+  @Middleware([authenticateProjectMetadata])
   @CatchAsync
   private async get(req: Request, res: Response, _next: NextFunction) {
     const auth = res.locals.auth;

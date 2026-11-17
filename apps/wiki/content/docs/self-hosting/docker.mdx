@@ -53,7 +53,18 @@ See [Environment Variables](/self-hosting/environment-variables) for all options
 | 9000  | Minio API                                |
 | 9001  | Minio web console                        |
 
-When deploying behind a reverse proxy or load balancer, expose port 80 (and 465/587 if using SMTP). Postgres, Redis, and Minio are kept internal to the Docker network by default.
+Compose publishes HTTP on `127.0.0.1:80` by default. Use `HTTP_PORT` to change the host port,
+`HTTP_BIND_ADDRESS=0.0.0.0` to accept remote connections, and `NGINX_PORT` to change the container's
+listener. Do not set `NGINX_PORT=8080`: the API already uses that internal port.
+MinIO publishes ports 9000/9001; PostgreSQL and Redis remain inside the Docker network.
+
+For containers without privileged port access, set `NGINX_PORT=8088`, `WIKI_PORT=1001`,
+`SMTP_PORT_SECURE=2465` and `SMTP_PORT_SUBMISSION=2587`. The SMTP host ports remain controlled by
+`PORT_SECURE` and `PORT_SUBMISSION`. Set `DISABLE_SMTP=true` or `DISABLE_WIKI=true` to skip either
+optional process. Requests to a disabled wiki's domain return 502.
+
+When using a nonstandard published HTTP port, include it in the explicit `API_URI`,
+`DASHBOARD_URI`, `LANDING_URI` and `WIKI_URI` values.
 
 ## Health check
 
@@ -66,16 +77,26 @@ curl https://api.yourdomain.com/health
 
 Use this for liveness/readiness probes. It returns `200` when the API process is up and able to serve requests.
 
-## Running Individual Services
+## Building this checkout locally
 
-Set `SERVICE` environment variable:
+Configure `.env.local` with the same variables as the self-hosting example, then run:
 
 ```bash
-SERVICE=api    # API only
-SERVICE=worker # Worker only
-SERVICE=web    # Dashboard only
-SERVICE=all    # Everything (default)
+docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.local.yml up -d --build
 ```
+
+This builds `plunk:local-fixes` from the checked-out source. The nginx-enabled image requires
+`SERVICE=all`. API and worker always run; SMTP and wiki can be disabled as described above.
+AWS SES credentials and configuration sets are required for real email delivery.
+
+## Contact normalization migration
+
+The correction for issue #436 changes the historical `20260615120000` migration so pending
+upgrades preserve active static-segment memberships when several duplicate contacts merge.
+An installation that already applied that migration cannot recover lost memberships from
+this change: restore them from a backup if needed. Review Prisma migration history before
+upgrading an existing database; do not reset or mark a failed migration as resolved without
+checking its actual state. The local Compose installation uses a new database volume.
 
 ## SMTP TLS Certificates
 

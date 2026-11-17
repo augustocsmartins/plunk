@@ -1,6 +1,12 @@
 /** @type {import('next').NextConfig} */
 module.exports = {
   transpilePackages: ['@plunk/ui'],
+  env: {
+    NEXT_PUBLIC_API_URI: process.env.NEXT_PUBLIC_API_URI || 'http://localhost:8080',
+    NEXT_PUBLIC_DASHBOARD_URI: process.env.NEXT_PUBLIC_DASHBOARD_URI || 'http://localhost:3000',
+    NEXT_PUBLIC_LANDING_URI: process.env.NEXT_PUBLIC_LANDING_URI || 'http://localhost:4000',
+    NEXT_PUBLIC_WIKI_URI: process.env.NEXT_PUBLIC_WIKI_URI || 'http://localhost:1000',
+  },
   output: 'standalone', // Optimized for Docker
   async redirects() {
     return [{source: '/discord', destination: 'https://discord.gg/sAPURyakc4', permanent: false}];

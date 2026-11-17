@@ -19,7 +19,7 @@ upstream plunk_landing {
 }
 
 upstream plunk_wiki {
-    server 127.0.0.1:1000;
+    server 127.0.0.1:${WIKI_PORT};
 }
 
 upstream plunk_acme_challenge {

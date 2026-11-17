@@ -21,6 +21,7 @@ export LANDING_DOMAIN="${LANDING_DOMAIN:-www.localhost}"
 export WIKI_DOMAIN="${WIKI_DOMAIN:-docs.localhost}"
 export SMTP_DOMAIN="${SMTP_DOMAIN:-smtp.localhost}"
 export NGINX_PORT="${NGINX_PORT:-80}"
+export WIKI_PORT="${WIKI_PORT:-1000}"
 export USE_HTTPS="${USE_HTTPS:-false}"
 
 # Determine protocol based on USE_HTTPS
@@ -54,7 +55,7 @@ if [ -z "$SMTP_DOMAIN" ]; then
     export SMTP_DOMAIN="_"  # nginx wildcard that won't match any real domain
 fi
 
-envsubst '${NGINX_PORT} ${API_DOMAIN} ${DASHBOARD_DOMAIN} ${LANDING_DOMAIN} ${WIKI_DOMAIN} ${SMTP_DOMAIN}' \
+envsubst '${NGINX_PORT} ${API_DOMAIN} ${DASHBOARD_DOMAIN} ${LANDING_DOMAIN} ${WIKI_DOMAIN} ${SMTP_DOMAIN} ${WIKI_PORT}' \
     < /app/docker/nginx/nginx.conf.template \
     > "${NGINX_CONF_D}/plunk.conf"
 

@@ -43,7 +43,7 @@ import {formatRelativeTime} from '../../lib/dateUtils';
 import {useColumnVisibility} from '../../lib/hooks/useColumnVisibility';
 import {usePersistentState} from '../../lib/hooks/usePersistentState';
 import {useShiftClickSelection} from '../../lib/hooks/useShiftClickSelection';
-import {Copy, FileText, MoreHorizontal, Plus, Trash2} from 'lucide-react';
+import {ClipboardCopy, Copy, FileText, MoreHorizontal, Plus, Trash2} from 'lucide-react';
 import {NextSeo} from 'next-seo';
 import Link from 'next/link';
 import {useEffect, useMemo, useState} from 'react';
@@ -220,6 +220,15 @@ export default function TemplatesPage() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => {
+          void navigator.clipboard.writeText(template.id).then(
+            () => toast.success('Template ID copied to clipboard'),
+            () => toast.error('Couldn’t copy the template ID. Try again.'),
+          );
+        }}>
+          <ClipboardCopy className="h-4 w-4" />
+          Copy template ID
+        </DropdownMenuItem>
         <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => void handleDuplicate(template.id)}>
           <Copy className="h-4 w-4" />
           Duplicate
