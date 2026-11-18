@@ -13,6 +13,7 @@ import {API_URI} from '../../lib/constants';
 import {useActiveProject} from '../../lib/contexts/ActiveProjectProvider';
 import {useOnboardingGate} from '../../lib/hooks/useOnboardingGate';
 import {useOnboardingPath} from '../../lib/hooks/useOnboardingPath';
+import {t} from '../../lib/i18n';
 
 interface SetupStep {
   id: string;
@@ -28,31 +29,31 @@ const steps: SetupStep[] = [
   {
     id: 'domain',
     icon: ShieldCheck,
-    title: 'Verify your sender domain',
-    description: 'Sending requires a verified domain. Two DNS records and you\'re set.',
-    cta: 'Verify domain',
+    title: t('Verify your sender domain'),
+    description: t('Sending requires a verified domain. Two DNS records and you\'re set.'),
+    cta: t('Verify domain'),
     href: '/settings?tab=domains',
     required: true,
   },
   {
     id: 'key',
     icon: KeyRound,
-    title: 'Copy your secret key',
-    description: 'Add it to your server environment. Never expose it in client-side code.',
+    title: t('Copy your secret key'),
+    description: t('Add it to your server environment. Never expose it in client-side code.'),
   },
   {
     id: 'send',
     icon: Mail,
-    title: 'Send your first email',
-    description: 'One API call. Pick your language and drop it into your app.',
+    title: t('Send your first email'),
+    description: t('One API call. Pick your language and drop it into your app.'),
   },
 ];
 
 function buildSnippets(apiUrl: string, secret: string): CodeSnippet[] {
   const body = {
     to: 'you@example.com',
-    subject: 'Hello from Plunk',
-    body: '<p>Your first email is live.</p>',
+    subject: t('Hello from Plunk'),
+    body: t('<p>Your first email is live.</p>'),
     from: 'sender@yourdomain.com',
   };
   const curl = `curl -X POST ${apiUrl}/v1/send \\
@@ -91,8 +92,8 @@ curl_exec($ch);`;
 
   return [
     {id: 'curl', label: 'cURL', code: curl},
-    {id: 'node', label: 'Node.js', code: node},
-    {id: 'python', label: 'Python', code: python},
+    {id: 'node', label: t('Node.js'), code: node},
+    {id: 'python', label: t('Python'), code: python},
     {id: 'php', label: 'PHP', code: php},
   ];
 }
@@ -124,15 +125,15 @@ export default function OnboardingDeveloper() {
 
   return (
     <>
-      <NextSeo title="Send your first email" />
+      <NextSeo title={t('Send your first email')} />
       <OnboardingLayout step={2}>
         <div className="flex flex-col gap-6">
           <header className="flex flex-col gap-2">
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">
-              Send your first email.
+              {t('Send your first email.')}
             </h1>
             <p className="text-base text-neutral-600 max-w-xl leading-relaxed">
-              Three steps to your first send. Start with your domain so emails actually reach the inbox.
+              {t('Three steps to your first send. Start with your domain so emails actually reach the inbox.')}
             </p>
           </header>
 
@@ -162,7 +163,7 @@ export default function OnboardingDeveloper() {
                           <h2 className="text-sm font-semibold text-neutral-900">{step.title}</h2>
                           {step.required && (
                             <span className="rounded bg-neutral-900 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white">
-                              Required
+                              {t('Required')}
                             </span>
                           )}
                         </div>
@@ -186,9 +187,9 @@ export default function OnboardingDeveloper() {
                     <div className="border-t border-neutral-100 pt-4">
                       {activeProject ? (
                         <ApiKeyDisplay
-                          label="Secret key"
+                          label={t('Secret key')}
                           value={activeProject.secret}
-                          description="Keep this server-side. Treat it like a password."
+                          description={t('Keep this server-side. Treat it like a password.')}
                           isSecret
                         />
                       ) : (
@@ -213,10 +214,10 @@ export default function OnboardingDeveloper() {
               className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-500 hover:text-neutral-900 transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back
+              {t('Back')}
             </Link>
             <Button onClick={handleContinue}>
-              Continue to dashboard
+              {t('Continue to dashboard')}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>

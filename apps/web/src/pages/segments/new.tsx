@@ -12,6 +12,7 @@ import {toast} from 'sonner';
 import type {FilterCondition} from '@plunk/types';
 import type {Segment} from '@plunk/db';
 import {SegmentSchemas} from '@plunk/shared';
+import {t} from '../../lib/i18n';
 
 type SegmentType = 'DYNAMIC' | 'STATIC';
 
@@ -54,20 +55,20 @@ export default function NewSegmentPage() {
             {emails: selectedContacts, createMissing: true},
           );
           const msg = result.created > 0
-            ? `Segment created with ${result.added} contact${result.added !== 1 ? 's' : ''} (${result.created} new)`
-            : `Segment created with ${result.added} contact${result.added !== 1 ? 's' : ''}`;
+            ? t('Segment created with {added} contact{value} ({created} new)', {added: result.added, value: result.added !== 1 ? 's' : '', created: result.created})
+            : t('Segment created with {added} contact{value}', {added: result.added, value: result.added !== 1 ? 's' : ''});
           toast.success(msg);
         } catch {
           // Segment was created; just warn about members
-          toast.warning('Segment created, but some contacts could not be added');
+          toast.warning(t('Segment created, but some contacts could not be added'));
         }
       } else {
-        toast.success('Segment created');
+        toast.success(t('Segment created'));
       }
 
       void router.push('/segments');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t create the segment. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t create the segment. Try again.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -75,7 +76,7 @@ export default function NewSegmentPage() {
 
   return (
     <>
-      <NextSeo title="Create segment" />
+      <NextSeo title={t('Create segment')} />
       <DashboardLayout>
         <div className="space-y-6">
           {/* Header */}
@@ -84,11 +85,11 @@ export default function NewSegmentPage() {
               <Link href="/segments"><ArrowLeft className="h-4 w-4" /></Link>
             </Button>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900">Create segment</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900">{t('Create segment')}</h1>
               <p className="text-neutral-500 mt-1">
                 {segmentType === 'DYNAMIC'
-                  ? 'Build complex audience filters with AND/OR logic'
-                  : 'Manually curate a list of contacts'}
+                  ? t('Build complex audience filters with AND/OR logic')
+                  : t('Manually curate a list of contacts')}
               </p>
             </div>
           </div>
@@ -104,7 +105,7 @@ export default function NewSegmentPage() {
                   : 'text-neutral-600 hover:text-neutral-900'
               }`}
             >
-              Dynamic
+              {t('Dynamic')}
             </button>
             <button
               type="button"
@@ -115,7 +116,7 @@ export default function NewSegmentPage() {
                   : 'text-neutral-600 hover:text-neutral-900'
               }`}
             >
-              Static
+              {t('Static')}
             </button>
           </div>
 
@@ -123,12 +124,12 @@ export default function NewSegmentPage() {
             {/* Basic Info */}
             <Card>
               <CardHeader>
-                <CardTitle>Segment details</CardTitle>
-                <CardDescription>Give your segment a name and description</CardDescription>
+                <CardTitle>{t('Segment details')}</CardTitle>
+                <CardDescription>{t('Give your segment a name and description')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="name">Segment name
+                  <Label htmlFor="name">{t('Segment name')}
             <span className="text-red-500"> *</span>
           </Label>
                   <Input
@@ -137,19 +138,19 @@ export default function NewSegmentPage() {
                     value={name}
                     onChange={e => setName(e.target.value)}
                     required
-                    placeholder="e.g., VIP Customers or Recent High Spenders"
+                    placeholder={t('e.g., VIP Customers or Recent High Spenders')}
                     maxLength={100}
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description">{t('Description')}</Label>
                   <Input
                     id="description"
                     type="text"
                     value={description}
                     onChange={e => setDescription(e.target.value)}
-                    placeholder="e.g., Users on VIP plan OR recent signups who spent $1000+"
+                    placeholder={t('e.g., Users on VIP plan OR recent signups who spent $1000+')}
                     maxLength={500}
                   />
                 </div>
@@ -164,10 +165,10 @@ export default function NewSegmentPage() {
                   />
                   <div className="flex-1">
                     <Label htmlFor="trackMembership" className="font-medium cursor-pointer">
-                      Track membership changes
+                      {t('Track membership changes')}
                     </Label>
                     <p className="text-xs text-neutral-500 mt-1">
-                      When enabled, segment entry and exit events will be tracked for use in workflows and analytics
+                      {t('When enabled, segment entry and exit events will be tracked for use in workflows and analytics')}
                     </p>
                   </div>
                 </div>
@@ -178,8 +179,8 @@ export default function NewSegmentPage() {
             {segmentType === 'DYNAMIC' ? (
               <Card>
                 <CardHeader>
-                  <CardTitle>Filter conditions</CardTitle>
-                  <CardDescription>Build complex audience filters with AND/OR logic</CardDescription>
+                  <CardTitle>{t('Filter conditions')}</CardTitle>
+                  <CardDescription>{t('Build complex audience filters with AND/OR logic')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <SegmentFilterBuilder condition={condition} onChange={setCondition} />
@@ -188,9 +189,9 @@ export default function NewSegmentPage() {
             ) : (
               <Card>
                 <CardHeader>
-                  <CardTitle>Initial members</CardTitle>
+                  <CardTitle>{t('Initial members')}</CardTitle>
                   <CardDescription>
-                    Optionally add contacts now — you can always add or remove members later
+                    {t('Optionally add contacts now — you can always add or remove members later')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -198,7 +199,7 @@ export default function NewSegmentPage() {
                     selected={selectedContacts}
                     onChange={setSelectedContacts}
                     onAdd={async (emails, _subscribed) => setSelectedContacts(prev => [...new Set([...prev, ...emails])])}
-                    placeholder="Search and select contacts…"
+                    placeholder={t('Search and select contacts…')}
                   />
                 </CardContent>
               </Card>
@@ -207,11 +208,11 @@ export default function NewSegmentPage() {
             {/* Actions */}
             <div className="flex items-center justify-end gap-2">
               <Button asChild variant="outline" disabled={isSubmitting}>
-                <Link href="/segments">Cancel</Link>
+                <Link href="/segments">{t('Cancel')}</Link>
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 <Save className="h-4 w-4 mr-2" />
-                {isSubmitting ? 'Creating…' : 'Create Segment'}
+                {isSubmitting ? t('Creating…') : t('Create Segment')}
               </Button>
             </div>
           </form>

@@ -10,6 +10,7 @@ import {MetricChart} from './MetricChart';
 import {computeDelta, formatCount, formatRate, metric, thresholdTone} from './metrics';
 import {ChartSkeleton, DeltaLabel, FigureBand, Panel, PanelEmpty, PanelError, RowsSkeleton} from './primitives';
 import {type Column, RateTable} from './RateTable';
+import {t} from '../../lib/i18n';
 
 const bounce = metric('bounceRate');
 const complaint = metric('complaintRate');
@@ -30,7 +31,7 @@ export function DeliverabilityTab({filters}: {filters: AnalyticsFilters}) {
         failed={(!!overview.error && !overview.data) || (!!deliverability.error && !d)}
         figures={[
           {
-            label: 'Bounce rate',
+            label: t('Bounce rate'),
             value: current && (empty ? '—' : formatRate(current.bounceRate)),
             tone: current && thresholdTone(bounce, current.bounceRate, current.sent),
             detail: current && previous && (
@@ -38,7 +39,7 @@ export function DeliverabilityTab({filters}: {filters: AnalyticsFilters}) {
             ),
           },
           {
-            label: 'Complaint rate',
+            label: t('Complaint rate'),
             value: current && (empty ? '—' : formatRate(current.complaintRate)),
             tone: current && thresholdTone(complaint, current.complaintRate, current.sent),
             detail: current && previous && (
@@ -48,19 +49,19 @@ export function DeliverabilityTab({filters}: {filters: AnalyticsFilters}) {
             ),
           },
           {
-            label: 'Hard bounces',
+            label: t('Hard bounces'),
             value: d && formatCount(d.hardBounces),
-            detail: 'Contact suppressed',
+            detail: t('Contact suppressed'),
           },
           {
-            label: 'Soft bounces',
+            label: t('Soft bounces'),
             value: d && formatCount(d.softBounces),
-            detail: 'Mailbox full; not suppressed',
+            detail: t('Mailbox full; not suppressed'),
           },
           {
-            label: 'Spam reports',
+            label: t('Spam reports'),
             value: d && formatCount(d.complaints),
-            detail: 'Contact suppressed',
+            detail: t('Contact suppressed'),
           },
         ]}
       />
@@ -70,16 +71,16 @@ export function DeliverabilityTab({filters}: {filters: AnalyticsFilters}) {
           <Panel
             key={def.key}
             title={`${def.label} ${series.data?.granularity === 'hour' ? 'by hour' : 'by day'}`}
-            description={`Plunk warns at ${formatRate(def.thresholds!.warning)} and can disable the project at ${formatRate(
+            description={t('Plunk warns at {value} and can disable the project at {value2}, measured over 7 days.', {value: formatRate(def.thresholds!.warning), value2: formatRate(
               def.thresholds!.critical,
-            )}, measured over 7 days.`}
+            )})}
           >
             {series.error && !series.data ? (
               <PanelError onRetry={() => void series.mutate()} />
             ) : !series.data ? (
               <ChartSkeleton height={200} />
             ) : empty ? (
-              <PanelEmpty height={200}>No emails were sent in this period.</PanelEmpty>
+              <PanelEmpty height={200}>{t('No emails were sent in this period.')}</PanelEmpty>
             ) : (
               <div className="px-2 pb-3 sm:px-3">
                 <MetricChart
@@ -104,23 +105,23 @@ function Providers({data, error, retry}: {data?: AnalyticsDeliverability; error:
   const columns: Column<AnalyticsMailboxProviderRow>[] = [
     {
       key: 'domain',
-      label: 'Recipient domain',
+      label: t('Recipient domain'),
       align: 'left',
       render: row => <span className="font-medium text-neutral-900">{row.domain}</span>,
     },
-    {key: 'sent', label: 'Sent', render: row => formatCount(row.sent), sortValue: row => row.sent},
-    {key: 'deliveryRate', label: 'Delivered', render: row => formatRate(row.deliveryRate), sortValue: row => row.deliveryRate},
-    {key: 'openRate', label: 'Opened', render: row => formatRate(row.openRate), sortValue: row => row.openRate},
+    {key: 'sent', label: t('Sent'), render: row => formatCount(row.sent), sortValue: row => row.sent},
+    {key: 'deliveryRate', label: t('Delivered'), render: row => formatRate(row.deliveryRate), sortValue: row => row.deliveryRate},
+    {key: 'openRate', label: t('Opened'), render: row => formatRate(row.openRate), sortValue: row => row.openRate},
     {
       key: 'bounceRate',
-      label: 'Bounced',
+      label: t('Bounced'),
       render: row => formatRate(row.bounceRate),
       sortValue: row => row.bounceRate,
       tone: row => thresholdTone(bounce, row.bounceRate, row.sent),
     },
     {
       key: 'complaintRate',
-      label: 'Complaints',
+      label: t('Complaints'),
       render: row => formatRate(row.complaintRate),
       sortValue: row => row.complaintRate,
       tone: row => thresholdTone(complaint, row.complaintRate, row.sent),
@@ -129,15 +130,15 @@ function Providers({data, error, retry}: {data?: AnalyticsDeliverability; error:
 
   return (
     <Panel
-      title="Recipient domains"
-      description="Your ten largest recipient domains. A problem with one mailbox provider shows up here before it moves the totals."
+      title={t('Recipient domains')}
+      description={t('Your ten largest recipient domains. A problem with one mailbox provider shows up here before it moves the totals.')}
     >
       {error && !data ? (
         <PanelError onRetry={retry} />
       ) : !data ? (
         <RowsSkeleton />
       ) : data.providers.length === 0 ? (
-        <PanelEmpty>No emails were sent in this period.</PanelEmpty>
+        <PanelEmpty>{t('No emails were sent in this period.')}</PanelEmpty>
       ) : (
         <div className="border-t border-neutral-100">
           <RateTable

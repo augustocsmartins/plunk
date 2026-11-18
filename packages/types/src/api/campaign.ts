@@ -21,6 +21,8 @@ export interface CreateCampaignData {
   fromName?: string | null;
   replyTo?: string | null;
   type?: TemplateType;
+  /** Open and click tracking: true/false overrides the project's TrackingMode, null/omitted follows it */
+  tracking?: boolean | null;
   audienceType: CampaignAudienceType;
   audienceCondition?: FilterCondition;
   segmentId?: string;
@@ -38,6 +40,8 @@ export interface UpdateCampaignData {
   fromName?: string | null;
   replyTo?: string | null;
   type?: TemplateType;
+  /** true/false overrides the project's TrackingMode, null goes back to following it, omitted leaves it unchanged */
+  tracking?: boolean | null;
   audienceType?: CampaignAudienceType;
   audienceCondition?: FilterCondition;
   segmentId?: string;
@@ -76,4 +80,17 @@ export interface CampaignRecipient {
   email: string;
   /** ISO 8601. The bounce, complaint or opt-out timestamp, whichever list this is. */
   occurredAt: string;
+}
+
+/**
+ * One cause of a campaign's failed sends, with how many recipients it stopped.
+ *
+ * Grouped by the error the send path recorded on the email row, so distinct causes stay
+ * distinct: a run that hit the SES daily quota and also lost two sends to a dropped socket
+ * reports two reasons, not one.
+ */
+export interface CampaignFailureReason {
+  /** The error recorded on the failed emails, verbatim. */
+  error: string;
+  count: number;
 }

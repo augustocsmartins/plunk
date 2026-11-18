@@ -10,7 +10,7 @@ import {
   useFormContext,
 } from 'react-hook-form';
 
-import {cn} from '../../lib';
+import {cn, uiT} from '../../lib';
 
 import {Label} from './Label';
 
@@ -109,7 +109,7 @@ FormDescription.displayName = 'FormDescription';
 
 function FormMessage({className, children, ref, ...props}: React.ComponentProps<'p'>) {
   const {error, formMessageId} = useFormField();
-  const body = error ? String(error?.message) : children;
+  const body = error ? uiT(String(error?.message)) : children;
 
   if (!body) {
     return null;

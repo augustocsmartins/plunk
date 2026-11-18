@@ -35,6 +35,7 @@ import useSWR from 'swr';
 import {useActiveProject} from '../lib/contexts/ActiveProjectProvider';
 import {WIKI_URI} from '../lib/constants';
 import {addRecentPage, getRecentPages} from '../lib/recentPages';
+import {t} from '../lib/i18n';
 
 interface Action {
   label: string;
@@ -45,23 +46,23 @@ interface Action {
 }
 
 const NAV_ACTIONS: Action[] = [
-  {label: 'Dashboard', href: '/', icon: LayoutDashboard, keywords: 'home overview', shortcut: ['G', 'D']},
-  {label: 'Contacts', href: '/contacts', icon: Users, keywords: 'subscribers people', shortcut: ['G', 'C']},
-  {label: 'Segments', href: '/segments', icon: Layers, keywords: 'groups filters', shortcut: ['G', 'S']},
-  {label: 'Activity', href: '/activity', icon: Activity, keywords: 'log events', shortcut: ['G', 'L']},
-  {label: 'Analytics', href: '/analytics', icon: BarChart3, keywords: 'stats metrics', shortcut: ['G', 'A']},
-  {label: 'Templates', href: '/templates', icon: FileText, keywords: 'email design', shortcut: ['G', 'T']},
-  {label: 'Workflows', href: '/workflows', icon: WorkflowIcon, keywords: 'automation trigger', shortcut: ['G', 'W']},
-  {label: 'Campaigns', href: '/campaigns', icon: Megaphone, keywords: 'broadcast newsletter', shortcut: ['G', 'M']},
-  {label: 'Settings', href: '/settings', icon: Settings, keywords: 'config project billing', shortcut: ['G', ',']},
-  {label: 'Account', href: '/account', icon: UserCog, keywords: 'profile password delete account me', shortcut: ['G', 'U']},
+  {label: t('Dashboard'), href: '/', icon: LayoutDashboard, keywords: 'home overview', shortcut: ['G', 'D']},
+  {label: t('Contacts'), href: '/contacts', icon: Users, keywords: 'subscribers people', shortcut: ['G', 'C']},
+  {label: t('Segments'), href: '/segments', icon: Layers, keywords: 'groups filters', shortcut: ['G', 'S']},
+  {label: t('Activity'), href: '/activity', icon: Activity, keywords: 'log events', shortcut: ['G', 'L']},
+  {label: t('Analytics'), href: '/analytics', icon: BarChart3, keywords: 'stats metrics', shortcut: ['G', 'A']},
+  {label: t('Templates'), href: '/templates', icon: FileText, keywords: 'email design', shortcut: ['G', 'T']},
+  {label: t('Workflows'), href: '/workflows', icon: WorkflowIcon, keywords: 'automation trigger', shortcut: ['G', 'W']},
+  {label: t('Campaigns'), href: '/campaigns', icon: Megaphone, keywords: 'broadcast newsletter', shortcut: ['G', 'M']},
+  {label: t('Settings'), href: '/settings', icon: Settings, keywords: 'config project billing', shortcut: ['G', ',']},
+  {label: t('Account'), href: '/account', icon: UserCog, keywords: 'profile password delete account me', shortcut: ['G', 'U']},
 ];
 
 const CREATE_ACTIONS: Action[] = [
-  {label: 'New campaign', href: '/campaigns/create', icon: Plus, keywords: 'create broadcast', shortcut: ['N', 'C']},
-  {label: 'New template', href: '/templates/create', icon: Plus, keywords: 'create email design', shortcut: ['N', 'T']},
-  {label: 'New segment', href: '/segments/new', icon: Plus, keywords: 'create group filter', shortcut: ['N', 'S']},
-  {label: 'New workflow', href: '/workflows', icon: Plus, keywords: 'create automation trigger', shortcut: ['N', 'W']},
+  {label: t('New campaign'), href: '/campaigns/create', icon: Plus, keywords: 'create broadcast', shortcut: ['N', 'C']},
+  {label: t('New template'), href: '/templates/create', icon: Plus, keywords: 'create email design', shortcut: ['N', 'T']},
+  {label: t('New segment'), href: '/segments/new', icon: Plus, keywords: 'create group filter', shortcut: ['N', 'S']},
+  {label: t('New workflow'), href: '/workflows', icon: Plus, keywords: 'create automation trigger', shortcut: ['N', 'W']},
 ];
 
 // Chord map: first-key → second-key → action
@@ -208,14 +209,14 @@ export function CommandPalette() {
   const copySecretKey = () => {
     if (!activeProject?.secret) return;
     void navigator.clipboard.writeText(activeProject.secret);
-    toast.success('Secret key copied');
+    toast.success(t('Secret key copied'));
     setOpen(false);
   };
 
   const copyPublicKey = () => {
     if (!activeProject?.public) return;
     void navigator.clipboard.writeText(activeProject.public);
-    toast.success('Public key copied');
+    toast.success(t('Public key copied'));
     setOpen(false);
   };
 
@@ -232,12 +233,12 @@ export function CommandPalette() {
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder="Search or jump to…" value={query} onValueChange={setQuery} />
+      <CommandInput placeholder={t('Search or jump to…')} value={query} onValueChange={setQuery} />
       <CommandList className="pb-2">
-        {!hasResults && <CommandEmpty>No results for &ldquo;{query}&rdquo;</CommandEmpty>}
+        {!hasResults && <CommandEmpty>{t('No results for “')}{query}&rdquo;</CommandEmpty>}
 
         {!shouldSearch && recentPages.length > 0 && (
-          <CommandGroup heading="Recent">
+          <CommandGroup heading={t('Recent')}>
             {recentPages.map(page => (
               <CommandItem
                 key={page.href}
@@ -253,7 +254,7 @@ export function CommandPalette() {
 
         {shouldSearch && contacts.length > 0 && (
           <>
-            <CommandGroup heading="Contacts">
+            <CommandGroup heading={t('Contacts')}>
               {contacts.map(contact => (
                 <CommandItem
                   key={contact.id}
@@ -271,7 +272,7 @@ export function CommandPalette() {
 
         {shouldSearch && campaigns.length > 0 && (
           <>
-            <CommandGroup heading="Campaigns">
+            <CommandGroup heading={t('Campaigns')}>
               {campaigns.map(campaign => (
                 <CommandItem
                   key={campaign.id}
@@ -289,7 +290,7 @@ export function CommandPalette() {
 
         {shouldSearch && templates.length > 0 && (
           <>
-            <CommandGroup heading="Templates">
+            <CommandGroup heading={t('Templates')}>
               {templates.map(template => (
                 <CommandItem
                   key={template.id}
@@ -307,7 +308,7 @@ export function CommandPalette() {
 
         {shouldSearch && workflows.length > 0 && (
           <>
-            <CommandGroup heading="Workflows">
+            <CommandGroup heading={t('Workflows')}>
               {workflows.map(workflow => (
                 <CommandItem
                   key={workflow.id}
@@ -325,7 +326,7 @@ export function CommandPalette() {
 
         {shouldSearch && segments.length > 0 && (
           <>
-            <CommandGroup heading="Segments">
+            <CommandGroup heading={t('Segments')}>
               {segments.map(segment => (
                 <CommandItem
                   key={segment.id}
@@ -343,7 +344,7 @@ export function CommandPalette() {
 
         {availableProjects.length > 1 && filteredProjects.length > 0 && (
           <>
-            <CommandGroup heading="Switch project">
+            <CommandGroup heading={t('Switch project')}>
               {filteredProjects.map(project => (
                 <CommandItem
                   key={project.id}
@@ -363,7 +364,7 @@ export function CommandPalette() {
         )}
 
         {filteredNavActions.length > 0 && (
-          <CommandGroup heading="Go to">
+          <CommandGroup heading={t('Go to')}>
             {filteredNavActions.map(action => {
               const Icon = action.icon;
               return (
@@ -384,7 +385,7 @@ export function CommandPalette() {
         {filteredCreateActions.length > 0 && (
           <>
             <CommandSeparator />
-            <CommandGroup heading="Create">
+            <CommandGroup heading={t('Create')}>
               {filteredCreateActions.map(action => {
                 const Icon = action.icon;
                 return (
@@ -403,30 +404,30 @@ export function CommandPalette() {
           </>
         )}
 
-        {(!shouldSearch || matches('api key copy code developer', query)) && (
+        {(!shouldSearch || matches(t('api key copy code developer'), query)) && (
           <>
             <CommandSeparator />
-            <CommandGroup heading="Developer">
-              {activeProject?.secret && (!shouldSearch || matches('copy secret key private developer', query)) && (
+            <CommandGroup heading={t('Developer')}>
+              {activeProject?.secret && (!shouldSearch || matches(t('copy secret key private developer'), query)) && (
                 <CommandItem value="copy-secret-key-private-developer" onSelect={copySecretKey}>
                   <Copy className="mr-3 h-4 w-4 text-neutral-400 shrink-0" />
-                  <span>Copy secret key</span>
+                  <span>{t('Copy secret key')}</span>
                   <span className="ml-auto font-mono text-xs text-neutral-400 truncate max-w-[120px]">
                     {activeProject.secret.slice(0, 8)}…
                   </span>
                 </CommandItem>
               )}
               {activeProject?.public &&
-                (!shouldSearch || matches('copy public key frontend client developer', query)) && (
+                (!shouldSearch || matches(t('copy public key frontend client developer'), query)) && (
                   <CommandItem value="copy-public-key-frontend-client-developer" onSelect={copyPublicKey}>
                     <Copy className="mr-3 h-4 w-4 text-neutral-400 shrink-0" />
-                    <span>Copy public key</span>
+                    <span>{t('Copy public key')}</span>
                     <span className="ml-auto font-mono text-xs text-neutral-400 truncate max-w-[120px]">
                       {activeProject.public.slice(0, 8)}…
                     </span>
                   </CommandItem>
                 )}
-              {(!shouldSearch || matches('documentation docs wiki help', query)) && (
+              {(!shouldSearch || matches(t('documentation docs wiki help'), query)) && (
                 <CommandItem
                   value="open-documentation-docs-wiki-help"
                   onSelect={() => {
@@ -435,7 +436,7 @@ export function CommandPalette() {
                   }}
                 >
                   <BookOpen className="mr-3 h-4 w-4 text-neutral-400 shrink-0" />
-                  <span>Documentation</span>
+                  <span>{t('Documentation')}</span>
                 </CommandItem>
               )}
             </CommandGroup>
@@ -445,17 +446,17 @@ export function CommandPalette() {
 
       <div className="flex items-center justify-between border-t border-neutral-100 px-4 py-2.5">
         <span className="text-xs text-neutral-400">
-          <Kbd>G</Kbd> go to · <Kbd>N</Kbd> new
+          <Kbd>G</Kbd> {t('go to ·')}{' '}<Kbd>N</Kbd> new
         </span>
         <span className="flex items-center gap-3">
           <span className="flex items-center gap-1 text-xs text-neutral-400">
-            <Kbd>↑↓</Kbd> navigate
+            <Kbd>↑↓</Kbd> {t('navigate')}
           </span>
           <span className="flex items-center gap-1 text-xs text-neutral-400">
-            <Kbd>↵</Kbd> open
+            <Kbd>↵</Kbd> {t('open')}
           </span>
           <span className="flex items-center gap-1 text-xs text-neutral-400">
-            <Kbd>esc</Kbd> close
+            <Kbd>esc</Kbd> {t('close')}
           </span>
         </span>
       </div>

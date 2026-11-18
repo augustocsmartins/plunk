@@ -1,0 +1,14 @@
+# Build and run this checkout: docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.local.yml up -d --build
+services:
+  plunk:
+    image: plunk:local-fixes
+    build:
+      context: .
+    environment:
+      # *.localhost subdomains are separate browser sites. Use one origin for sessions.
+      API_URI: ${DASHBOARD_URI:-http://app.localhost:9000}/api
+    extra_hosts:
+      - "api.localhost:127.0.0.1"
+      - "app.localhost:127.0.0.1"
+      - "www.localhost:127.0.0.1"
+      - "docs.localhost:127.0.0.1"

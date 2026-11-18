@@ -5,6 +5,7 @@ import {Command, CommandGroup, CommandItem, CommandList} from '@plunk/ui';
 import {ChevronDown} from 'lucide-react';
 import {useCallback, useRef, useState} from 'react';
 import useSWR from 'swr';
+import {t as tx} from '../lib/i18n';
 
 interface TemplateSearchPickerProps {
   /** Currently selected template ID */
@@ -54,7 +55,13 @@ export function TemplateSearchPicker({value, initialName, onChange}: TemplateSea
     : (value ? (data?.data.find(t => t.id === value)?.name ?? selectedName ?? initialName ?? '') : '');
 
   return (
-    <div className="relative">
+    <div
+      className="relative"
+      onBlur={event => {
+        // Keep the list mounted while focus moves from the input to an option.
+        if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
+      }}
+    >
       <Input
         type="text"
         value={displayValue}
@@ -63,8 +70,7 @@ export function TemplateSearchPicker({value, initialName, onChange}: TemplateSea
           setOpen(true);
           setDebouncedQuery(query);
         }}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
-        placeholder="Search templates…"
+        placeholder={tx('Search templates…')}
         autoComplete="off"
         className="pr-8"
       />
@@ -73,9 +79,9 @@ export function TemplateSearchPicker({value, initialName, onChange}: TemplateSea
       {open && (
         <div className="absolute z-50 w-full mt-1 rounded-md border border-neutral-200 bg-white shadow-md max-h-60 overflow-y-auto">
           {isLoading ? (
-            <div className="px-3 py-2 text-sm text-neutral-500">Searching…</div>
+            <div className="px-3 py-2 text-sm text-neutral-500">{tx('Searching…')}</div>
           ) : !data?.data.length ? (
-            <div className="px-3 py-2 text-sm text-neutral-500">No templates found</div>
+            <div className="px-3 py-2 text-sm text-neutral-500">{tx('No templates found')}</div>
           ) : (
             <Command>
               <CommandList>
@@ -101,7 +107,7 @@ export function TemplateSearchPicker({value, initialName, onChange}: TemplateSea
           )}
           {(data?.total ?? 0) > 20 && (
             <div className="px-3 py-1.5 text-xs text-neutral-400 border-t border-neutral-100">
-              Showing 20 of {data!.total} — type to narrow results
+              {tx('Showing 20 of')}{' '}{data!.total} {tx('— type to narrow results')}
             </div>
           )}
         </div>

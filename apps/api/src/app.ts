@@ -9,9 +9,9 @@ import signale from 'signale';
 import {ZodError} from 'zod';
 
 import {
+  DASHBOARD_URI,
   GITHUB_OAUTH_ENABLED,
   GOOGLE_OAUTH_ENABLED,
-  LANDING_URI,
   NODE_ENV,
   PLUNK_ENABLED,
   PORT,
@@ -42,6 +42,7 @@ import {Unsubscribe} from './controllers/Unsubscribe.js';
 import {Uploads} from './controllers/Uploads.js';
 import {Users} from './controllers/Users.js';
 import {Webhooks} from './controllers/Webhooks.js';
+import {WhatsApp, WhatsAppActions, WhatsAppWebhooks} from './controllers/WhatsApp.js';
 import {Workflows} from './controllers/Workflows.js';
 import {Config} from './controllers/Config.js';
 import {prisma} from './database/prisma.js';
@@ -167,6 +168,9 @@ const server = new (class extends Server {
       new Unsubscribe(),
       new Uploads(),
       new Webhooks(),
+      new WhatsApp(),
+      new WhatsAppActions(),
+      new WhatsAppWebhooks(),
       new Workflows(),
       new Events(),
       new Config(),
@@ -182,7 +186,7 @@ const server = new (class extends Server {
       });
     });
 
-    this.app.get('/', (_, res) => res.redirect(LANDING_URI));
+    this.app.get('/', (_, res) => res.redirect(DASHBOARD_URI));
 
     this.app.use('*', () => {
       throw new HttpException(404, 'Unknown route');

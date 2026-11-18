@@ -2,7 +2,7 @@ import type {ProjectWithRole} from '@plunk/types';
 import dayjs from 'dayjs';
 import {getDomain} from 'tldts';
 
-import {API_URI, DASHBOARD_URI, NODE_ENV} from '../app/constants.js';
+import {API_URI, DASHBOARD_URI, DISABLE_SIGNUPS, NODE_ENV} from '../app/constants.js';
 import {prisma} from '../database/prisma.js';
 import {wrapRedis} from '../database/redis.js';
 
@@ -14,7 +14,7 @@ import {Keys} from './keys.js';
  * to a public suffix such as ".com.br" or ".co.uk", which browsers reject.
  * e.g., "http://api.example.com" -> ".example.com"
  * e.g., "http://api.example.com.br" -> ".example.com.br"
- * e.g., "http://api.localhost" -> ".localhost"
+ * e.g., "http://api.localhost" -> no domain (host-only cookie)
  * e.g., "http://app.plunk.local" -> ".plunk.local"
  * e.g., "http://localhost" or an IP address -> no domain
  */
@@ -26,9 +26,10 @@ function getCookieDomain(): string | undefined {
   try {
     const {hostname} = new URL(API_URI);
 
-    // *.localhost is a reserved TLD, so share the cookie across all of it
+    // Browsers reject a Domain=localhost cookie from a subdomain. Keep it
+    // host-only; local HTTP deployments should proxy the API on the dashboard origin.
     if (hostname.endsWith('.localhost')) {
-      return '.localhost';
+      return undefined;
     }
 
     // Private suffixes (e.g. up.railway.app) are included, since browsers reject cookies scoped to them too
@@ -64,6 +65,20 @@ function isDashboardSameSite(): boolean {
 
 export class UserService {
   public static readonly COOKIE_NAME = 'next_token';
+
+  /**
+   * Whether new accounts may be created right now.
+   * With DISABLE_SIGNUPS=true, signups stay open only until the first user exists,
+   * so a private instance can still bootstrap its initial admin account.
+   */
+  public static async signupsAllowed(): Promise<boolean> {
+    if (!DISABLE_SIGNUPS) {
+      return true;
+    }
+
+    const existing = await prisma.user.findFirst({select: {id: true}});
+    return !existing;
+  }
 
   public static async id(id: string) {
     return wrapRedis(Keys.User.id(id), async () => {

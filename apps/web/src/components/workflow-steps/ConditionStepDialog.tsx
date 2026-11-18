@@ -6,6 +6,7 @@ import {toast} from 'sonner';
 import useSWR from 'swr';
 
 import {type EditStepDialogProps, getStepConfig, type StepWithTemplate, StepDialogShell, useStepUpdate} from './shared';
+import {t as tx} from '../../lib/i18n';
 
 type FieldType = 'string' | 'number' | 'boolean' | 'date';
 type ConditionMode = 'binary' | 'multi';
@@ -30,16 +31,16 @@ interface OperatorOption {
 }
 
 const ALL_OPERATORS: OperatorOption[] = [
-  {value: 'equals',             label: 'Equals',                 types: ['string', 'number', 'boolean', 'date']},
-  {value: 'notEquals',          label: 'Not equals',             types: ['string', 'number', 'boolean', 'date']},
-  {value: 'contains',           label: 'Contains',               types: ['string']},
-  {value: 'notContains',        label: 'Does not contain',       types: ['string']},
-  {value: 'greaterThan',        label: 'Greater than',           types: ['number', 'date']},
-  {value: 'lessThan',           label: 'Less than',              types: ['number', 'date']},
-  {value: 'greaterThanOrEqual', label: 'Greater than or equal',  types: ['number', 'date']},
-  {value: 'lessThanOrEqual',    label: 'Less than or equal',     types: ['number', 'date']},
-  {value: 'exists',             label: 'Exists',                 types: ['string', 'number', 'boolean', 'date']},
-  {value: 'notExists',          label: 'Does not exist',         types: ['string', 'number', 'boolean', 'date']},
+  {value: 'equals',             label: tx('Equals'),                 types: ['string', 'number', 'boolean', 'date']},
+  {value: 'notEquals',          label: tx('Not equals'),             types: ['string', 'number', 'boolean', 'date']},
+  {value: 'contains',           label: tx('Contains'),               types: ['string']},
+  {value: 'notContains',        label: tx('Does not contain'),       types: ['string']},
+  {value: 'greaterThan',        label: tx('Greater than'),           types: ['number', 'date']},
+  {value: 'lessThan',           label: tx('Less than'),              types: ['number', 'date']},
+  {value: 'greaterThanOrEqual', label: tx('Greater than or equal'),  types: ['number', 'date']},
+  {value: 'lessThanOrEqual',    label: tx('Less than or equal'),     types: ['number', 'date']},
+  {value: 'exists',             label: tx('Exists'),                 types: ['string', 'number', 'boolean', 'date']},
+  {value: 'notExists',          label: tx('Does not exist'),         types: ['string', 'number', 'boolean', 'date']},
 ];
 
 const NO_VALUE_OPERATORS = ['exists', 'notExists'];
@@ -185,11 +186,11 @@ export function ConditionStepDialog({step, workflowId, open, onOpenChange, onSuc
     if (conditionMode === 'multi') {
       const validBranches = conditionBranches.filter(b => b.name.trim());
       if (validBranches.length === 0) {
-        toast.error('At least one branch with a name is required');
+        toast.error(tx('At least one branch with a name is required'));
         return;
       }
       if (!conditionField) {
-        toast.error('Please select a field');
+        toast.error(tx('Please select a field'));
         return;
       }
 
@@ -303,7 +304,7 @@ function ConditionModeToggle({
 }: ConditionModeToggleProps) {
   return (
     <div>
-      <Label className="text-sm font-medium mb-2 block">Condition mode</Label>
+      <Label className="text-sm font-medium mb-2 block">{tx('Condition mode')}</Label>
       <div className="flex gap-2">
         <button
           type="button"
@@ -317,7 +318,7 @@ function ConditionModeToggle({
                 : 'border-neutral-200 text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50'
           }`}
         >
-          Simple (If/Else)
+          {tx('Simple (If/Else)')}
         </button>
         <button
           type="button"
@@ -331,31 +332,30 @@ function ConditionModeToggle({
                 : 'border-neutral-200 text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50'
           }`}
         >
-          Multi-branch (Switch)
+          {tx('Multi-branch (Switch)')}
         </button>
       </div>
       <p className="text-xs text-neutral-500 mt-1.5">
         {mode === 'binary'
-          ? 'Evaluates a single condition with Yes/No paths'
-          : 'Match a field against multiple values, each routing to its own branch'}
+          ? tx('Evaluates a single condition with Yes/No paths')
+          : tx('Match a field against multiple values, each routing to its own branch')}
       </p>
       {blocksMultiToBinary && (
         <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800">
           <AlertTriangle className="h-3 w-3 inline mr-1" />
-          Cannot switch to simple mode: branches have connected nodes. Disconnect all branch connections first.
+          {tx('Cannot switch to simple mode: branches have connected nodes. Disconnect all branch connections first.')}
         </div>
       )}
       {blocksBinaryToMulti && (
         <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-800">
           <AlertTriangle className="h-3 w-3 inline mr-1" />
-          Cannot switch to multi-branch mode: Yes/No branches have connected nodes. Disconnect all branch connections
-          first.
+          {tx('Cannot switch to multi-branch mode: Yes/No branches have connected nodes. Disconnect all branch connections first.')}
         </div>
       )}
       {showWiringWarning && (
         <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
           <AlertTriangle className="h-3 w-3 inline mr-1" />
-          Changing mode will disconnect existing branches. You will need to rewire them.
+          {tx('Changing mode will disconnect existing branches. You will need to rewire them.')}
         </div>
       )}
     </div>
@@ -380,18 +380,18 @@ function ConditionFieldPicker({value, onChange, availableFields, loading}: Condi
 
   return (
     <div>
-      <Label htmlFor="editConditionField">Field to check
+      <Label htmlFor="editConditionField">{tx('Field to check')}
             <span className="text-red-500"> *</span>
           </Label>
       {loading ? (
         <div className="flex items-center gap-2 px-3 py-2 border border-neutral-200 rounded-lg text-sm text-neutral-500 mt-1.5">
           <IconSpinner size="sm" />
-          Loading fields...
+          {tx('Loading fields...')}
         </div>
       ) : availableFields.length > 0 ? (
         <Select value={value} onValueChange={onChange} required>
           <SelectTrigger id="editConditionField" className="mt-1.5">
-            <SelectValue placeholder="Select a field…" />
+            <SelectValue placeholder={tx('Select a field…')} />
           </SelectTrigger>
           <SelectContent>
             {Object.entries(grouped).map(([category, fields]) => (
@@ -418,7 +418,7 @@ function ConditionFieldPicker({value, onChange, availableFields, loading}: Condi
           value={value}
           onChange={e => onChange(e.target.value)}
           required
-          placeholder="e.g., contact.subscribed or contact.data.plan"
+          placeholder={tx('e.g., contact.subscribed or contact.data.plan')}
           className="mt-1.5"
         />
       )}
@@ -448,7 +448,7 @@ function BinaryCondition({
   return (
     <>
       <div>
-        <Label htmlFor="editConditionOperator">Operator</Label>
+        <Label htmlFor="editConditionOperator">{tx('Operator')}</Label>
         <Select value={operator} onValueChange={onOperatorChange}>
           <SelectTrigger id="editConditionOperator" className="mt-1.5">
             <SelectValue />
@@ -465,7 +465,7 @@ function BinaryCondition({
 
       {needsValue && (
         <div>
-          <Label htmlFor="editConditionValue">Value</Label>
+          <Label htmlFor="editConditionValue">{tx('Value')}</Label>
           <ConditionValueInput fieldType={fieldType} value={value} onChange={onValueChange} />
         </div>
       )}
@@ -487,8 +487,8 @@ function ConditionValueInput({fieldType, value, onChange}: ConditionValueInputPr
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="true">True</SelectItem>
-          <SelectItem value="false">False</SelectItem>
+          <SelectItem value="true">{tx('True')}</SelectItem>
+          <SelectItem value="false">{tx('False')}</SelectItem>
         </SelectContent>
       </Select>
     );
@@ -522,16 +522,15 @@ interface MultiBranchEditorProps {
 function MultiBranchEditor({branches, validOperators, onUpdateBranch, onRemoveBranch, onAddBranch}: MultiBranchEditorProps) {
   return (
     <div className="space-y-3">
-      <Label>Branches</Label>
+      <Label>{tx('Branches')}</Label>
       <p className="text-xs text-neutral-500">
-        Each branch defines a condition. The first matching branch is taken. Contacts not matching any branch follow the
-        Default path.
+        {tx('Each branch defines a condition. The first matching branch is taken. Contacts not matching any branch follow the Default path.')}
       </p>
 
       {branches.map((branch, idx) => (
         <div key={branch.id} className="p-3 border border-neutral-200 rounded-lg space-y-3 bg-neutral-50/50">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-neutral-500">Branch {idx + 1}</span>
+            <span className="text-xs font-semibold text-neutral-500">{tx('Branch')}{' '}{idx + 1}</span>
             {branches.length > 1 && (
               <Button
                 type="button"
@@ -546,21 +545,21 @@ function MultiBranchEditor({branches, validOperators, onUpdateBranch, onRemoveBr
           </div>
 
           <div>
-            <Label className="text-xs">Name
+            <Label className="text-xs">{tx('Name')}
             <span className="text-red-500"> *</span>
           </Label>
             <Input
               type="text"
               value={branch.name}
               onChange={e => onUpdateBranch(branch.id, {name: e.target.value})}
-              placeholder="e.g., Premium, Free, Enterprise"
+              placeholder={tx('e.g., Premium, Free, Enterprise')}
               className="mt-1 h-8 text-sm"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label className="text-xs">Operator</Label>
+              <Label className="text-xs">{tx('Operator')}</Label>
               <Select
                 value={branch.operator}
                 onValueChange={val => onUpdateBranch(branch.id, {operator: val})}
@@ -580,12 +579,12 @@ function MultiBranchEditor({branches, validOperators, onUpdateBranch, onRemoveBr
 
             {!NO_VALUE_OPERATORS.includes(branch.operator) && (
               <div>
-                <Label className="text-xs">Value</Label>
+                <Label className="text-xs">{tx('Value')}</Label>
                 <Input
                   type="text"
                   value={branch.value}
                   onChange={e => onUpdateBranch(branch.id, {value: e.target.value})}
-                  placeholder="Value…"
+                  placeholder={tx('Value…')}
                   className="mt-1 h-8 text-sm"
                 />
               </div>
@@ -601,15 +600,15 @@ function MultiBranchEditor({branches, validOperators, onUpdateBranch, onRemoveBr
           className="flex items-center gap-1.5 text-sm text-neutral-700 hover:text-neutral-900 font-medium"
         >
           <Plus className="h-3.5 w-3.5" />
-          Add branch
+          {tx('Add branch')}
         </button>
       )}
 
       <div className="p-2 bg-neutral-100 rounded-lg text-xs text-neutral-600 flex items-start gap-2">
         <Info className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
         <span>
-          Branches are evaluated in order. The first match wins. Contacts not matching any branch will follow the{' '}
-          <strong>Default</strong> path.
+          {tx('Branches are evaluated in order. The first match wins. Contacts not matching any branch will follow the')}{' '}
+          <strong>{tx('Default')}</strong> {tx('path.')}
         </span>
       </div>
     </div>

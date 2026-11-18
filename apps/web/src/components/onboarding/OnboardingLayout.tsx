@@ -6,6 +6,7 @@ import {type CSSProperties, type ReactNode, useCallback} from 'react';
 
 import {useActiveProject} from '../../lib/contexts/ActiveProjectProvider';
 import {useOnboardingComplete} from '../../lib/hooks/useOnboardingComplete';
+import {t} from '../../lib/i18n';
 
 interface OnboardingLayoutProps {
   step: 1 | 2;
@@ -40,12 +41,12 @@ export function OnboardingLayout({step, totalSteps = 2, maxWidthClass = 'max-w-2
           <div className="h-8 w-8 rounded-lg bg-white shadow-sm border border-neutral-200 flex items-center justify-center p-1">
             <Image src="/assets/logo.svg" alt="" aria-hidden width={24} height={24} />
           </div>
-          <span className="text-lg font-bold tracking-tight text-neutral-900">Plunk</span>
+          <span className="text-lg font-bold tracking-tight text-neutral-900">{t('Plunk')}</span>
         </Link>
 
         <div className="hidden sm:flex items-center gap-2 text-xs font-medium text-neutral-500">
           <span className="tabular-nums">
-            Step {step} of {totalSteps}
+            {t('Step')}{' '}{step} {t('of')} {totalSteps}
           </span>
           <div className="flex items-center gap-1.5 ml-1">
             {dots.map(d => (
@@ -64,7 +65,7 @@ export function OnboardingLayout({step, totalSteps = 2, maxWidthClass = 'max-w-2
           onClick={handleSkip}
           className="text-sm text-neutral-500 hover:text-neutral-900 transition-colors"
         >
-          Skip setup
+          {t('Skip setup')}
         </button>
       </header>
 

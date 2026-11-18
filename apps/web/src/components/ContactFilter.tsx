@@ -16,6 +16,7 @@ import {useEffect, useState} from 'react';
 import useSWR from 'swr';
 
 import {FilterPillFrame, filterPillTriggerClass} from './data-table';
+import {t} from '../lib/i18n';
 
 /**
  * A filter pill that narrows a view to one contact. Searches as you type, against the
@@ -46,8 +47,8 @@ export function ContactFilter({
 
   return (
     <FilterPillFrame
-      title="Contact"
-      value={contactId ? (selected?.email ?? 'Loading') : undefined}
+      title={t('Contact')}
+      value={contactId ? (selected?.email ?? t('Loading')) : undefined}
       onClear={() => onChange(null)}
     >
       {label => (
@@ -65,13 +66,13 @@ export function ContactFilter({
           </PopoverTrigger>
           <PopoverContent align="start" className="w-72 p-0">
             <Command shouldFilter={false}>
-              <CommandInput value={search} onValueChange={setSearch} placeholder="Search by email" />
+              <CommandInput value={search} onValueChange={setSearch} placeholder={t('Search by email')} />
               <CommandList>
                 {debounced.length === 0 ? (
-                  <p className="px-3 py-6 text-center text-sm text-neutral-500">Type part of an email address</p>
+                  <p className="px-3 py-6 text-center text-sm text-neutral-500">{t('Type part of an email address')}</p>
                 ) : (
                   <>
-                    <CommandEmpty>{isLoading ? 'Searching' : 'No contacts match'}</CommandEmpty>
+                    <CommandEmpty>{isLoading ? t('Searching') : t('No contacts match')}</CommandEmpty>
                     <CommandGroup>
                       {(results?.data ?? []).map(contact => (
                         <CommandItem

@@ -469,6 +469,28 @@ describe('WorkflowService', () => {
   // WORKFLOW STEPS
   // ========================================
   describe('addStep', () => {
+    it('validates delay-until config when creating or updating a step', async () => {
+      const workflow = await factories.createWorkflow({projectId});
+      const input = {type: WorkflowStepType.DELAY, name: 'Wait until scheduled', position: {x: 200, y: 100}};
+      const invalid = {mode: 'until', until: '2026-11-21T08:02:31'};
+      await expect(WorkflowService.addStep(projectId, workflow.id, {...input, config: invalid})).rejects.toMatchObject({
+        code: 400,
+        message: 'Enter an ISO 8601 date with a timezone',
+      });
+
+      const config = {mode: 'until', until: '{{event.schedule.sendAt}}'};
+      const step = await WorkflowService.addStep(projectId, workflow.id, {...input, config});
+      expect(step.config).toEqual(config);
+      await expect(WorkflowService.updateStep(projectId, workflow.id, step.id, {config: invalid})).rejects.toMatchObject({
+        code: 400,
+        message: 'Enter an ISO 8601 date with a timezone',
+      });
+      const literal = {mode: 'until', until: '2026-11-21T08:02:31-03:00'};
+      expect(await WorkflowService.updateStep(projectId, workflow.id, step.id, {config: literal})).toMatchObject({
+        config: literal,
+      });
+    });
+
     it('should add a step to workflow', async () => {
       const workflow = await factories.createWorkflow({projectId});
 

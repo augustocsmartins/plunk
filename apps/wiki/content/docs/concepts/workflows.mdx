@@ -59,12 +59,22 @@ A workflow always begins with a single auto-created `TRIGGER` step. You build th
 | ----------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
 | `TRIGGER`         | Auto-created entry point. Holds the trigger configuration.                                             | `eventName` (for `EVENT` trigger)                                |
 | `SEND_EMAIL`      | Sends an email to the contact using a template. Template variables resolve from contact data + execution context. | `templateId`, optional `from` override                  |
-| `DELAY`           | Pauses the execution for a fixed duration before continuing.                                           | `amount`, `unit` (`minutes` / `hours` / `days`)                  |
+| `DELAY`           | Pauses the execution for a fixed duration or until a date.                                             | `amount` and `unit` (`minutes` / `hours` / `days`), or `mode: "until"` and `until` |
 | `WAIT_FOR_EVENT`  | Pauses until a specified event is tracked on the contact, with a timeout fallback.                     | `eventName`, `timeout` (seconds; `0` or omitted waits with no limit) |
 | `CONDITION`       | Branches the execution based on contact data or event data. Each `CONDITION` step has two outgoing transitions tagged `yes` / `no`. | A filter expression (same shape as segment filters) |
-| `WEBHOOK`         | Calls an external HTTPS endpoint with contact + execution context as the JSON body. `url`, header values, and `body` support `{{variables}}`. | `url`, optional `method`, `headers`, `body`            |
+| `WEBHOOK`         | Calls an external HTTPS endpoint with contact + execution context as the JSON body. `url`, header values, and `body` support `{{variables}}`. | `url`, optional `method`, `headers`, `body`, `saveResponseAs` |
 | `UPDATE_CONTACT`  | Patches contact data — useful for tagging contacts as they progress (`{ stage: "activated" }`).        | `data` object                                                    |
 | `EXIT`            | Terminates the execution. Optionally records an `exitReason` for analytics.                            | optional `reason`                                                |
+
+A `WAIT_FOR_EVENT` step on an email event resumes when that event comes from any email of the contact, including emails sent by campaigns or other workflows (`scope: "contact"`, the default). For the events a workflow email produces (`email.sent`, `email.delivery`, `email.open`, `email.click`, `email.bounce`, `email.complaint`), set `scope: "execution"` in the step config (**Only emails from this run** in the editor) to count only the emails this execution sent to the contact. Emails a step sends to a custom recipient are recorded under the contact but never count for a scoped wait. If the execution sent several emails, an event from any of them resumes the wait. The editor requires a timeout for a scoped wait: if its email is never sent (for example, to an unsubscribed contact) or never opened, the execution would otherwise wait forever.
+
+### Delay until a date from a webhook
+
+1. Add a `WEBHOOK` step with config `{"url":"https://example.com/schedule","method":"POST","saveResponseAs":"schedule"}`.
+2. Have the endpoint return JSON such as `{"sendAt":"2026-11-21T08:02:31-03:00"}`.
+3. Connect a `DELAY` step with config `{"mode":"until","until":"{{event.schedule.sendAt}}"}`. You can also use a literal date in `until`.
+
+The date must use ISO 8601 with an explicit timezone (`Z` or `±HH:MM`). Both delay modes support up to 365 days of waiting. A date at or before the current time resumes immediately. A missing, invalid, or too distant date fails the execution. The step output records the rendered `until` value and the scheduled `resumeAt`.
 
 ## Transitions
 

@@ -2,7 +2,7 @@ import {Head, Html, Main, NextScript} from 'next/document';
 
 function Document({locale}: {locale: string}) {
   return (
-    <Html lang={locale}>
+    <Html lang={locale || 'pt-BR'}>
       <Head>
         {/* Viewport */}
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
@@ -11,7 +11,7 @@ function Document({locale}: {locale: string}) {
         <meta name="title" content="Plunk | Email Platform Dashboard" />
         <meta
           name="description"
-          content="Manage your email campaigns, contacts, and analytics with Plunk, the open-source email platform."
+          content="Manage your email campaigns, contacts, and analytics in one place."
         />
 
         {/* Open Graph / Facebook */}
@@ -19,18 +19,16 @@ function Document({locale}: {locale: string}) {
         <meta property="og:title" content="Plunk | Email Platform Dashboard" />
         <meta
           property="og:description"
-          content="Manage your email campaigns, contacts, and analytics with Plunk, the open-source email platform."
+          content="Manage your email campaigns, contacts, and analytics in one place."
         />
-        <meta property="og:image" content="https://next-app.useplunk.com/api/og?title=Email%20Platform%20Dashboard" />
 
         {/* Twitter */}
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:title" content="Plunk | Email Platform Dashboard" />
         <meta
           property="twitter:description"
-          content="Manage your email campaigns, contacts, and analytics with Plunk, the open-source email platform."
+          content="Manage your email campaigns, contacts, and analytics in one place."
         />
-        <meta property="twitter:image" content="https://next-app.useplunk.com/api/og?title=Email%20Platform%20Dashboard" />
 
         {/* Fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />

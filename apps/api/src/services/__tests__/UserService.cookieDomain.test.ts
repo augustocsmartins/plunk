@@ -25,12 +25,11 @@ describe('UserService.cookieOptions domain', () => {
     ['https://api.example.com.au', '.example.com.au'],
     ['https://plunk-api.up.railway.app', '.plunk-api.up.railway.app'],
     ['http://app.plunk.local', '.plunk.local'],
-    ['http://api.localhost', '.localhost'],
   ])('scopes the cookie for %s to %s', async (apiUri, expected) => {
     expect(await cookieDomainFor(apiUri)).toBe(expected);
   });
 
-  it.each(['http://localhost:8080', 'http://127.0.0.1:8080'])('sets no domain for %s', async apiUri => {
+  it.each(['http://localhost:8080', 'http://127.0.0.1:8080', 'http://api.localhost', 'http://app.localhost:9000/api'])('sets no domain for %s', async apiUri => {
     expect(await cookieDomainFor(apiUri)).toBeUndefined();
   });
 });

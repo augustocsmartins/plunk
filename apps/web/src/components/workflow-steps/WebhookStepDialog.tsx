@@ -1,3 +1,4 @@
+import {WorkflowStepConfigSchemas} from '@plunk/shared';
 import {Button, Collapsible, CollapsibleContent, CollapsibleTrigger, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@plunk/ui';
 import {ChevronDown, Plus, Trash2} from 'lucide-react';
 import Link from 'next/link';
@@ -7,6 +8,7 @@ import {toast} from 'sonner';
 import {WIKI_URI} from '../../lib/constants';
 
 import {type EditStepDialogProps, getStepConfig, StepDialogShell, useStepUpdate} from './shared';
+import {t} from '../../lib/i18n';
 
 interface HeaderEntry {
   key: string;
@@ -25,6 +27,7 @@ export function WebhookStepDialog({step, workflowId, open, onOpenChange, onSucce
   const [webhookUrl, setWebhookUrl] = useState(String(config.url ?? ''));
   const [webhookMethod, setWebhookMethod] = useState(String(config.method ?? 'POST'));
   const [webhookHeaders, setWebhookHeaders] = useState<HeaderEntry[]>(initialHeaders);
+  const [saveResponseAs, setSaveResponseAs] = useState(String(config.saveResponseAs ?? ''));
   const [showWebhookInfo, setShowWebhookInfo] = useState(false);
 
   const {update, isSubmitting} = useStepUpdate(workflowId, step.id);
@@ -33,7 +36,7 @@ export function WebhookStepDialog({step, workflowId, open, onOpenChange, onSucce
     e.preventDefault();
 
     if (!webhookUrl) {
-      toast.error('Webhook URL is required');
+      toast.error(t('Webhook URL is required'));
       return;
     }
 
@@ -44,9 +47,18 @@ export function WebhookStepDialog({step, workflowId, open, onOpenChange, onSucce
       }
     });
 
+    const responseKey = saveResponseAs.trim();
+    if (responseKey) {
+      const check = WorkflowStepConfigSchemas.webhook.shape.saveResponseAs.safeParse(responseKey);
+      if (!check.success) {
+        toast.error(t('Save response as: {value}', {value: check.error.issues[0]?.message ?? 'invalid name'}));
+        return;
+      }
+    }
+
     const ok = await update({
       name,
-      config: {url: webhookUrl, method: webhookMethod, headers},
+      config: {url: webhookUrl, method: webhookMethod, headers, ...(responseKey ? {saveResponseAs: responseKey} : {})},
     });
 
     if (ok) {
@@ -74,7 +86,7 @@ export function WebhookStepDialog({step, workflowId, open, onOpenChange, onSucce
           <div className="flex items-center justify-between">
             <CollapsibleTrigger className="flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-700">
               <ChevronDown className={`h-3 w-3 transition-transform ${showWebhookInfo ? 'rotate-180' : ''}`} />
-              {showWebhookInfo ? 'Hide' : 'View'} request payload
+              {showWebhookInfo ? t('Hide') : t('View')} {t('request payload')}
             </CollapsibleTrigger>
             <Link
               href={`${WIKI_URI}/guides/webhooks#webhook-payload`}
@@ -82,7 +94,7 @@ export function WebhookStepDialog({step, workflowId, open, onOpenChange, onSucce
               rel="noopener noreferrer"
               className="text-xs text-neutral-500 hover:text-neutral-700 underline underline-offset-2"
             >
-              Webhook guide
+              {t('Webhook guide')}
             </Link>
           </div>
           <CollapsibleContent className="mt-2">
@@ -111,7 +123,7 @@ export function WebhookStepDialog({step, workflowId, open, onOpenChange, onSucce
         </div>
 
         <div>
-          <Label htmlFor="editWebhookMethod">Method</Label>
+          <Label htmlFor="editWebhookMethod">{t('Method')}</Label>
           <Select value={webhookMethod} onValueChange={setWebhookMethod}>
             <SelectTrigger id="editWebhookMethod" className="font-mono mt-1.5">
               <SelectValue />
@@ -128,7 +140,7 @@ export function WebhookStepDialog({step, workflowId, open, onOpenChange, onSucce
 
         <div>
           <div className="flex items-center justify-between mb-2">
-            <Label>Headers</Label>
+            <Label>{t('Headers')}</Label>
             <Button
               type="button"
               variant="outline"
@@ -137,7 +149,7 @@ export function WebhookStepDialog({step, workflowId, open, onOpenChange, onSucce
               className="h-7 text-xs"
             >
               <Plus className="h-3 w-3 mr-1" />
-              Add
+              {t('Add')}
             </Button>
           </div>
 
@@ -145,13 +157,13 @@ export function WebhookStepDialog({step, workflowId, open, onOpenChange, onSucce
             {webhookHeaders.map((header, index) => (
               <div key={index} className="flex gap-2 items-center">
                 <Input
-                  placeholder="e.g., plan"
+                  placeholder={t('e.g., plan')}
                   value={header.key}
                   onChange={e => updateHeader(index, {key: e.target.value})}
                   className="text-sm font-mono"
                 />
                 <Input
-                  placeholder="e.g., pro"
+                  placeholder={t('e.g., pro')}
                   value={header.value}
                   onChange={e => updateHeader(index, {value: e.target.value})}
                   className="text-sm font-mono"
@@ -168,6 +180,21 @@ export function WebhookStepDialog({step, workflowId, open, onOpenChange, onSucce
               </div>
             ))}
           </div>
+        </div>
+
+        <div>
+          <Label htmlFor="editWebhookSaveResponseAs">{t('Save response as (optional)')}</Label>
+          <Input
+            className="font-mono mt-1.5"
+            id="editWebhookSaveResponseAs"
+            value={saveResponseAs}
+            onChange={e => setSaveResponseAs(e.target.value)}
+            placeholder={t('e.g., coupon')}
+          />
+          <p className="text-xs text-neutral-500 mt-1.5">
+            {t('Stores the JSON response of a successful request so later steps can use it, e.g.')}{' '}
+            <code className="font-mono">{'{{event.coupon.code}}'}</code>.
+          </p>
         </div>
       </div>
     </StepDialogShell>

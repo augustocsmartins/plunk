@@ -10,7 +10,7 @@ import {CampaignService} from '../services/CampaignService.js';
 import {DomainService} from '../services/DomainService.js';
 import {CatchAsync} from '../utils/asyncHandler.js';
 import {parseListSort} from '../utils/listSort.js';
-import {assertValidTemplateSyntax} from '../utils/templateValidation.js';
+import {assertValidReplyTo, assertValidTemplateSyntax} from '../utils/templateValidation.js';
 
 @Controller('campaigns')
 export class Campaigns {
@@ -23,8 +23,20 @@ export class Campaigns {
   @CatchAsync
   private async create(req: Request, res: Response, _next: NextFunction) {
     const auth = res.locals.auth;
-    const {name, description, subject, body, from, fromName, replyTo, type, audienceType, audienceCondition, segmentId} =
-      CampaignSchemas.create.parse(req.body);
+    const {
+      name,
+      description,
+      subject,
+      body,
+      from,
+      fromName,
+      replyTo,
+      type,
+      tracking,
+      audienceType,
+      audienceCondition,
+      segmentId,
+    } = CampaignSchemas.create.parse(req.body);
 
     if (audienceType === CampaignAudienceType.SEGMENT && !segmentId) {
       throw new HttpException(400, 'Segment ID is required for SEGMENT audience type');
@@ -48,6 +60,7 @@ export class Campaigns {
       fromName,
       replyTo,
       type,
+      tracking,
       audienceType,
       audienceCondition,
       segmentId,
@@ -164,6 +177,7 @@ export class Campaigns {
     const {id} = UtilitySchemas.id.parse(req.params);
     const {name, description, subject, body, from, fromName, replyTo, type, audienceType, audienceCondition, segmentId} =
       req.body;
+    const {tracking} = CampaignSchemas.update.pick({tracking: true}).parse(req.body);
 
     // Validate audience-specific fields if audienceType is being updated
     if (audienceType === CampaignAudienceType.SEGMENT && segmentId === undefined) {
@@ -180,6 +194,7 @@ export class Campaigns {
     if (from) {
       await DomainService.verifyEmailDomain(from, auth.projectId);
     }
+    assertValidReplyTo(replyTo);
 
     const campaign = await CampaignService.update(auth.projectId, id!, {
       name,
@@ -190,6 +205,7 @@ export class Campaigns {
       fromName,
       replyTo,
       type: type as TemplateType | undefined,
+      tracking,
       audienceType,
       audienceCondition,
       segmentId,
@@ -405,8 +421,9 @@ export class Campaigns {
     const auth = res.locals.auth;
     const {id} = UtilitySchemas.id.parse(req.params);
     const {email} = CampaignSchemas.sendTest.parse(req.body);
+    const {subject, body, from, fromName, replyTo} = req.body;
 
-    await CampaignService.sendTest(auth.projectId, id!, email);
+    await CampaignService.sendTest(auth.projectId, id!, email, {subject, body, from, fromName, replyTo});
 
     return res.json({
       success: true,

@@ -1,11 +1,11 @@
 import {Button, Card, CardContent, CardHeader, CardTitle} from '@plunk/ui';
-import {AnimatePresence, motion} from 'framer-motion';
-import {BookOpen, Check, CheckCircle2, Mail, MessageCircle, Shield, Users, Zap} from 'lucide-react';
+import {BookOpen, CheckCircle2, Mail, Shield, Users, Zap} from 'lucide-react';
 import Link from 'next/link';
-import {useMemo, useState} from 'react';
-import {LANDING_URI, WIKI_URI} from '../lib/constants';
+import {useMemo} from 'react';
+import {WIKI_URI} from '../lib/constants';
 import type {ProjectSetupState} from '../lib/hooks/useProjectSetupState';
 import {useConfig} from '../lib/hooks/useConfig';
+import {t} from '../lib/i18n';
 
 interface QuickStartStep {
   id: string;
@@ -24,63 +24,16 @@ interface QuickStartProps {
 
 // Help resources that always appear
 function HelpResources() {
-  const [copied, setCopied] = useState(false);
-
-  const copyEmail = () => {
-    void navigator.clipboard.writeText('support@useplunk.com');
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   return (
     <div className="px-6 pb-6 pt-4 border-t border-neutral-200">
-      <p className="text-xs font-medium text-neutral-500 mb-3">Need help?</p>
+      <p className="text-xs font-medium text-neutral-500 mb-3">{t('Need help?')}</p>
       <div className="flex flex-col sm:flex-row gap-2">
         <Button asChild variant="outline" size="sm" className="flex-1">
           <Link href={WIKI_URI} target="_blank">
             <BookOpen className="h-3.5 w-3.5" />
-            Documentation
+            {t('Documentation')}
           </Link>
         </Button>
-        <Button asChild variant="outline" size="sm" className="flex-1">
-          <Link href={`${LANDING_URI}/discord`} target="_blank">
-            <MessageCircle className="h-3.5 w-3.5" />
-            Join Discord
-          </Link>
-        </Button>
-        <motion.button
-          onClick={copyEmail}
-          whileTap={{scale: 0.97}}
-          className="flex-1 relative flex items-center justify-center gap-1.5 h-9 rounded-md border border-neutral-200 bg-white px-3 text-xs font-medium text-neutral-700 overflow-hidden transition-colors hover:bg-neutral-50 hover:text-neutral-900 hover:border-neutral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        >
-          <AnimatePresence mode="wait" initial={false}>
-            {copied ? (
-              <motion.span
-                key="copied"
-                className="flex items-center gap-1.5"
-                initial={{opacity: 0, y: 6}}
-                animate={{opacity: 1, y: 0}}
-                exit={{opacity: 0, y: -6}}
-                transition={{duration: 0.15}}
-              >
-                <Check className="h-3.5 w-3.5 text-green-600" />
-                <span className="text-green-600">Copied!</span>
-              </motion.span>
-            ) : (
-              <motion.span
-                key="idle"
-                className="flex items-center gap-1.5"
-                initial={{opacity: 0, y: 6}}
-                animate={{opacity: 1, y: 0}}
-                exit={{opacity: 0, y: -6}}
-                transition={{duration: 0.15}}
-              >
-                <Mail className="h-3.5 w-3.5" />
-                Email support
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </motion.button>
       </div>
     </div>
   );
@@ -103,7 +56,7 @@ export function QuickStart({setupState, isLoading}: QuickStartProps) {
     return (
       <Card className="flex flex-col h-full">
         <CardHeader>
-          <CardTitle>Quick start</CardTitle>
+          <CardTitle>{t('Quick start')}</CardTitle>
         </CardHeader>
         <CardContent className="flex-1 min-h-0 overflow-y-auto">
           <div className="space-y-3">
@@ -140,10 +93,10 @@ export function QuickStart({setupState, isLoading}: QuickStartProps) {
     allSteps.push({
       id: 'domain',
       icon: Shield,
-      title: 'Verify your domain',
-      description: 'Unverified domains land in spam.',
+      title: t('Verify your domain'),
+      description: t('Unverified domains land in spam.'),
       link: '/settings?tab=domains',
-      linkText: 'Add domain',
+      linkText: t('Add domain'),
       isCompleted: false,
     });
   }
@@ -153,10 +106,10 @@ export function QuickStart({setupState, isLoading}: QuickStartProps) {
     allSteps.push({
       id: 'contacts',
       icon: Users,
-      title: 'Add your first contacts',
-      description: 'Import a CSV or add them through the API.',
+      title: t('Add your first contacts'),
+      description: t('Import a CSV or add them through the API.'),
       link: '/contacts',
-      linkText: 'Add contacts',
+      linkText: t('Add contacts'),
       isCompleted: false,
     });
   }
@@ -166,10 +119,10 @@ export function QuickStart({setupState, isLoading}: QuickStartProps) {
     allSteps.push({
       id: 'campaign',
       icon: Mail,
-      title: 'Send your first campaign',
-      description: 'Write it, preview it, send it.',
+      title: t('Send your first campaign'),
+      description: t('Write it, preview it, send it.'),
       link: '/campaigns',
-      linkText: 'Create campaign',
+      linkText: t('Create campaign'),
       isCompleted: false,
     });
   }
@@ -179,10 +132,10 @@ export function QuickStart({setupState, isLoading}: QuickStartProps) {
     allSteps.push({
       id: 'workflows',
       icon: Zap,
-      title: 'Set up automation',
-      description: 'Send email automatically when contacts trigger an event.',
+      title: t('Set up automation'),
+      description: t('Send email automatically when contacts trigger an event.'),
       link: '/workflows',
-      linkText: 'Create workflow',
+      linkText: t('Create workflow'),
       isCompleted: false,
     });
   }
@@ -192,10 +145,10 @@ export function QuickStart({setupState, isLoading}: QuickStartProps) {
     allSteps.push({
       id: 'subscription',
       icon: Shield,
-      title: 'Upgrade your plan',
-      description: 'Remove Plunk branding from your emails.',
+      title: t('Upgrade your plan'),
+      description: t('Remove Plunk branding from your emails.'),
       link: '/settings?tab=billing',
-      linkText: 'Upgrade',
+      linkText: t('Upgrade'),
       isCompleted: false,
     });
   }
@@ -205,10 +158,10 @@ export function QuickStart({setupState, isLoading}: QuickStartProps) {
     allSteps.push({
       id: 'campaign-reengagement',
       icon: Mail,
-      title: 'Re-engage your contacts',
-      description: `${daysSinceLastCampaign} days since your last campaign.`,
+      title: t('Re-engage your contacts'),
+      description: t('{daysSinceLastCampaign} days since your last campaign.', {daysSinceLastCampaign: daysSinceLastCampaign}),
       link: '/campaigns',
-      linkText: 'Create campaign',
+      linkText: t('Create campaign'),
       isCompleted: false,
     });
   }
@@ -218,7 +171,7 @@ export function QuickStart({setupState, isLoading}: QuickStartProps) {
     return (
       <Card className="flex flex-col h-full">
         <CardHeader>
-          <CardTitle>Quick start</CardTitle>
+          <CardTitle>{t('Quick start')}</CardTitle>
         </CardHeader>
         <CardContent className="flex-1 min-h-0 overflow-y-auto">
           <div className="flex items-start gap-4 p-4 bg-green-50 rounded-lg border border-green-200">
@@ -226,9 +179,9 @@ export function QuickStart({setupState, isLoading}: QuickStartProps) {
               <CheckCircle2 className="h-5 w-5 text-green-700" />
             </div>
             <div className="flex-1 pt-0.5">
-              <p className="text-sm font-semibold text-green-900 mb-1">All set!</p>
+              <p className="text-sm font-semibold text-green-900 mb-1">{t('All set!')}</p>
               <p className="text-xs text-green-700 leading-relaxed">
-                Domain verified, contacts imported, campaigns running.
+                {t('Domain verified, contacts imported, campaigns running.')}
               </p>
             </div>
           </div>
@@ -244,7 +197,7 @@ export function QuickStart({setupState, isLoading}: QuickStartProps) {
   return (
     <Card className="flex flex-col h-full">
       <CardHeader>
-        <CardTitle>Quick start</CardTitle>
+        <CardTitle>{t('Quick start')}</CardTitle>
       </CardHeader>
       <CardContent className="flex-1 min-h-0 overflow-y-auto">
         <div className="space-y-3">

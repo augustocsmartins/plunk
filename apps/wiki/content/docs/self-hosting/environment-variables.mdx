@@ -93,6 +93,16 @@ Rate limiting is **off by default** — upgrading Plunk will never start refusin
 
 Contact writes share one budget because a sync integration drives create, update and delete from the same upstream change feed — separate budgets would let a single runaway sync spend three times the intended allowance.
 
+## Login Rate Limiting
+
+Failed password logins on `POST /auth/login` are counted in Redis over a fixed window. Once a counter reaches its limit, further attempts return `429` with a `Retry-After` header until the window expires. A successful login clears the per-email counter, and an unknown email is counted the same as a wrong password. Set a limit to `0` to disable that counter.
+
+| Variable                     | Required | Description                                                                                                                                                                                                                                                                                                   | Default |
+| ---------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `LOGIN_RATE_LIMIT_PER_EMAIL` | No       | Failed login attempts allowed per email address within the window.                                                                                                                                                                                                                                            | `5`     |
+| `LOGIN_RATE_LIMIT_PER_IP`    | No       | Failed login attempts allowed per client IP within the window, across all emails. Plunk does not configure Express to trust proxy headers, so on the Docker image (bundled nginx) and behind any reverse proxy this counter is shared by every user. Only enable it when clients connect to the API directly. | `0`     |
+| `LOGIN_RATE_LIMIT_WINDOW`    | No       | Window length in seconds. Must be at least `1`.                                                                                                                                                                                                                                                               | `900`   |
+
 ## Idempotency
 
 Callers can pass an `Idempotency-Key` header to `POST /v1/track` and `POST /v1/send` to guarantee the request runs at most once. See [Idempotency](/guides/idempotency).
@@ -169,14 +179,15 @@ Plunk bundles a self-hosted [ntfy](https://ntfy.sh) server for internal system n
 
 | Variable                 | Required | Description                                                                                                                 | Default |
 | ------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `DISABLE_SIGNUPS`        | No       | When `true`, the signup endpoint rejects new registrations. Useful for private instances.                                   | `false` |
+| `DISABLE_SIGNUPS`        | No       | When `true`, new registrations (email and OAuth) are rejected once the first user exists — the first account can always be created to bootstrap the instance. Useful for private instances. | `false` (`true` in `docker-compose.yml`) |
 | `VERIFY_EMAIL_ON_SIGNUP` | No       | When `true`, validates emails on signup — checks for disposable domains, plus-addressing, domain existence, and MX records. | `false` |
 
 ## Interface
 
 | Variable       | Required | Description                                                                                                                                                      | Default |
 | -------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- |
-| `SHOW_SPONSOR` | No       | When `true`, the dashboard navigation shows a **Sponsor** link to [GitHub Sponsors](https://github.com/sponsors/driaug). Set to `false` to hide it.               | `true`  |
+| `SHOW_SPONSOR` | No       | When `true`, the dashboard navigation shows a **Sponsor** link to GitHub Sponsors. Set to `false` to hide it.               | `true` (`false` in `docker-compose.yml`) |
+| `DISABLE_LANDING` | No    | Docker only. When `true`, the landing app is not started and the landing domain redirects to the dashboard, which opens on the login page. | `true` (`docker-compose.yml`) |
 
 ## Security
 
@@ -194,6 +205,17 @@ Variables for unusual deployments. The defaults work for the standard Docker Com
 | Variable     | Required | Description                                                                                                              | Default |
 | ------------ | -------- | ------------------------------------------------------------------------------------------------------------------------ | ------- |
 | `NGINX_PORT` | No       | Host port the bundled Nginx reverse proxy binds to. Override when port 80/443 is already in use on the host (e.g. running behind another reverse proxy that forwards to a different port). | `80`    |
+
+## WhatsApp
+
+Transactional WhatsApp messages through an [Evolution API](https://doc.evolution-api.com) server: the `POST /v1/whatsapp/send` endpoint and the **Send WhatsApp** workflow step. Campaigns remain email-only. Each project gets its own Evolution instance (one number), connected by scanning a QR code in **Settings → WhatsApp**.
+
+| Variable                         | Required | Description                                                                                                          | Default   |
+| -------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------- | --------- |
+| `EVOLUTION_BASE_URL`             | No       | Base URL of the Evolution API server. WhatsApp is enabled when this and `EVOLUTION_ADMIN_TOKEN` are set.             | —         |
+| `EVOLUTION_ADMIN_TOKEN`          | No       | Evolution global API key, used to create one instance per project and register its webhook.                          | —         |
+| `WHATSAPP_WEBHOOK_BASE_URL`      | No       | Public base URL Evolution calls back for delivery status (`/webhooks/whatsapp/:secret`). Set it when `API_URI` is not reachable from the Evolution server. | `API_URI` |
+| `WHATSAPP_RATE_LIMIT_PER_MINUTE` | No       | Messages sent per minute across all projects, to keep numbers below WhatsApp's spam heuristics.                      | `20`      |
 
 ## Phishing Detection
 

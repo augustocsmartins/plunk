@@ -1,0 +1,43 @@
+---
+title: WhatsApp
+description: Send transactional WhatsApp messages from the API and from workflows
+icon: MessageCircle
+---
+
+Plunk can send **transactional** WhatsApp messages through an [Evolution API](https://doc.evolution-api.com) server: order updates, login codes, reminders. WhatsApp is not available for campaigns; bulk marketing over WhatsApp gets numbers banned.
+
+## Setup
+
+1. Set `EVOLUTION_BASE_URL` and `EVOLUTION_ADMIN_TOKEN` on the server (see [environment variables](/self-hosting/environment-variables#whatsapp)).
+2. Open **Settings → WhatsApp** in the dashboard. Plunk creates an Evolution instance for the project and shows a QR code.
+3. On the phone, open WhatsApp → **Settings → Linked devices → Link a device** and scan the code.
+
+Each project connects its own number. Disconnecting logs the number out; messages fail until a number is connected again.
+
+## Send from the API
+
+```bash
+curl -X POST https://api.example.com/v1/whatsapp/send \
+  -H "Authorization: Bearer sk_..." \
+  -H "Content-Type: application/json" \
+  -d '{"to": "+5541999999999", "body": "Your order has shipped!", "email": "customer@example.com"}'
+```
+
+| Field   | Required | Description                                                                                   |
+| ------- | -------- | --------------------------------------------------------------------------------------------- |
+| `to`    | Yes      | Phone number. Use `+<country code><number>`; numbers without `+` and with 10-11 digits are treated as Brazilian. |
+| `body`  | Yes      | Message text, up to 4096 characters. WhatsApp formatting (`*bold*`, `_italic_`) works.        |
+| `email` | No       | Links the message to the project's contact with this email.                                   |
+
+The response returns the message `id` and `status` (`QUEUED`). Messages are delivered in the background and move through `SENT`, `DELIVERED` and `READ`, or `FAILED`. The `Idempotency-Key` header is supported.
+
+## Send from a workflow
+
+Add a **Send WhatsApp** step to a workflow. The message supports the same [template language](/guides/template-language) as emails, for example `Hi {{firstName}}, order {{event.orderId}} has shipped`.
+
+- **Contact**: reads the phone number from a contact data field (`phone` by default). Contacts without a valid number are skipped and the workflow continues.
+- **Custom number**: sends to a fixed number, for example to alert your team.
+
+## Delivery status
+
+Evolution calls `/webhooks/whatsapp/<secret>` with delivery and read receipts. The URL is registered automatically and defaults to `API_URI`; set `WHATSAPP_WEBHOOK_BASE_URL` when the API is not reachable from the Evolution server. Recent messages and their status are listed in **Settings → WhatsApp**.

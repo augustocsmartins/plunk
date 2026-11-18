@@ -9,6 +9,7 @@ import {
 } from '@plunk/ui';
 import type {Table} from '@tanstack/react-table';
 import {ChevronDown, Columns3} from 'lucide-react';
+import {t} from '../../lib/i18n';
 
 interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
@@ -37,17 +38,17 @@ export function DataTableViewOptions<TData>({table, lockedColumnIds = []}: DataT
           type="button"
           variant="outline"
           size="sm"
-          aria-label="Toggle column visibility"
-          title="Columns"
+          aria-label={t('Toggle column visibility')}
+          title={t('Columns')}
           className="gap-1.5"
         >
           <Columns3 className="h-4 w-4 text-neutral-500" />
-          <span className="hidden sm:inline">Columns</span>
+          <span className="hidden sm:inline">{t('Columns')}</span>
           <ChevronDown className="h-3.5 w-3.5 text-neutral-400" aria-hidden="true" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>Visible columns</DropdownMenuLabel>
+        <DropdownMenuLabel>{t('Visible columns')}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {columns.map(column => {
           const id = column.id;

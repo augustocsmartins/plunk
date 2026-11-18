@@ -1032,8 +1032,8 @@ export class SecurityService {
         headers: {
           'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://useplunk.com',
-          'X-Title': 'Plunk Email Platform',
+          'HTTP-Referer': DASHBOARD_URI,
+          'X-Title': 'Email Platform',
         },
         body: JSON.stringify({
           model: OPENROUTER_MODEL,

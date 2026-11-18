@@ -13,6 +13,7 @@ import {API_URI} from '../../lib/constants';
 import {useActiveProject} from '../../lib/contexts/ActiveProjectProvider';
 import {useOnboardingGate} from '../../lib/hooks/useOnboardingGate';
 import {useOnboardingPath} from '../../lib/hooks/useOnboardingPath';
+import {t} from '../../lib/i18n';
 
 interface SetupStep {
   id: string;
@@ -28,32 +29,32 @@ const steps: SetupStep[] = [
   {
     id: 'domain',
     icon: ShieldCheck,
-    title: 'Verify your sender domain',
-    description: 'Workflows send from a verified domain. Two DNS records and you\'re set.',
-    cta: 'Verify domain',
+    title: t('Verify your sender domain'),
+    description: t('Workflows send from a verified domain. Two DNS records and you\'re set.'),
+    cta: t('Verify domain'),
     href: '/settings?tab=domains',
     required: true,
   },
   {
     id: 'track',
     icon: Zap,
-    title: 'Fire events from your app',
-    description: 'Call /v1/track whenever something interesting happens. Workflows listen and respond.',
+    title: t('Fire events from your app'),
+    description: t('Call /v1/track whenever something interesting happens. Workflows listen and respond.'),
   },
   {
     id: 'template',
     icon: FileText,
-    title: 'Create an email template',
-    description: 'Design the email your workflow will send — drag blocks or write HTML.',
-    cta: 'Create template',
+    title: t('Create an email template'),
+    description: t('Design the email your workflow will send — drag blocks or write HTML.'),
+    cta: t('Create template'),
     href: '/templates/create',
   },
   {
     id: 'workflow',
     icon: Workflow,
-    title: 'Build your first workflow',
-    description: 'Pick a trigger event, attach your template, chain delays, hit publish.',
-    cta: 'Open workflow builder',
+    title: t('Build your first workflow'),
+    description: t('Pick a trigger event, attach your template, chain delays, hit publish.'),
+    cta: t('Open workflow builder'),
     href: '/workflows',
   },
 ];
@@ -101,8 +102,8 @@ curl_exec($ch);`;
 
   return [
     {id: 'curl', label: 'cURL', code: curl},
-    {id: 'node', label: 'Node.js', code: node},
-    {id: 'python', label: 'Python', code: python},
+    {id: 'node', label: t('Node.js'), code: node},
+    {id: 'python', label: t('Python'), code: python},
     {id: 'php', label: 'PHP', code: php},
   ];
 }
@@ -134,15 +135,15 @@ export default function OnboardingWorkflows() {
 
   return (
     <>
-      <NextSeo title="Automate with workflows" />
+      <NextSeo title={t('Automate with workflows')} />
       <OnboardingLayout step={2}>
         <div className="flex flex-col gap-6">
           <header className="flex flex-col gap-2">
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">
-              Automate with workflows.
+              {t('Automate with workflows.')}
             </h1>
             <p className="text-base text-neutral-600 max-w-xl leading-relaxed">
-              Four steps to your first automated email. Start with your domain so emails actually reach the inbox.
+              {t('Four steps to your first automated email. Start with your domain so emails actually reach the inbox.')}
             </p>
           </header>
 
@@ -172,7 +173,7 @@ export default function OnboardingWorkflows() {
                           <h2 className="text-sm font-semibold text-neutral-900">{step.title}</h2>
                           {step.required && (
                             <span className="rounded bg-neutral-900 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white">
-                              Required
+                              {t('Required')}
                             </span>
                           )}
                         </div>
@@ -196,9 +197,9 @@ export default function OnboardingWorkflows() {
                     <div className="flex flex-col gap-3 border-t border-neutral-100 pt-4">
                       {activeProject ? (
                         <ApiKeyDisplay
-                          label="Public key"
+                          label={t('Public key')}
                           value={activeProject.public}
-                          description="Use this key to track events from browsers or clients."
+                          description={t('Use this key to track events from browsers or clients.')}
                         />
                       ) : (
                         <Skeleton className="h-16 rounded-lg" />
@@ -219,10 +220,10 @@ export default function OnboardingWorkflows() {
               className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-500 hover:text-neutral-900 transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back
+              {t('Back')}
             </Link>
             <Button onClick={handleContinue}>
-              Continue to dashboard
+              {t('Continue to dashboard')}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>

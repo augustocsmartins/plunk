@@ -1,5 +1,6 @@
 import type {
   Contact,
+  Email,
   Prisma,
   Template,
   Workflow,
@@ -7,9 +8,19 @@ import type {
   WorkflowStep,
   WorkflowStepExecution,
 } from '@plunk/db';
-import {StepExecutionStatus, WorkflowExecutionStatus} from '@plunk/db';
+import {StepExecutionStatus, WhatsAppSourceType, WorkflowExecutionStatus} from '@plunk/db';
 import {toPrismaJson} from '@plunk/types';
-import {renderTemplate, WorkflowStepConfigSchemas} from '@plunk/shared';
+import {
+  canScopeWaitToExecution,
+  normalizeWhatsAppPhone,
+  parseWorkflowDelayDate,
+  renderTemplate,
+  WHATSAPP_DEFAULT_PHONE_FIELD,
+  WORKFLOW_DELAY_LIMIT_MESSAGE,
+  WORKFLOW_DELAY_UNIT_MS,
+  WORKFLOW_MAX_DELAY_MS,
+  WorkflowStepConfigSchemas,
+} from '@plunk/shared';
 import dns from 'node:dns/promises';
 import net from 'node:net';
 import signale from 'signale';
@@ -19,13 +30,18 @@ import {HttpException} from '../exceptions/index.js';
 import {DASHBOARD_URI} from '../app/constants.js';
 
 import {ContactFieldService} from './ContactFieldService.js';
+import {RECIPIENT_OVERRIDE_HEADER} from './EmailHeaderService.js';
 import {EmailService} from './EmailService.js';
 import {NtfyService} from './NtfyService.js';
 import {QueueService} from './QueueService.js';
+import {WhatsAppService} from './WhatsAppService.js';
 
 // A step's error is rethrown through the catch of every step before it in the same run, which
 // had completed; the step it came from has handled it, so those pass it up untouched.
 const handledFailures = new WeakSet<object>();
+
+/** A saved webhook response is copied into every later step's context, so keep it small. */
+const WEBHOOK_SAVED_RESPONSE_MAX_BYTES = 64 * 1024;
 
 type StepConfig = Prisma.JsonValue;
 type StepResult = Record<string, unknown>;
@@ -223,8 +239,10 @@ export class WorkflowExecutionService {
       const result = await this.executeStep(step, execution, stepExecution);
       signale.info(`[WORKFLOW] Step ${stepId} executed successfully`);
 
+      // DELAY owns its continuation. A zero-delay job can already have resumed the execution.
+      if (step.type === 'DELAY') return;
+
       // Check if step is in a waiting state (WAIT_FOR_EVENT steps only)
-      // DELAY steps now mark themselves as COMPLETED and queue the next step
       const updatedStepExecution = await prisma.workflowStepExecution.findUnique({
         where: {id: stepExecution.id},
       });
@@ -423,18 +441,18 @@ export class WorkflowExecutionService {
   }
 
   /**
-   * End a DELAY step that had no step after it when the delay started
+   * End a DELAY step, moving on to whatever follows it now
    * Called by BullMQ worker when the delay-end job executes
    */
   public static async processDelayEnd(executionId: string, stepId: string): Promise<void> {
     const execution = await prisma.workflowExecution.findUnique({where: {id: executionId}});
 
     // Cancelled, deleted, or already moved on: nothing left to end
-    if (execution?.status !== WorkflowExecutionStatus.WAITING) {
+    if (execution?.status !== WorkflowExecutionStatus.WAITING || execution.currentStepId !== stepId) {
       return;
     }
 
-    // A step may have been connected after the delay while the contact was waiting
+    // Steps may have been inserted after the delay while the contact was waiting
     const firstTransition = await prisma.workflowTransition.findFirst({
       where: {fromStepId: stepId},
       orderBy: {priority: 'asc'},
@@ -471,6 +489,7 @@ export class WorkflowExecutionService {
     eventName: string,
     contactId?: string,
     data?: Record<string, unknown>,
+    emailId?: string,
   ): Promise<void> {
     // Find workflows waiting for this event (a cancelled execution keeps its wait step WAITING)
     const waitingExecutions = await prisma.workflowStepExecution.findMany({
@@ -503,10 +522,29 @@ export class WorkflowExecutionService {
       },
     });
 
+    // The email behind the event, loaded at most once and only for a wait scoped to its execution
+    let sourceEmail: Pick<Email, 'workflowExecutionId' | 'headers'> | null | undefined;
+
     for (const stepExecution of waitingExecutions) {
       const config = stepExecution.step.config;
 
       if (config && typeof config === 'object' && 'eventName' in config && config.eventName === eventName) {
+        // A wait scoped to its execution counts only the emails that execution sent to the contact
+        if ('scope' in config && config.scope === 'execution' && canScopeWaitToExecution(eventName)) {
+          if (sourceEmail === undefined) {
+            sourceEmail = emailId
+              ? await prisma.email.findUnique({
+                  where: {id: emailId},
+                  select: {workflowExecutionId: true, headers: true},
+                })
+              : null;
+          }
+
+          if (!this.sentByExecution(sourceEmail, stepExecution.executionId)) {
+            continue;
+          }
+        }
+
         // Event matches. Claim the wait before resuming it: the list above can be stale by now,
         // as the same event may be delivered twice at once (SES notifications, repeated clicks)
         // or tracked again while an earlier wait of this loop was resumed. Whoever moves the
@@ -544,6 +582,24 @@ export class WorkflowExecutionService {
   }
 
   /**
+   * Whether an email was sent to the contact by the given execution. An email a step sent to a
+   * custom recipient is recorded under the contact too, but it is not the contact's engagement.
+   */
+  private static sentByExecution(
+    email: Pick<Email, 'workflowExecutionId' | 'headers'> | null,
+    executionId: string,
+  ): boolean {
+    if (email?.workflowExecutionId !== executionId) {
+      return false;
+    }
+
+    const headers =
+      email.headers && typeof email.headers === 'object' && !Array.isArray(email.headers) ? email.headers : {};
+
+    return !(RECIPIENT_OVERRIDE_HEADER in headers);
+  }
+
+  /**
    * Execute a specific step based on its type
    */
   private static async executeStep(
@@ -577,6 +633,9 @@ export class WorkflowExecutionService {
 
       case 'UPDATE_CONTACT':
         return await this.executeUpdateContact(step, execution, stepExecution, config);
+
+      case 'SEND_WHATSAPP':
+        return await this.executeSendWhatsApp(step, execution, stepExecution, config);
 
       default:
         throw new Error(`Unknown step type: ${step.type}`);
@@ -619,30 +678,8 @@ export class WorkflowExecutionService {
     const stepConfig = WorkflowStepConfigSchemas.sendEmail.parse(config);
     const recipientConfig = stepConfig.recipient || {type: 'CONTACT' as const};
 
-    // Get contact data for variable substitution
     const contact = execution.contact;
-    const contactData =
-      contact.data && typeof contact.data === 'object' && !Array.isArray(contact.data)
-        ? (contact.data as Record<string, unknown>)
-        : {};
-
-    // Render template with contact data
-    const executionContext =
-      execution.context && typeof execution.context === 'object' && !Array.isArray(execution.context)
-        ? (execution.context as Record<string, unknown>)
-        : {};
-
-    const variables = {
-      id: contact.id,
-      email: contact.email,
-      ...contactData,
-      ...executionContext,
-      data: contactData,
-      event: executionContext,
-      unsubscribeUrl: `${DASHBOARD_URI}/unsubscribe/${contact.id}`,
-      subscribeUrl: `${DASHBOARD_URI}/subscribe/${contact.id}`,
-      manageUrl: `${DASHBOARD_URI}/manage/${contact.id}`,
-    };
+    const variables = this.getTemplateVariables(execution);
 
     const renderedSubject = this.renderTemplate(step.template.subject, variables);
     const renderedBody = this.renderTemplate(step.template.body, variables);
@@ -676,34 +713,116 @@ export class WorkflowExecutionService {
   }
 
   /**
-   * DELAY step - Wait for a specified duration
+   * SEND_WHATSAPP step - Send a transactional WhatsApp message to the contact's phone (read from
+   * a contact data field) or to a custom number. A contact without a usable phone number is
+   * skipped rather than failing the run, the same way most contacts simply lack optional data.
    */
-  private static async executeDelay(
+  private static async executeSendWhatsApp(
     _step: WorkflowStep,
-    _execution: WorkflowExecutionWithRelations,
+    execution: WorkflowExecutionWithRelations,
     stepExecution: WorkflowStepExecution,
     config: StepConfig,
   ): Promise<StepResult> {
-    const {amount, unit} = WorkflowStepConfigSchemas.delay.parse(config);
+    const {message, recipient} = WorkflowStepConfigSchemas.sendWhatsApp.parse(config);
+    const recipientConfig = recipient ?? {type: 'CONTACT' as const};
 
-    // Calculate delay in milliseconds
-    let delayMs = 0;
+    const contact = execution.contact;
+    const contactData =
+      contact.data && typeof contact.data === 'object' && !Array.isArray(contact.data)
+        ? (contact.data as Record<string, unknown>)
+        : {};
+    // Non-persistent /v1/track fields arrive as {value, persistent: false}; templates read the value
+    const executionContext = Object.fromEntries(
+      Object.entries(
+        execution.context && typeof execution.context === 'object' && !Array.isArray(execution.context)
+          ? (execution.context as Record<string, unknown>)
+          : {},
+      ).map(([key, value]) =>
+        value && typeof value === 'object' && 'value' in value && 'persistent' in value
+          ? [key, (value as {value: unknown}).value]
+          : [key, value],
+      ),
+    );
 
-    switch (unit) {
-      case 'minutes':
-        delayMs = amount * 60 * 1000;
-        break;
-      case 'hours':
-        delayMs = amount * 60 * 60 * 1000;
-        break;
-      case 'days':
-        delayMs = amount * 24 * 60 * 60 * 1000;
-        break;
-      default:
-        throw new Error(`Unknown delay unit: ${unit}`);
+    const variables = {
+      id: contact.id,
+      email: contact.email,
+      ...contactData,
+      ...executionContext,
+      data: contactData,
+      event: executionContext,
+      unsubscribeUrl: `${DASHBOARD_URI}/unsubscribe/${contact.id}`,
+      subscribeUrl: `${DASHBOARD_URI}/subscribe/${contact.id}`,
+      manageUrl: `${DASHBOARD_URI}/manage/${contact.id}`,
+    };
+
+    const rawPhone =
+      recipientConfig.type === 'CUSTOM'
+        ? this.renderTemplate(recipientConfig.customPhone ?? '', variables)
+        : this.resolveField(recipientConfig.phoneField || WHATSAPP_DEFAULT_PHONE_FIELD, {...contactData, data: contactData});
+
+    const phone = normalizeWhatsAppPhone(rawPhone);
+    if (!phone) {
+      return {skipped: true, reason: 'no_phone', recipientType: recipientConfig.type};
     }
 
-    const resumeAt = new Date(Date.now() + delayMs);
+    const body = this.renderTemplate(message, variables).trim();
+    if (!body) {
+      return {skipped: true, reason: 'empty_message', recipientType: recipientConfig.type};
+    }
+
+    const sent = await WhatsAppService.queueMessage({
+      projectId: execution.workflow.projectId,
+      contactId: contact.id,
+      phone,
+      body,
+      sourceType: WhatsAppSourceType.WORKFLOW,
+      workflowExecutionId: execution.id,
+      workflowStepExecutionId: stepExecution.id,
+    });
+
+    return {
+      whatsappMessageId: sent.id,
+      recipientType: recipientConfig.type,
+      phone: sent.phone,
+    };
+  }
+
+  /**
+   * DELAY step - Wait for a specified duration
+   */
+  private static async executeDelay(
+    step: WorkflowStep,
+    execution: WorkflowExecutionWithRelations,
+    stepExecution: WorkflowStepExecution,
+    config: StepConfig,
+  ): Promise<StepResult> {
+    const parsed = WorkflowStepConfigSchemas.delay.safeParse(config);
+    if (!parsed.success) {
+      throw new Error(`DELAY: ${parsed.error.issues[0]?.message || 'Invalid configuration'}`);
+    }
+    const delay = parsed.data;
+    const now = Date.now();
+    let delayMs: number;
+    let details: {until: string} | {delayAmount: number; delayUnit: string};
+
+    if (delay.mode === 'until') {
+      const until = this.renderTemplate(delay.until, this.getTemplateVariables(execution));
+      const timestamp = parseWorkflowDelayDate(until);
+      if (!Number.isFinite(timestamp)) {
+        throw new Error(`DELAY until: ${JSON.stringify(until.slice(0, 120))} is not an ISO 8601 date with a timezone`);
+      }
+      delayMs = Math.max(0, timestamp - now);
+      if (delayMs > WORKFLOW_MAX_DELAY_MS) {
+        throw new Error(`DELAY until: ${WORKFLOW_DELAY_LIMIT_MESSAGE}`);
+      }
+      details = {until};
+    } else {
+      delayMs = delay.amount * WORKFLOW_DELAY_UNIT_MS[delay.unit];
+      details = {delayAmount: delay.amount, delayUnit: delay.unit};
+    }
+    const resumeAt = new Date(now + delayMs);
+    const output = {...details, resumeAt: resumeAt.toISOString()};
 
     // Mark step as completed immediately (BullMQ handles the delay)
     await prisma.workflowStepExecution.update({
@@ -711,41 +830,19 @@ export class WorkflowExecutionService {
       data: {
         status: StepExecutionStatus.COMPLETED,
         completedAt: new Date(),
-        output: {
-          delayAmount: amount,
-          delayUnit: unit,
-          resumeAt: resumeAt.toISOString(),
-        },
+        output,
       },
     });
 
     // Update workflow execution to waiting (a cancelled one stays cancelled; what is queued below then does nothing)
-    await this.updateUnlessCancelled(_execution.id, {status: WorkflowExecutionStatus.WAITING});
+    await this.updateUnlessCancelled(execution.id, {status: WorkflowExecutionStatus.WAITING});
 
-    // Find next steps to queue
-    const transitions = await prisma.workflowTransition.findMany({
-      where: {fromStepId: _step.id},
-      include: {toStep: true},
-      orderBy: {priority: 'asc'},
-    });
+    // The step after the delay is looked up when the delay ends, not now: one inserted after the
+    // delay while the contact waits must not be skipped
+    const queueDelayMs = delay.mode === 'until' ? Math.max(0, resumeAt.getTime() - Date.now()) : delayMs;
+    await QueueService.queueWorkflowDelayEnd(execution.id, step.id, stepExecution.id, queueDelayMs);
 
-    if (transitions.length > 0) {
-      const firstTransition = transitions[0];
-      if (firstTransition?.toStep) {
-        const nextStep = firstTransition.toStep;
-        await QueueService.queueWorkflowStep(_execution.id, nextStep.id, Math.max(0, delayMs));
-      }
-    } else {
-      // Nothing follows the delay: still schedule its end, or the execution would never leave WAITING
-      await QueueService.queueWorkflowDelayEnd(_execution.id, _step.id, stepExecution.id, Math.max(0, delayMs));
-    }
-
-    return {
-      delayAmount: amount,
-      delayUnit: unit,
-      resumeAt: resumeAt.toISOString(),
-      queued: true,
-    };
+    return {...output, queued: true};
   }
 
   /**
@@ -827,7 +924,7 @@ export class WorkflowExecutionService {
       const actualValue = this.resolveField(parsed.field, fieldData);
 
       for (const branch of parsed.branches) {
-        if (this.evaluateCondition(actualValue, branch.operator, branch.value)) {
+        if (this.evaluateCondition(actualValue, branch.operator, branch.value, parsed.field === 'contact.email')) {
           return {
             field: parsed.field,
             mode: 'multi',
@@ -853,7 +950,7 @@ export class WorkflowExecutionService {
     const operator = 'operator' in parsed ? parsed.operator : 'equals';
     const value = 'value' in parsed ? parsed.value : undefined;
     const actualValue = this.resolveField(field, fieldData);
-    const result = this.evaluateCondition(actualValue, operator, value);
+    const result = this.evaluateCondition(actualValue, operator, value, field === 'contact.email');
 
     return {
       field,
@@ -1101,7 +1198,7 @@ export class WorkflowExecutionService {
     _stepExecution: WorkflowStepExecution,
     config: StepConfig,
   ): Promise<StepResult> {
-    const {url, method, headers, body} = WorkflowStepConfigSchemas.webhook.parse(config);
+    const {url, method, headers, body, saveResponseAs} = WorkflowStepConfigSchemas.webhook.parse(config);
 
     // Prepare webhook payload
     const contact = execution.contact;
@@ -1115,21 +1212,7 @@ export class WorkflowExecutionService {
         : {};
     const context = execution.context || {};
 
-    // Render scope: SEND_EMAIL's scope (id, email, contact data, execution
-    // context, subscribe/unsubscribe/manage URLs) plus a webhook-only
-    // `event` namespace carrying the trigger event payload. `method` is
-    // intentionally NOT rendered — it must remain a literal HTTP verb.
-    const variables = {
-      id: contact.id,
-      email: contact.email,
-      ...contactData,
-      ...executionContext,
-      data: contactData,
-      event: context,
-      unsubscribeUrl: `${DASHBOARD_URI}/unsubscribe/${contact.id}`,
-      subscribeUrl: `${DASHBOARD_URI}/subscribe/${contact.id}`,
-      manageUrl: `${DASHBOARD_URI}/manage/${contact.id}`,
-    };
+    const variables = {...this.getTemplateVariables(execution), event: context};
 
     const renderedUrl = this.renderTemplate(url, variables);
     const renderedHeaders = headers
@@ -1172,12 +1255,27 @@ export class WorkflowExecutionService {
       parsedResponse = responseData;
     }
 
+    const responseSaved =
+      saveResponseAs !== undefined &&
+      response.ok &&
+      Buffer.byteLength(responseData, 'utf8') <= WEBHOOK_SAVED_RESPONSE_MAX_BYTES;
+
+    if (responseSaved) {
+      const updatedContext = {...executionContext, [saveResponseAs]: parsedResponse};
+      await prisma.workflowExecution.update({
+        where: {id: execution.id},
+        data: {context: toPrismaJson(updatedContext)},
+      });
+      execution.context = updatedContext as WorkflowExecutionWithRelations['context'];
+    }
+
     return {
       url: renderedUrl,
       method,
       statusCode: response.status,
       success: response.ok,
       response: parsedResponse,
+      ...(saveResponseAs !== undefined ? {savedAs: responseSaved ? saveResponseAs : null} : {}),
     };
   }
 
@@ -1375,6 +1473,31 @@ export class WorkflowExecutionService {
     return count > 0;
   }
 
+  private static getTemplateVariables(execution: WorkflowExecutionWithRelations): Record<string, unknown> {
+    const contact = execution.contact;
+    const contactData =
+      contact.data && typeof contact.data === 'object' && !Array.isArray(contact.data)
+        ? (contact.data as Record<string, unknown>)
+        : {};
+
+    const executionContext =
+      execution.context && typeof execution.context === 'object' && !Array.isArray(execution.context)
+        ? (execution.context as Record<string, unknown>)
+        : {};
+
+    return {
+      id: contact.id,
+      email: contact.email,
+      ...contactData,
+      ...executionContext,
+      data: contactData,
+      event: executionContext,
+      unsubscribeUrl: `${DASHBOARD_URI}/unsubscribe/${contact.id}`,
+      subscribeUrl: `${DASHBOARD_URI}/subscribe/${contact.id}`,
+      manageUrl: `${DASHBOARD_URI}/manage/${contact.id}`,
+    };
+  }
+
   /**
    * Helper: Render template with variables
    * Uses shared template rendering from @plunk/shared
@@ -1412,7 +1535,17 @@ export class WorkflowExecutionService {
   /**
    * Helper: Evaluate condition
    */
-  private static evaluateCondition(actualValue: unknown, operator: string, expectedValue: unknown): boolean {
+  private static evaluateCondition(
+    actualValue: unknown,
+    operator: string,
+    expectedValue: unknown,
+    caseInsensitive = false,
+  ): boolean {
+    // Email comparisons ignore case, the same as SegmentService (see @plunk/shared operators)
+    if (caseInsensitive && typeof actualValue === 'string' && typeof expectedValue === 'string') {
+      return this.evaluateCondition(actualValue.toLowerCase(), operator, expectedValue.toLowerCase());
+    }
+
     switch (operator) {
       case 'equals':
         // equals can match null/undefined if expectedValue is also null/undefined

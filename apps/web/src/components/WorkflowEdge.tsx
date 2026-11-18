@@ -1,6 +1,7 @@
 import {BaseEdge, EdgeLabelRenderer, type EdgeProps, getSmoothStepPath} from '@xyflow/react';
 import {Plus, Unlink} from 'lucide-react';
 import {useState} from 'react';
+import {t} from '../lib/i18n';
 
 export interface WorkflowEdgeData extends Record<string, unknown> {
   /** Branch label ("Yes", "No", a named branch…). Undefined for plain transitions. */
@@ -74,7 +75,7 @@ export function WorkflowEdge({
               <button
                 type="button"
                 onClick={onInsert}
-                title="Insert a step here"
+                title={t('Insert a step here')}
                 className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
               >
                 <Plus className="h-4 w-4" />
@@ -82,7 +83,7 @@ export function WorkflowEdge({
               <button
                 type="button"
                 onClick={onDisconnect}
-                title="Disconnect these steps"
+                title={t('Disconnect these steps')}
                 className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-600 transition-colors hover:bg-red-50 hover:text-red-600"
               >
                 <Unlink className="h-4 w-4" />

@@ -22,6 +22,7 @@ import type {PaginatedResponse} from '@plunk/types';
 import {ArrowLeft, FileText, Search} from 'lucide-react';
 import {useState} from 'react';
 import useSWR from 'swr';
+import {t} from '../lib/i18n';
 
 interface TemplateSelectionDialogProps {
   open: boolean;
@@ -110,12 +111,12 @@ export function TemplateSelectionDialog({open, onOpenChange, onSelectTemplate}: 
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             )}
-            {step === 'select' ? 'Select a Template' : 'Choose What to Copy'}
+            {step === 'select' ? t('Select a Template') : t('Choose What to Copy')}
           </DialogTitle>
           <DialogDescription>
             {step === 'select'
-              ? 'Choose a template to start your campaign with'
-              : 'Select which parts of the template you want to use'}
+              ? t('Choose a template to start your campaign with')
+              : t('Select which parts of the template you want to use')}
           </DialogDescription>
         </DialogHeader>
 
@@ -128,14 +129,14 @@ export function TemplateSelectionDialog({open, onOpenChange, onSelectTemplate}: 
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500" />
                   <Input
                     type="text"
-                    placeholder="Search templates…"
+                    placeholder={t('Search templates…')}
                     value={searchInput}
                     onChange={e => setSearchInput(e.target.value)}
                     className="pl-10"
                   />
                 </div>
                 <Button type="submit" size="sm">
-                  Search
+                  {t('Search')}
                 </Button>
                 {search && (
                   <Button
@@ -148,7 +149,7 @@ export function TemplateSelectionDialog({open, onOpenChange, onSelectTemplate}: 
                       setPage(1);
                     }}
                   >
-                    Clear
+                    {t('Clear')}
                   </Button>
                 )}
               </form>
@@ -164,7 +165,7 @@ export function TemplateSelectionDialog({open, onOpenChange, onSelectTemplate}: 
                   variant={typeFilter === 'ALL' ? 'default' : 'secondary'}
                   size="sm"
                 >
-                  All templates
+                  {t('All templates')}
                 </Button>
                 <Button
                   type="button"
@@ -175,7 +176,7 @@ export function TemplateSelectionDialog({open, onOpenChange, onSelectTemplate}: 
                   variant={typeFilter === 'MARKETING' ? 'default' : 'secondary'}
                   size="sm"
                 >
-                  Marketing
+                  {t('Marketing')}
                 </Button>
                 <Button
                   type="button"
@@ -186,7 +187,7 @@ export function TemplateSelectionDialog({open, onOpenChange, onSelectTemplate}: 
                   variant={typeFilter === 'TRANSACTIONAL' ? 'default' : 'secondary'}
                   size="sm"
                 >
-                  Transactional
+                  {t('Transactional')}
                 </Button>
                 <Button
                   type="button"
@@ -197,7 +198,7 @@ export function TemplateSelectionDialog({open, onOpenChange, onSelectTemplate}: 
                   variant={typeFilter === 'HEADLESS' ? 'default' : 'secondary'}
                   size="sm"
                 >
-                  Headless
+                  {t('Headless')}
                 </Button>
               </div>
             </div>
@@ -212,8 +213,8 @@ export function TemplateSelectionDialog({open, onOpenChange, onSelectTemplate}: 
               {!isLoading && data?.data.length === 0 && (
                 <EmptyState
                   icon={FileText}
-                  title="No templates found"
-                  description={search ? 'Try adjusting your search terms.' : 'Create a template first to use this feature.'}
+                  title={t('No templates found')}
+                  description={search ? t('Try adjusting your search terms.') : t('Create a template first to use this feature.')}
                 />
               )}
 
@@ -241,11 +242,11 @@ export function TemplateSelectionDialog({open, onOpenChange, onSelectTemplate}: 
                   <CardContent className="pt-0">
                     <div className="space-y-2 text-xs">
                       <div>
-                        <span className="text-neutral-500">Subject:</span>{' '}
+                        <span className="text-neutral-500">{t('Subject:')}</span>{' '}
                         <span className="font-medium text-neutral-900">{template.subject}</span>
                       </div>
                       <div>
-                        <span className="text-neutral-500">From:</span>{' '}
+                        <span className="text-neutral-500">{t('From:')}</span>{' '}
                         <span className="text-neutral-700">{template.from}</span>
                       </div>
                     </div>
@@ -258,11 +259,11 @@ export function TemplateSelectionDialog({open, onOpenChange, onSelectTemplate}: 
             {data && data.totalPages > 1 && (
               <div className="flex items-center justify-between pt-3 border-t">
                 <p className="text-sm text-neutral-500">
-                  Page {page} of {data.totalPages}
+                  {t('Page')}{' '}{page} {t('of')} {data.totalPages}
                 </p>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 1}>
-                    Previous
+                    {t('Previous')}
                   </Button>
                   <Button
                     variant="outline"
@@ -270,7 +271,7 @@ export function TemplateSelectionDialog({open, onOpenChange, onSelectTemplate}: 
                     onClick={() => setPage(p => p + 1)}
                     disabled={page === data.totalPages}
                   >
-                    Next
+                    {t('Next')}
                   </Button>
                 </div>
               </div>
@@ -308,7 +309,7 @@ export function TemplateSelectionDialog({open, onOpenChange, onSelectTemplate}: 
                   />
                   <div className="flex-1">
                     <Label htmlFor="subject" className="text-sm font-medium cursor-pointer">
-                      Email subject
+                      {t('Email subject')}
                     </Label>
                     {selectedTemplate?.subject && (
                       <p className="text-xs text-neutral-400 mt-0.5 truncate">{selectedTemplate.subject}</p>
@@ -323,9 +324,9 @@ export function TemplateSelectionDialog({open, onOpenChange, onSelectTemplate}: 
                   <Checkbox id="body" checked={selectedFields.body} onCheckedChange={() => toggleField('body')} />
                   <div className="flex-1">
                     <Label htmlFor="body" className="text-sm font-medium cursor-pointer">
-                      Email body
+                      {t('Email body')}
                     </Label>
-                    <p className="text-xs text-neutral-400 mt-0.5">Full email content and design</p>
+                    <p className="text-xs text-neutral-400 mt-0.5">{t('Full email content and design')}</p>
                   </div>
                 </div>
 
@@ -336,7 +337,7 @@ export function TemplateSelectionDialog({open, onOpenChange, onSelectTemplate}: 
                   <Checkbox id="from" checked={selectedFields.from} onCheckedChange={() => toggleField('from')} />
                   <div className="flex-1">
                     <Label htmlFor="from" className="text-sm font-medium cursor-pointer">
-                      From email
+                      {t('From email')}
                     </Label>
                     {selectedTemplate?.from && (
                       <p className="text-xs text-neutral-400 mt-0.5">{selectedTemplate.from}</p>
@@ -355,7 +356,7 @@ export function TemplateSelectionDialog({open, onOpenChange, onSelectTemplate}: 
                   />
                   <div className="flex-1">
                     <Label htmlFor="fromName" className="text-sm font-medium cursor-pointer">
-                      From name
+                      {t('From name')}
                     </Label>
                     {selectedTemplate?.fromName && (
                       <p className="text-xs text-neutral-400 mt-0.5">{selectedTemplate.fromName}</p>
@@ -374,7 +375,7 @@ export function TemplateSelectionDialog({open, onOpenChange, onSelectTemplate}: 
                   />
                   <div className="flex-1">
                     <Label htmlFor="replyTo" className="text-sm font-medium cursor-pointer">
-                      Reply-To email
+                      {t('Reply-To email')}
                     </Label>
                     {selectedTemplate?.replyTo && (
                       <p className="text-xs text-neutral-400 mt-0.5">{selectedTemplate.replyTo}</p>
@@ -387,10 +388,10 @@ export function TemplateSelectionDialog({open, onOpenChange, onSelectTemplate}: 
             {/* Fixed Action Buttons */}
             <div className="flex gap-3 pt-4 border-t mt-4">
               <Button variant="outline" onClick={handleBack} className="flex-1">
-                Back
+                {t('Back')}
               </Button>
               <Button onClick={handleConfirm} className="flex-1" disabled={!Object.values(selectedFields).some(v => v)}>
-                Create campaign
+                {t('Create campaign')}
               </Button>
             </div>
           </div>

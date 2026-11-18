@@ -31,13 +31,14 @@ import {
   StickySaveBar,
 } from '@plunk/ui';
 import type {Campaign, Segment} from '@plunk/db';
-import type {CampaignRecipientType} from '@plunk/types';
+import type {CampaignFailureReason, CampaignRecipientType} from '@plunk/types';
 import {CampaignAudienceType, CampaignStatus, TemplateType} from '@plunk/db';
 import {CampaignSchemas, detectUnsubscribeSignal} from '@plunk/shared';
 import {AnimatedNumber} from '../../components/AnimatedNumber';
 import {CampaignRecipientsSheet} from '../../components/CampaignRecipientsSheet';
 import {DashboardLayout} from '../../components/DashboardLayout';
 import {EmailSettings} from '../../components/EmailSettings';
+import {TrackingOverrideSelect} from '../../components/TrackingOverrideSelect';
 import {EmailEditor} from '../../components/EmailEditor';
 import {network} from '../../lib/network';
 import {formatFullDateTime, formatUTCDateTime, getUserTimezone, schedulePresets} from '../../lib/dateUtils';
@@ -67,6 +68,7 @@ import {toast} from 'sonner';
 import useSWR from 'swr';
 import {NextSeo} from 'next-seo';
 import {useActiveProject} from '../../lib/contexts/ActiveProjectProvider';
+import {t} from '../../lib/i18n';
 
 interface CampaignStats {
   totalRecipients: number;
@@ -77,6 +79,10 @@ interface CampaignStats {
   bouncedCount: number;
   complainedCount: number;
   unsubscribedCount: number;
+  /** Recipients the send never reached: their email failed before SES accepted it. */
+  failedCount: number;
+  /** Why, most common cause first. Empty while the campaign is still sending. */
+  failureReasons: CampaignFailureReason[];
   openRate: number;
   clickRate: number;
   bounceRate: number;
@@ -114,17 +120,17 @@ interface SupportingFigure {
  * Every rate is measured against sentCount, the denominator the stats endpoint documents.
  */
 const SUPPORTING_FIGURES: SupportingFigure[] = [
-  {label: 'Delivered', count: s => s.deliveredCount, rate: s => s.deliveryRate},
-  {label: 'Clicked', count: s => s.clickedCount, rate: s => s.clickRate},
+  {label: t('Delivered'), count: s => s.deliveredCount, rate: s => s.deliveryRate},
+  {label: t('Clicked'), count: s => s.clickedCount, rate: s => s.clickRate},
   {
-    label: 'Bounced',
+    label: t('Bounced'),
     count: s => s.bouncedCount,
     rate: s => s.bounceRate,
     adverse: {warnRate: 5, minCount: 5},
     drillDown: 'bounced',
   },
   {
-    label: 'Spam reports',
+    label: t('Spam reports'),
     count: s => s.complainedCount,
     rate: s => s.complaintRate,
     adverse: {warnRate: 0.075, minCount: 3},
@@ -133,7 +139,7 @@ const SUPPORTING_FIGURES: SupportingFigure[] = [
   // No enforcement threshold applies to unsubscribes, so this one never turns red: it is
   // a cost to read, not a fault to fix.
   {
-    label: 'Unsubscribed',
+    label: t('Unsubscribed'),
     count: s => s.unsubscribedCount,
     rate: s => s.unsubscribeRate,
     drillDown: 'unsubscribed',
@@ -149,6 +155,35 @@ function figureTone(figure: SupportingFigure, s: CampaignStats): string {
   }
 
   return 'text-neutral-900';
+}
+
+/**
+ * Plain-language labels for the send errors a user can do something about. Matched on the
+ * error SES (or the send path) recorded, so anything unrecognised is shown verbatim rather
+ * than guessed at.
+ */
+const FAILURE_EXPLANATIONS: {match: RegExp; label: string; detail: string}[] = [
+  {
+    match: /daily message quota exceeded/i,
+    label: t('Daily sending quota reached'),
+    detail:
+      t('Your AWS SES account hit its 24-hour sending limit, so SES refused the rest of this send. These recipients were not emailed.'),
+  },
+  {
+    match: /maximum sending rate exceeded/i,
+    label: t('Sending rate limit exceeded'),
+    detail: t('SES refused these emails because they were sent faster than your account allows per second.'),
+  },
+  {
+    match: /^project is disabled$/i,
+    label: t('Project disabled'),
+    detail: t('The project was disabled while this campaign was sending, so the remaining emails were not sent.'),
+  },
+];
+
+function explainFailure(error: string): {label: string; detail?: string} {
+  const known = FAILURE_EXPLANATIONS.find(explanation => explanation.match.test(error));
+  return known ? {label: known.label, detail: known.detail} : {label: error};
 }
 
 export default function CampaignDetailsPage() {
@@ -169,7 +204,10 @@ export default function CampaignDetailsPage() {
     isLoading,
   } = useSWR<{data: Campaign}>(id ? `/campaigns/${id}` : null, {
     revalidateOnFocus: false,
-    refreshInterval: revertPending ? 5000 : 0,
+    // While sending, poll the campaign along with its stats: the status is what moves the
+    // page from the progress panel to the results, so without it a tab left open over the
+    // end of a send kept showing "Sending" and never showed what failed.
+    refreshInterval: revertPending ? 5000 : latest => (latest?.data.status === CampaignStatus.SENDING ? 15000 : 0),
   });
 
   // Stop polling the moment the cleanup promotes the campaign, and give up if it is
@@ -181,7 +219,7 @@ export default function CampaignDetailsPage() {
 
     if (revertedStatus === CampaignStatus.DRAFT) {
       setRevertPending(false);
-      toast.success('Campaign returned to draft');
+      toast.success(t('Campaign returned to draft'));
       return;
     }
 
@@ -245,26 +283,26 @@ export default function CampaignDetailsPage() {
 
       if (res.revertPending) {
         setRevertPending(true);
-        toast.success('Campaign stopped. Clearing its unsent emails, then it returns to draft.');
+        toast.success(t('Campaign stopped. Clearing its unsent emails, then it returns to draft.'));
       } else {
         toast.success(
-          res.data.status === CampaignStatus.DRAFT ? 'Campaign stopped and returned to draft' : 'Campaign canceled',
+          res.data.status === CampaignStatus.DRAFT ? t('Campaign stopped and returned to draft') : t('Campaign canceled'),
         );
       }
 
       void mutate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t cancel the campaign. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t cancel the campaign. Try again.'));
     }
   };
 
   const handleDelete = async () => {
     try {
       await network.fetch('DELETE', `/campaigns/${id}`);
-      toast.success('Campaign deleted');
+      toast.success(t('Campaign deleted'));
       void router.push('/campaigns');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t delete the campaign. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t delete the campaign. Try again.'));
     }
   };
 
@@ -275,13 +313,13 @@ export default function CampaignDetailsPage() {
   const handleSetArchived = async (archived: boolean) => {
     try {
       await network.fetch('POST', `/campaigns/${id}/${archived ? 'archive' : 'unarchive'}`);
-      toast.success(archived ? 'Campaign archived' : 'Campaign restored');
+      toast.success(archived ? t('Campaign archived') : t('Campaign restored'));
       void mutate();
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
-          : `Couldn\u2019t ${archived ? 'archive' : 'restore'} the campaign. Try again.`,
+          : t('Couldn’t {value} the campaign. Try again.', {value: archived ? 'archive' : 'restore'}),
       );
     }
   };
@@ -289,16 +327,16 @@ export default function CampaignDetailsPage() {
   const handleSend = async () => {
     try {
       await network.fetch<void>('POST', `/campaigns/${id}/send`);
-      toast.success('Campaign is being sent!');
+      toast.success(t('Campaign is being sent!'));
       void mutate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t send the campaign. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t send the campaign. Try again.'));
     }
   };
 
   const handleSchedule = async () => {
     if (!scheduledDateTime) {
-      toast.error('Please select a date and time');
+      toast.error(t('Please select a date and time'));
       return;
     }
 
@@ -307,7 +345,7 @@ export default function CampaignDetailsPage() {
     const now = new Date();
 
     if (scheduledDate.getTime() <= now.getTime()) {
-      toast.error('Scheduled time must be in the future');
+      toast.error(t('Scheduled time must be in the future'));
       return;
     }
 
@@ -319,34 +357,40 @@ export default function CampaignDetailsPage() {
 
       // Show confirmation with user's local time
       const localTimeString = formatFullDateTime(scheduledDate);
-      toast.success(`Campaign scheduled for ${localTimeString}`);
+      toast.success(t('Campaign scheduled for {localTimeString}', {localTimeString: localTimeString}));
       setDialog({type: 'none'});
       setScheduledDateTime('');
       setSelectedPreset(null);
       void mutate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t schedule the campaign. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t schedule the campaign. Try again.'));
     }
   };
 
   const handleSendTestEmail = async () => {
     if (!testEmailAddress) {
-      toast.error('Please select a project member');
+      toast.error(t('Please select a project member'));
       return;
     }
 
     setDialog({type: 'testEmail', sending: true});
 
     try {
+      // Send what is in the editor right now, so no save is required first.
       await network.fetch<{success: boolean; message: string}>('POST', `/campaigns/${id}/test`, {
         email: testEmailAddress,
+        subject: editedCampaign.subject,
+        body: editedCampaign.body,
+        from: editedCampaign.from,
+        fromName: editedCampaign.fromName || null,
+        replyTo: editedCampaign.replyTo || null,
       } as any);
 
-      toast.success(`Test email sent to ${testEmailAddress}`);
+      toast.success(t('Test email sent to {testEmailAddress}', {testEmailAddress: testEmailAddress}));
       setDialog({type: 'none'});
       setTestEmailAddress('');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t send the test email. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t send the test email. Try again.'));
     } finally {
       setDialog(d => (d.type === 'testEmail' ? {type: 'testEmail', sending: false} : d));
     }
@@ -369,6 +413,7 @@ export default function CampaignDetailsPage() {
         fromName: editedCampaign.fromName || null,
         replyTo: editedCampaign.replyTo || null,
         type: editedCampaign.type,
+        tracking: editedCampaign.tracking ?? null,
         audienceType: editedCampaign.audienceType,
         segmentId: editedCampaign.segmentId || undefined,
       });
@@ -386,12 +431,13 @@ export default function CampaignDetailsPage() {
           fromName: updated.data.fromName || '',
           replyTo: updated.data.replyTo || '',
           type: updated.data.type,
+          tracking: updated.data.tracking,
           audienceType: updated.data.audienceType,
           segmentId: updated.data.segmentId || undefined,
         });
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t save the campaign. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t save the campaign. Try again.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -409,6 +455,7 @@ export default function CampaignDetailsPage() {
         fromName: campaign.data.fromName || '',
         replyTo: campaign.data.replyTo || '',
         type: campaign.data.type,
+        tracking: campaign.data.tracking,
         audienceType: campaign.data.audienceType,
         segmentId: campaign.data.segmentId || undefined,
       });
@@ -430,6 +477,7 @@ export default function CampaignDetailsPage() {
       (editedCampaign.fromName || '') !== (campaign.data.fromName || '') ||
       (editedCampaign.replyTo || '') !== (campaign.data.replyTo || '') ||
       editedCampaign.type !== campaign.data.type ||
+      (editedCampaign.tracking ?? null) !== campaign.data.tracking ||
       editedCampaign.audienceType !== campaign.data.audienceType ||
       (editedCampaign.segmentId || null) !== (campaign.data.segmentId || null);
 
@@ -444,11 +492,11 @@ export default function CampaignDetailsPage() {
       CampaignStatus,
       {variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string}
     > = {
-      DRAFT: {variant: 'secondary', label: 'Draft'},
-      SCHEDULED: {variant: 'default', label: 'Scheduled'},
-      SENDING: {variant: 'default', label: 'Sending'},
-      SENT: {variant: 'default', label: 'Sent'},
-      CANCELLED: {variant: 'destructive', label: 'Cancelled'},
+      DRAFT: {variant: 'secondary', label: t('Draft')},
+      SCHEDULED: {variant: 'default', label: t('Scheduled')},
+      SENDING: {variant: 'default', label: t('Sending')},
+      SENT: {variant: 'default', label: t('Sent')},
+      CANCELLED: {variant: 'destructive', label: t('Cancelled')},
     };
 
     const config = variants[status];
@@ -470,7 +518,7 @@ export default function CampaignDetailsPage() {
       <DashboardLayout>
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-neutral-500">Campaign not found</p>
+            <p className="text-neutral-500">{t('Campaign not found')}</p>
           </CardContent>
         </Card>
       </DashboardLayout>
@@ -497,19 +545,17 @@ export default function CampaignDetailsPage() {
   const cancelCopy =
     c.status === CampaignStatus.SCHEDULED || sentSoFar === 0
       ? {
-          title: 'Stop this campaign?',
+          title: t('Stop this campaign?'),
           description:
             c.status === CampaignStatus.SCHEDULED
-              ? 'Nothing has been sent yet, so the campaign returns to draft and stays editable.'
-              : 'Sending stops now. If nothing has gone out yet the campaign returns to draft; any contact who already received it keeps their copy.',
-          confirmText: 'Stop campaign',
+              ? t('Nothing has been sent yet, so the campaign returns to draft and stays editable.')
+              : t('Sending stops now. If nothing has gone out yet the campaign returns to draft; any contact who already received it keeps their copy.'),
+          confirmText: t('Stop campaign'),
         }
       : {
-          title: 'Cancel this campaign?',
-          description: `Sending stops now. The ${sentSoFar.toLocaleString()} ${
-            sentSoFar === 1 ? 'contact' : 'contacts'
-          } who already received it keep their copy, and the campaign is permanently cancelled.`,
-          confirmText: 'Cancel campaign',
+          title: t('Cancel this campaign?'),
+          description: t('Sending stops now. The {sentSoFar} {value} who already received it keep their copy, and the campaign is permanently cancelled.', {sentSoFar: sentSoFar.toLocaleString(), value: sentSoFar === 1 ? t('contact') : t('contacts')}),
+          confirmText: t('Cancel campaign'),
         };
 
   // Get recipient count for draft campaigns from the campaign's totalRecipients field
@@ -531,20 +577,20 @@ export default function CampaignDetailsPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 sm:gap-3">
                   <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 truncate">{c.name}</h1>
-                  <Badge variant="secondary">Draft</Badge>
+                  <Badge variant="secondary">{t('Draft')}</Badge>
                 </div>
                 <p className="text-neutral-500 mt-1 text-sm sm:text-base">
-                  Not sent yet. Edit freely.
+                  {t('Not sent yet. Edit freely.')}
                 </p>
               </div>
             </div>
             <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="flex-1">
                 {!hasChanges && !isSubmitting && (
-                  <span className="text-xs sm:text-sm text-neutral-500">All changes saved</span>
+                  <span className="text-xs sm:text-sm text-neutral-500">{t('All changes saved')}</span>
                 )}
                 {hasChanges && !isSubmitting && (
-                  <span className="text-xs sm:text-sm text-amber-600">Unsaved changes</span>
+                  <span className="text-xs sm:text-sm text-amber-600">{t('Unsaved changes')}</span>
                 )}
               </div>
               <div className="flex gap-2">
@@ -555,7 +601,7 @@ export default function CampaignDetailsPage() {
                   className="flex-1 sm:flex-none"
                 >
                   <Trash2 className="h-4 w-4" />
-                  <span className="hidden sm:inline">Delete</span>
+                  <span className="hidden sm:inline">{t('Delete')}</span>
                 </Button>
                 <Button
                   type="submit"
@@ -564,14 +610,14 @@ export default function CampaignDetailsPage() {
                   className="flex-1 sm:flex-none"
                 >
                   <Save className="h-4 w-4" />
-                  <span className="hidden sm:inline">{isSubmitting ? 'Saving…' : 'Save'}</span>
-                  <span className="sm:hidden">Save</span>
+                  <span className="hidden sm:inline">{isSubmitting ? t('Saving…') : t('Save')}</span>
+                  <span className="sm:hidden">{t('Save')}</span>
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button type="button" className="flex-1 sm:flex-none">
                       <Send className="h-4 w-4" />
-                      <span className="hidden sm:inline">Send</span>
+                      <span className="hidden sm:inline">{t('Send')}</span>
                       <ChevronDown className="h-4 w-4 sm:ml-1" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -580,9 +626,9 @@ export default function CampaignDetailsPage() {
                       <div className="flex items-start gap-3">
                         <TestTube className="h-4 w-4 mt-0.5 text-neutral-700" />
                         <div className="flex flex-col gap-0.5 flex-1">
-                          <span className="font-medium text-sm">Send test email</span>
+                          <span className="font-medium text-sm">{t('Send test email')}</span>
                           <span className="text-xs text-neutral-500 leading-snug">
-                            Preview in your inbox before sending
+                            {t('Preview in your inbox before sending')}
                           </span>
                         </div>
                       </div>
@@ -591,9 +637,9 @@ export default function CampaignDetailsPage() {
                       <div className="flex items-start gap-3">
                         <Send className="h-4 w-4 mt-0.5 text-neutral-700" />
                         <div className="flex flex-col gap-0.5 flex-1">
-                          <span className="font-medium text-sm">Send now</span>
+                          <span className="font-medium text-sm">{t('Send now')}</span>
                           <span className="text-xs text-neutral-500 leading-snug">
-                            Send immediately to all recipients
+                            {t('Send immediately to all recipients')}
                           </span>
                         </div>
                       </div>
@@ -602,8 +648,8 @@ export default function CampaignDetailsPage() {
                       <div className="flex items-start gap-3">
                         <Calendar className="h-4 w-4 mt-0.5 text-neutral-700" />
                         <div className="flex flex-col gap-0.5 flex-1">
-                          <span className="font-medium text-sm">Schedule for later</span>
-                          <span className="text-xs text-neutral-500 leading-snug">Choose a specific date and time</span>
+                          <span className="font-medium text-sm">{t('Schedule for later')}</span>
+                          <span className="text-xs text-neutral-500 leading-snug">{t('Choose a specific date and time')}</span>
                         </div>
                       </div>
                     </DropdownMenuItem>
@@ -618,11 +664,11 @@ export default function CampaignDetailsPage() {
                           <Archive className="h-4 w-4 mt-0.5 text-neutral-700" />
                         )}
                         <div className="flex flex-col gap-0.5 flex-1">
-                          <span className="font-medium text-sm">{c.archived ? 'Restore draft' : 'Archive draft'}</span>
+                          <span className="font-medium text-sm">{c.archived ? t('Restore draft') : t('Archive draft')}</span>
                           <span className="text-xs text-neutral-500 leading-snug">
                             {c.archived
-                              ? 'Put it back on the campaigns list'
-                              : 'Hide it from the campaigns list without deleting it'}
+                              ? t('Put it back on the campaigns list')
+                              : t('Hide it from the campaigns list without deleting it')}
                           </span>
                         </div>
                       </div>
@@ -638,14 +684,14 @@ export default function CampaignDetailsPage() {
           <Card>
             <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
               <div>
-                <CardTitle>Audience</CardTitle>
-                <CardDescription>Who will receive this campaign when you send</CardDescription>
+                <CardTitle>{t('Audience')}</CardTitle>
+                <CardDescription>{t('Who will receive this campaign when you send')}</CardDescription>
               </div>
               {draftRecipientCount > 0 && (
                 <div className="flex items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 shrink-0">
                   <Users className="h-4 w-4 text-neutral-500" />
                   <span className="text-sm font-semibold text-neutral-900 tabular-nums">
-                    {draftRecipientCount.toLocaleString()} {draftRecipientCount === 1 ? 'recipient' : 'recipients'}
+                    {draftRecipientCount.toLocaleString()} {draftRecipientCount === 1 ? t('recipient') : t('recipients')}
                   </span>
                 </div>
               )}
@@ -654,7 +700,7 @@ export default function CampaignDetailsPage() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="audienceType">
-                    Audience Type <span className="text-red-500">*</span>
+                    {t('Audience Type')}{' '}<span className="text-red-500">*</span>
                   </Label>
                   <Select
                     value={editedCampaign.audienceType ?? c.audienceType}
@@ -667,18 +713,18 @@ export default function CampaignDetailsPage() {
                     }}
                   >
                     <SelectTrigger id="audienceType">
-                      <SelectValue placeholder="Select audience type" />
+                      <SelectValue placeholder={t('Select audience type')} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItemWithDescription
                         value={CampaignAudienceType.ALL}
-                        title={(editedCampaign.type ?? c.type) === TemplateType.TRANSACTIONAL ? 'All Contacts' : 'All Subscribed Contacts'}
-                        description={(editedCampaign.type ?? c.type) === TemplateType.TRANSACTIONAL ? 'Send to all contacts regardless of subscription status' : "Send to everyone who hasn't unsubscribed"}
+                        title={(editedCampaign.type ?? c.type) === TemplateType.TRANSACTIONAL ? t('All Contacts') : t('All Subscribed Contacts')}
+                        description={(editedCampaign.type ?? c.type) === TemplateType.TRANSACTIONAL ? t('Send to all contacts regardless of subscription status') : t('Send to everyone who hasn\'t unsubscribed')}
                       />
                       <SelectItemWithDescription
                         value={CampaignAudienceType.SEGMENT}
-                        title="Specific segment"
-                        description="Target a defined group of contacts"
+                        title={t('Specific segment')}
+                        description={t('Target a defined group of contacts')}
                       />
                     </SelectContent>
                   </Select>
@@ -687,7 +733,7 @@ export default function CampaignDetailsPage() {
                 {(editedCampaign.audienceType ?? c.audienceType) === CampaignAudienceType.SEGMENT && (
                   <div className="space-y-2">
                     <Label htmlFor="segment">
-                      Select Segment <span className="text-red-500">*</span>
+                      {t('Select Segment')}{' '}<span className="text-red-500">*</span>
                     </Label>
                     <Select
                       value={editedCampaign.segmentId ?? c.segmentId ?? undefined}
@@ -701,7 +747,7 @@ export default function CampaignDetailsPage() {
                     >
                       <SelectTrigger id="segment">
                         <SelectValue
-                          placeholder={segments && segments.length > 0 ? 'Choose a segment' : 'No segments available'}
+                          placeholder={segments && segments.length > 0 ? t('Choose a segment') : t('No segments available')}
                         />
                       </SelectTrigger>
                       <SelectContent>
@@ -712,16 +758,16 @@ export default function CampaignDetailsPage() {
                               key={segment.id}
                               value={segment.id}
                               title={segment.name}
-                              description={`${segment.memberCount.toLocaleString()} contacts`}
+                              description={t('{value} contacts', {value: segment.memberCount.toLocaleString()})}
                             />
                           ))}
                       </SelectContent>
                     </Select>
                     {segments && segments.length === 0 && (
                       <p className="text-sm text-neutral-500">
-                        No segments found.{' '}
+                        {t('No segments found.')}{' '}
                         <Link href="/segments/new" className="underline">
-                          Create one first
+                          {t('Create one first')}
                         </Link>
                       </p>
                     )}
@@ -731,16 +777,16 @@ export default function CampaignDetailsPage() {
 
               {editedCampaign.audienceType === CampaignAudienceType.FILTERED && (
                 <p className="text-sm text-neutral-500">
-                  Filtered audiences are configured with advanced filter conditions
+                  {t('Filtered audiences are configured with advanced filter conditions')}
                 </p>
               )}
 
               {draftRecipientCount > 0 && (
                 <p className="text-xs text-neutral-500">
-                  Recalculated at send time. Final count may differ if contacts{' '}
+                  {t('Recalculated at send time. Final count may differ if contacts')}{' '}
                   {(editedCampaign.type ?? c.type) === TemplateType.TRANSACTIONAL
-                    ? 'are added or removed, or segment membership changes.'
-                    : 'subscribe, unsubscribe, or segment membership changes.'
+                    ? t('are added or removed, or segment membership changes.')
+                    : t('subscribe, unsubscribe, or segment membership changes.')
                   }
                 </p>
               )}
@@ -752,17 +798,17 @@ export default function CampaignDetailsPage() {
             {/* Basic Information */}
             <Card>
               <CardHeader>
-                <CardTitle>Basic information</CardTitle>
-                <CardDescription>Name and describe your campaign</CardDescription>
+                <CardTitle>{t('Basic information')}</CardTitle>
+                <CardDescription>{t('Name and describe your campaign')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">
-                    Campaign Name <span className="text-red-500">*</span>
+                    {t('Campaign Name')}{' '}<span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="name"
-                    placeholder="e.g., Spring Sale Announcement"
+                    placeholder={t('e.g., Spring Sale Announcement')}
                     value={editedCampaign.name || ''}
                     onChange={e => setEditedCampaign({...editedCampaign, name: e.target.value})}
                     required
@@ -770,10 +816,10 @@ export default function CampaignDetailsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description">{t('Description')}</Label>
                   <Input
                     id="description"
-                    placeholder="e.g., Q2 launch, list A"
+                    placeholder={t('e.g., Q2 launch, list A')}
                     value={editedCampaign.description || ''}
                     onChange={e => setEditedCampaign({...editedCampaign, description: e.target.value})}
                   />
@@ -784,15 +830,15 @@ export default function CampaignDetailsPage() {
             {/* Campaign Type */}
             <Card>
               <CardHeader>
-                <CardTitle>Campaign type</CardTitle>
-                <CardDescription>Choose how this campaign should be treated</CardDescription>
+                <CardTitle>{t('Campaign type')}</CardTitle>
+                <CardDescription>{t('Choose how this campaign should be treated')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col gap-2">
                   {([
-                    {value: TemplateType.MARKETING, label: 'Marketing', description: 'Subscribed contacts, includes unsubscribe link'},
-                    {value: TemplateType.TRANSACTIONAL, label: 'Transactional', description: 'All contacts, no subscription check or footer'},
-                    {value: TemplateType.HEADLESS, label: 'Headless', description: 'Subscribed contacts, no Plunk footer'},
+                    {value: TemplateType.MARKETING, label: t('Marketing'), description: t('Subscribed contacts, includes unsubscribe link')},
+                    {value: TemplateType.TRANSACTIONAL, label: t('Transactional'), description: t('All contacts, no subscription check or footer')},
+                    {value: TemplateType.HEADLESS, label: t('Headless'), description: t('Subscribed contacts, no Plunk footer')},
                   ] as const).map(({value, label, description}) => (
                     <button
                       key={value}
@@ -814,11 +860,11 @@ export default function CampaignDetailsPage() {
                   <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 overflow-hidden">
                     <div className="flex items-center gap-2 border-b border-amber-200 bg-amber-100/60 px-3 py-2">
                       <TriangleAlert className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-                      <p className="text-xs font-semibold text-amber-900">No unsubscribe link detected</p>
+                      <p className="text-xs font-semibold text-amber-900">{t('No unsubscribe link detected')}</p>
                     </div>
                     <div className="px-3 py-2.5 space-y-2">
                       <p className="text-xs text-amber-800 leading-relaxed">
-                        You are responsible for providing recipients a way to opt out. Use the Plunk variables below to build your own footer.
+                        {t('You are responsible for providing recipients a way to opt out. Use the Plunk variables below to build your own footer.')}
                       </p>
                       <div className="flex flex-wrap gap-1.5">
                         <code className="inline-flex items-center rounded bg-amber-100 border border-amber-200 px-1.5 py-0.5 font-mono text-[11px] text-amber-900">
@@ -838,8 +884,8 @@ export default function CampaignDetailsPage() {
           {/* Email Settings */}
           <Card>
             <CardHeader>
-              <CardTitle>Email settings</CardTitle>
-              <CardDescription>Configure sender information and subject</CardDescription>
+              <CardTitle>{t('Email settings')}</CardTitle>
+              <CardDescription>{t('Configure sender information and subject')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <EmailSettings
@@ -849,29 +895,35 @@ export default function CampaignDetailsPage() {
                 onFromChange={value => setEditedCampaign({...editedCampaign, from: value})}
                 onFromNameChange={value => setEditedCampaign({...editedCampaign, fromName: value})}
                 onReplyToChange={value => setEditedCampaign({...editedCampaign, replyTo: value})}
-                fromNamePlaceholder={activeProject?.name || 'Your Company'}
+                fromNamePlaceholder={activeProject?.name || t('Your Company')}
               />
 
               <div className="space-y-2">
                 <Label htmlFor="subject">
-                  Email Subject <span className="text-red-500">*</span>
+                  {t('Email Subject')}{' '}<span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="subject"
-                  placeholder="e.g., Introducing our Spring Sale!"
+                  placeholder={t('e.g., Introducing our Spring Sale!')}
                   value={editedCampaign.subject || ''}
                   onChange={e => setEditedCampaign({...editedCampaign, subject: e.target.value})}
                   required
                 />
               </div>
+
+              <TrackingOverrideSelect
+                value={editedCampaign.tracking ?? null}
+                onChange={tracking => setEditedCampaign({...editedCampaign, tracking})}
+                appliesTo="campaign"
+              />
             </CardContent>
           </Card>
 
           {/* Email Content */}
           <Card className="overflow-visible">
             <CardHeader>
-              <CardTitle>Email content</CardTitle>
-              <CardDescription>Design your email message</CardDescription>
+              <CardTitle>{t('Email content')}</CardTitle>
+              <CardDescription>{t('Design your email message')}</CardDescription>
             </CardHeader>
             <CardContent>
               <EmailEditor
@@ -893,17 +945,17 @@ export default function CampaignDetailsPage() {
           <Dialog open={dialog.type === 'testEmail'} onOpenChange={open => !open && setDialog({type: 'none'})}>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>Send a preview</DialogTitle>
+                <DialogTitle>{t('Send a preview')}</DialogTitle>
                 <DialogDescription>
-                  Get a copy of this campaign in your inbox before sending it for real.
+                  {t('Get a copy of this campaign in your inbox before sending it for real.')}
                 </DialogDescription>
               </DialogHeader>
 
               <div className="space-y-2">
-                <Label htmlFor="testEmail">Send to</Label>
+                <Label htmlFor="testEmail">{t('Send to')}</Label>
                 <Select value={testEmailAddress} onValueChange={setTestEmailAddress}>
                   <SelectTrigger id="testEmail">
-                    <SelectValue placeholder="Choose a teammate" />
+                    <SelectValue placeholder={t('Choose a teammate')} />
                   </SelectTrigger>
                   <SelectContent>
                     {projectMembers?.data.map(member => (
@@ -917,23 +969,23 @@ export default function CampaignDetailsPage() {
 
               {/* Preview of how the email will arrive */}
               <div className="space-y-2">
-                <Label className="text-neutral-500">Will arrive as</Label>
+                <Label className="text-neutral-500">{t('Will arrive as')}</Label>
                 <div className="rounded-lg border border-neutral-200 bg-neutral-50 divide-y divide-neutral-200 text-sm">
                   <div className="grid grid-cols-[64px_1fr] gap-3 px-3 py-2.5">
-                    <span className="text-neutral-500">From</span>
+                    <span className="text-neutral-500">{t('From')}</span>
                     <span className="text-neutral-900 truncate">{editedCampaign.from || c.from}</span>
                   </div>
                   <div className="grid grid-cols-[64px_1fr] gap-3 px-3 py-2.5">
-                    <span className="text-neutral-500">Subject</span>
+                    <span className="text-neutral-500">{t('Subject')}</span>
                     <span className="text-neutral-900 truncate">
-                      <span className="font-medium">[TEST]</span> {editedCampaign.subject || c.subject}
+                      <span className="font-medium">{t('[TEST]')}</span> {editedCampaign.subject || c.subject}
                     </span>
                   </div>
                 </div>
               </div>
 
               <p className="text-xs text-neutral-500 leading-relaxed">
-                Variables like {'{{firstName}}'} aren{"'"}t replaced in previews. You{"'"}ll see them as written.
+                {t('Variables like')}{' '}{'{{firstName}}'} {t("aren't replaced in previews. You'll see them as written.")}
               </p>
 
               <DialogFooter>
@@ -945,7 +997,7 @@ export default function CampaignDetailsPage() {
                     setTestEmailAddress('');
                   }}
                 >
-                  Cancel
+                  {t('Cancel')}
                 </Button>
                 <Button
                   type="button"
@@ -953,7 +1005,7 @@ export default function CampaignDetailsPage() {
                   disabled={(dialog.type === 'testEmail' && dialog.sending) || !testEmailAddress}
                 >
                   <TestTube className="h-4 w-4" />
-                  {dialog.type === 'testEmail' && dialog.sending ? 'Sending…' : 'Send preview'}
+                  {dialog.type === 'testEmail' && dialog.sending ? t('Sending…') : t('Send preview')}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -963,24 +1015,24 @@ export default function CampaignDetailsPage() {
           <Dialog open={dialog.type === 'schedule'} onOpenChange={open => !open && setDialog({type: 'none'})}>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>Schedule for later</DialogTitle>
+                <DialogTitle>{t('Schedule for later')}</DialogTitle>
                 <DialogDescription>
-                  Pick a time and Plunk will send it for you. Times shown in {getUserTimezone()}.
+                  {t('Pick a time and Plunk will send it for you. Times shown in')}{' '}{getUserTimezone()}.
                 </DialogDescription>
               </DialogHeader>
 
               <div className="space-y-5 py-2">
                 {/* Quick presets */}
                 <div className="space-y-2">
-                  <Label>Quick options</Label>
+                  <Label>{t('Quick options')}</Label>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      {key: 'in1h', label: 'In 1 hour', getValue: schedulePresets.inOneHour},
-                      {key: 'in3h', label: 'In 3 hours', getValue: schedulePresets.inThreeHours},
-                      {key: 'tom9', label: 'Tomorrow, 9 AM', getValue: schedulePresets.tomorrowAt9AM},
-                      {key: 'tom2', label: 'Tomorrow, 2 PM', getValue: schedulePresets.tomorrowAt2PM},
-                      {key: 'nextMon', label: 'Next Monday', getValue: schedulePresets.nextMonday},
-                      {key: 'in1w', label: 'In 1 week', getValue: schedulePresets.inOneWeek},
+                      {key: 'in1h', label: t('In 1 hour'), getValue: schedulePresets.inOneHour},
+                      {key: 'in3h', label: t('In 3 hours'), getValue: schedulePresets.inThreeHours},
+                      {key: 'tom9', label: t('Tomorrow, 9 AM'), getValue: schedulePresets.tomorrowAt9AM},
+                      {key: 'tom2', label: t('Tomorrow, 2 PM'), getValue: schedulePresets.tomorrowAt2PM},
+                      {key: 'nextMon', label: t('Next Monday'), getValue: schedulePresets.nextMonday},
+                      {key: 'in1w', label: t('In 1 week'), getValue: schedulePresets.inOneWeek},
                     ].map(({key, label, getValue}) => {
                       const isActive = selectedPreset === key;
                       return (
@@ -1006,7 +1058,7 @@ export default function CampaignDetailsPage() {
 
                 {/* Custom Date/Time */}
                 <div className="space-y-2">
-                  <Label htmlFor="scheduledDateTime">Or pick an exact time</Label>
+                  <Label htmlFor="scheduledDateTime">{t('Or pick an exact time')}</Label>
                   <Input
                     id="scheduledDateTime"
                     type="datetime-local"
@@ -1025,7 +1077,7 @@ export default function CampaignDetailsPage() {
                     <div className="px-4 py-3">
                       <div className="flex items-center gap-2 text-neutral-500">
                         <Calendar className="h-3.5 w-3.5" />
-                        <span className="text-xs font-medium uppercase tracking-wide">Sending on</span>
+                        <span className="text-xs font-medium uppercase tracking-wide">{t('Sending on')}</span>
                       </div>
                       <p className="mt-1 text-base font-semibold text-neutral-900">
                         {formatFullDateTime(new Date(scheduledDateTime))}
@@ -1035,20 +1087,20 @@ export default function CampaignDetailsPage() {
                       <div className="px-4 py-3">
                         <div className="flex items-center gap-2 text-neutral-500">
                           <Users className="h-3.5 w-3.5" />
-                          <span className="text-xs font-medium uppercase tracking-wide">To</span>
+                          <span className="text-xs font-medium uppercase tracking-wide">{t('To')}</span>
                         </div>
                         <p className="mt-1 text-sm text-neutral-900">
                           <span className="font-semibold tabular-nums">{draftRecipientCount.toLocaleString()}</span>
                           <span className="text-neutral-600">
-                            {draftRecipientCount === 1 ? ' recipient in ' : ' recipients in '}
+                            {draftRecipientCount === 1 ? t(' recipient in ') : t(' recipients in ')}
                           </span>
                           {(editedCampaign.audienceType ?? c.audienceType) === CampaignAudienceType.ALL &&
                             ((editedCampaign.type ?? c.type) === TemplateType.TRANSACTIONAL
-                              ? 'all contacts'
-                              : 'all subscribed contacts')}
+                              ? t('all contacts')
+                              : t('all subscribed contacts'))}
                           {(editedCampaign.audienceType ?? c.audienceType) === CampaignAudienceType.SEGMENT &&
-                            (segments?.find(s => s.id === (editedCampaign.segmentId ?? c.segmentId))?.name ?? 'the selected segment')}
-                          {(editedCampaign.audienceType ?? c.audienceType) === CampaignAudienceType.FILTERED && 'filtered contacts'}
+                            (segments?.find(s => s.id === (editedCampaign.segmentId ?? c.segmentId))?.name ?? t('the selected segment'))}
+                          {(editedCampaign.audienceType ?? c.audienceType) === CampaignAudienceType.FILTERED && t('filtered contacts')}
                         </p>
                       </div>
                     )}
@@ -1057,7 +1109,7 @@ export default function CampaignDetailsPage() {
               </div>
 
               <p className="text-xs text-neutral-500 leading-relaxed">
-                You can edit or cancel this campaign anytime before it sends.
+                {t('You can edit or cancel this campaign anytime before it sends.')}
               </p>
 
               <DialogFooter>
@@ -1070,11 +1122,11 @@ export default function CampaignDetailsPage() {
                     setSelectedPreset(null);
                   }}
                 >
-                  Not yet
+                  {t('Not yet')}
                 </Button>
                 <Button type="button" onClick={handleSchedule} disabled={!scheduledDateTime}>
                   <Calendar className="h-4 w-4" />
-                  Schedule send
+                  {t('Schedule send')}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -1087,8 +1139,8 @@ export default function CampaignDetailsPage() {
         <Dialog open={dialog.type === 'send'} onOpenChange={open => !open && setDialog({type: 'none'})}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Ready to send?</DialogTitle>
-              <DialogDescription>Review the details below, then send when you{"'"}re ready.</DialogDescription>
+              <DialogTitle>{t('Ready to send?')}</DialogTitle>
+              <DialogDescription>{t("Review the details below, then send when you're ready.")}</DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-2">
@@ -1096,7 +1148,7 @@ export default function CampaignDetailsPage() {
               <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-5 py-6 text-center">
                 <div className="flex items-center justify-center gap-2 text-neutral-500">
                   <Users className="h-4 w-4" />
-                  <span className="text-xs font-medium uppercase tracking-wide">Recipients</span>
+                  <span className="text-xs font-medium uppercase tracking-wide">{t('Recipients')}</span>
                 </div>
                 <div className="mt-1.5 text-4xl font-bold text-neutral-900 tabular-nums">
                   {draftRecipientCount.toLocaleString()}
@@ -1104,22 +1156,22 @@ export default function CampaignDetailsPage() {
                 <div className="mt-1 text-xs text-neutral-500">
                   {(editedCampaign.audienceType ?? c.audienceType) === CampaignAudienceType.ALL &&
                     ((editedCampaign.type ?? c.type) === TemplateType.TRANSACTIONAL
-                      ? 'All contacts'
-                      : 'All subscribed contacts')}
+                      ? t('All contacts')
+                      : t('All subscribed contacts'))}
                   {(editedCampaign.audienceType ?? c.audienceType) === CampaignAudienceType.SEGMENT &&
-                    (segments?.find(s => s.id === (editedCampaign.segmentId ?? c.segmentId))?.name ?? 'Selected segment')}
-                  {(editedCampaign.audienceType ?? c.audienceType) === CampaignAudienceType.FILTERED && 'Filtered contacts'}
+                    (segments?.find(s => s.id === (editedCampaign.segmentId ?? c.segmentId))?.name ?? t('Selected segment'))}
+                  {(editedCampaign.audienceType ?? c.audienceType) === CampaignAudienceType.FILTERED && t('Filtered contacts')}
                 </div>
               </div>
 
               {/* Compact summary */}
               <div className="rounded-lg border border-neutral-200 divide-y divide-neutral-200 text-sm">
                 <div className="grid grid-cols-[80px_1fr] gap-3 px-3 py-2.5">
-                  <span className="text-neutral-500">From</span>
+                  <span className="text-neutral-500">{t('From')}</span>
                   <span className="text-neutral-900 truncate">{editedCampaign.from || c.from}</span>
                 </div>
                 <div className="grid grid-cols-[80px_1fr] gap-3 px-3 py-2.5">
-                  <span className="text-neutral-500">Subject</span>
+                  <span className="text-neutral-500">{t('Subject')}</span>
                   <span className="text-neutral-900 truncate">{editedCampaign.subject || c.subject}</span>
                 </div>
               </div>
@@ -1128,18 +1180,18 @@ export default function CampaignDetailsPage() {
               <div className="flex items-start gap-2 rounded-lg bg-neutral-50 px-3 py-2.5">
                 <Info className="h-4 w-4 text-neutral-500 mt-0.5 shrink-0" />
                 <p className="text-xs text-neutral-600 leading-relaxed">
-                  Sending takes a few minutes. You can cancel the campaign at any time while it{"'"}s still sending.
+                  {t("Sending takes a few minutes. You can cancel the campaign at any time while it's still sending.")}
                 </p>
               </div>
             </div>
 
             <DialogFooter>
               <Button variant="outline" onClick={() => setDialog({type: 'none'})}>
-                Not yet
+                {t('Not yet')}
               </Button>
               <Button onClick={async () => { await handleSend(); setDialog({type: 'none'}); }}>
                 <Send className="h-4 w-4" />
-                Send to {draftRecipientCount.toLocaleString()} {draftRecipientCount === 1 ? 'contact' : 'contacts'}
+                {t('Send to')}{' '}{draftRecipientCount.toLocaleString()} {draftRecipientCount === 1 ? t('contact') : t('contacts')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1149,9 +1201,9 @@ export default function CampaignDetailsPage() {
           open={dialog.type === 'delete'}
           onOpenChange={open => !open && setDialog({type: 'none'})}
           onConfirm={handleDelete}
-          title={`Delete ${c.name}?`}
-          description="This draft and its content are gone for good."
-          confirmText="Delete campaign"
+          title={t('Delete {name}?', {name: c.name})}
+          description={t('This draft and its content are gone for good.')}
+          confirmText={t('Delete campaign')}
           variant="destructive"
         />
       </DashboardLayout>
@@ -1178,7 +1230,7 @@ export default function CampaignDetailsPage() {
                 {c.archived && (
                   <Badge variant="neutral" className="shrink-0">
                     <Archive className="h-3 w-3" />
-                    Archived
+                    {t('Archived')}
                   </Badge>
                 )}
               </div>
@@ -1191,8 +1243,8 @@ export default function CampaignDetailsPage() {
             <div className="flex justify-end">
               <Button variant="destructive" onClick={() => setDialog({type: 'cancel'})} className="w-full sm:w-auto">
                 <XCircle className="h-4 w-4" />
-                <span className="hidden sm:inline">Cancel campaign</span>
-                <span className="sm:hidden">Cancel</span>
+                <span className="hidden sm:inline">{t('Cancel campaign')}</span>
+                <span className="sm:hidden">{t('Cancel')}</span>
               </Button>
             </div>
           ) : (
@@ -1205,7 +1257,7 @@ export default function CampaignDetailsPage() {
                 className="w-full sm:w-auto"
               >
                 {c.archived ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
-                {c.archived ? 'Restore campaign' : 'Archive campaign'}
+                {c.archived ? t('Restore campaign') : t('Archive campaign')}
               </Button>
             </div>
           )}
@@ -1219,16 +1271,16 @@ export default function CampaignDetailsPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <h3 className="font-semibold text-neutral-900 text-lg">Sending in progress</h3>
+                    <h3 className="font-semibold text-neutral-900 text-lg">{t('Sending in progress')}</h3>
                     <p className="text-sm text-neutral-500 mt-1 tabular-nums">
-                      {s.sentCount.toLocaleString()} of {s.totalRecipients.toLocaleString()} emails sent
+                      {s.sentCount.toLocaleString()} {t('of')} {s.totalRecipients.toLocaleString()} {t('emails sent')}
                     </p>
                   </div>
                   <div className="text-right">
                     <div className="text-3xl font-semibold tracking-tight tabular-nums text-neutral-900">
                       {sendProgress.toFixed(0)}%
                     </div>
-                    <p className="text-xs text-neutral-500 mt-1">Complete</p>
+                    <p className="text-xs text-neutral-500 mt-1">{t('Complete')}</p>
                   </div>
                 </div>
                 <div
@@ -1236,7 +1288,7 @@ export default function CampaignDetailsPage() {
                   aria-valuenow={Math.round(sendProgress)}
                   aria-valuemin={0}
                   aria-valuemax={100}
-                  aria-label="Emails sent"
+                  aria-label={t('Emails sent')}
                   className="w-full bg-neutral-100 rounded-full h-2 overflow-hidden"
                 >
                   <div
@@ -1244,7 +1296,49 @@ export default function CampaignDetailsPage() {
                     style={{width: `${sendProgress}%`}}
                   />
                 </div>
-                <p className="text-xs text-neutral-400">Updating every 15 seconds</p>
+                <p className="text-xs text-neutral-400">{t('Updating every 15 seconds')}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* A finished send that did not reach everyone. Without this a campaign that lost a
+            fifth of its audience to the SES daily quota read exactly like a clean send: SENT,
+            with a smaller number. Each cause is listed on its own, so a quota stop and a
+            couple of dropped connections are not merged into one figure. */}
+        {c.status === CampaignStatus.SENT && s && s.failedCount > 0 && (
+          <Card className="border-amber-200 bg-amber-50">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+                <div className="min-w-0 flex-1 space-y-3">
+                  <div>
+                    <h3 className="font-semibold text-neutral-900">
+                      {t('{value} of {value2} {value3} {value4} not sent', {value: s.failedCount.toLocaleString(), value2: (s.sentCount + s.failedCount).toLocaleString(), value3: s.sentCount + s.failedCount === 1 ? t('recipient') : t('recipients'), value4: s.failedCount === 1 ? 'was' : 'were'})}
+                    </h3>
+                    <p className="mt-1 text-sm text-neutral-600">
+                      {t('Sending finished, but these emails failed before reaching your email provider. They are not retried automatically.')}
+                    </p>
+                  </div>
+                  {s.failureReasons.length > 0 && (
+                    <ul className="space-y-2 border-t border-amber-200 pt-3">
+                      {s.failureReasons.map(reason => {
+                        const {label, detail} = explainFailure(reason.error);
+                        return (
+                          <li key={reason.error} className="text-sm">
+                            <div className="flex items-baseline justify-between gap-4">
+                              <span className="font-medium text-neutral-900 break-words">{label}</span>
+                              <span className="shrink-0 tabular-nums text-neutral-600">
+                                {reason.count.toLocaleString()}
+                              </span>
+                            </div>
+                            {detail && <p className="mt-0.5 text-xs text-neutral-600">{detail}</p>}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -1258,10 +1352,10 @@ export default function CampaignDetailsPage() {
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 text-red-700">
                   <AlertCircle className="h-5 w-5 shrink-0" />
-                  <span>Couldn{"'"}t load results. Try again in a moment.</span>
+                  <span>{t("Couldn't load results. Try again in a moment.")}</span>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => void mutateStats()}>
-                  Try again
+                  {t('Try again')}
                 </Button>
               </div>
             </CardContent>
@@ -1304,10 +1398,15 @@ export default function CampaignDetailsPage() {
         {hasResults && s && (
           <Card>
             <CardHeader>
-              <CardTitle>Results</CardTitle>
+              <CardTitle>{t('Results')}</CardTitle>
               <CardDescription>
-                {`Sent to ${s.sentCount.toLocaleString()} ${s.sentCount === 1 ? 'contact' : 'contacts'}`}
-                {c.sentAt ? ` on ${formatFullDateTime(new Date(c.sentAt))}` : ''}.
+                {t('Sent to {value} {value2}', {value: s.sentCount.toLocaleString(), value2: s.sentCount === 1 ? t('contact') : t('contacts')})}
+                {c.sentAt ? ` on ${formatFullDateTime(new Date(c.sentAt))}` : ''}
+                {c.status === CampaignStatus.SENT && s.failedCount > 0
+                  ? t(', {value} not sent', {value: s.failedCount.toLocaleString()})
+                  : ''}
+                .
+                {c.tracking === false && t(' Opens and clicks aren’t tracked for this campaign.')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -1318,15 +1417,13 @@ export default function CampaignDetailsPage() {
                     <AnimatedNumber value={s.openedCount} />
                   </span>
                   <span className="text-lg font-medium text-neutral-500">
-                    {s.openedCount === 1 ? 'open' : 'opens'}
+                    {s.openedCount === 1 ? t('open') : t('opens')}
                   </span>
                 </div>
                 <p className="mt-2 text-sm text-neutral-500">
                   {s.sentCount > 0
-                    ? `${s.openRate.toFixed(1)}% open rate, measured against the ${s.sentCount.toLocaleString()} ${
-                        s.sentCount === 1 ? 'email' : 'emails'
-                      } sent`
-                    : 'Nothing has been sent yet'}
+                    ? t('{value}% open rate, measured against the {value2} {value3} sent', {value: s.openRate.toFixed(1), value2: s.sentCount.toLocaleString(), value3: s.sentCount === 1 ? t('email') : t('emails')})
+                    : t('Nothing has been sent yet')}
                 </p>
               </div>
 
@@ -1362,7 +1459,7 @@ export default function CampaignDetailsPage() {
                           >
                             {value}
                             <span className="sr-only">
-                              {`Show the ${figure.count(s).toLocaleString()} ${figure.label.toLowerCase()} recipients`}
+                              {t('Show the {value} {value2} recipients', {value: figure.count(s).toLocaleString(), value2: figure.label.toLowerCase()})}
                             </span>
                           </button>
                         ) : (
@@ -1378,9 +1475,9 @@ export default function CampaignDetailsPage() {
               {lostContacts > 0 && (
                 <p className="border-t border-neutral-100 pt-4 text-xs text-neutral-500">
                   <span className="font-medium tabular-nums text-neutral-900">{lostContacts.toLocaleString()}</span>{' '}
-                  {lostContacts === 1 ? 'contact' : 'contacts'} bounced, reported spam, or unsubscribed and no longer
+                  {lostContacts === 1 ? t('contact') : t('contacts')} {t('bounced, reported spam, or unsubscribed and no longer')}
                   {' '}
-                  {lostContacts === 1 ? 'receives' : 'receive'} marketing from this project.
+                  {lostContacts === 1 ? t('receives') : t('receive')} {t('marketing from this project.')}
                 </p>
               )}
             </CardContent>
@@ -1392,26 +1489,26 @@ export default function CampaignDetailsPage() {
           {/* Email Content - Takes 2 columns */}
           <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle>Email preview</CardTitle>
-              <CardDescription>How your email will appear to recipients</CardDescription>
+              <CardTitle>{t('Email preview')}</CardTitle>
+              <CardDescription>{t('How your email will appear to recipients')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Email Header Info */}
               <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-4 space-y-2">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <p className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Subject</p>
+                    <p className="text-xs text-neutral-500 uppercase tracking-wide font-medium">{t('Subject')}</p>
                     <p className="text-base font-semibold text-neutral-900 mt-1">{c.subject}</p>
                   </div>
                 </div>
                 <div className="flex gap-6 pt-2 border-t border-neutral-200">
                   <div>
-                    <p className="text-xs text-neutral-500">From</p>
+                    <p className="text-xs text-neutral-500">{t('From')}</p>
                     <p className="text-sm text-neutral-900 mt-0.5">{c.from}</p>
                   </div>
                   {c.replyTo && (
                     <div>
-                      <p className="text-xs text-neutral-500">Reply-To</p>
+                      <p className="text-xs text-neutral-500">{t('Reply-To')}</p>
                       <p className="text-sm text-neutral-900 mt-0.5">{c.replyTo}</p>
                     </div>
                   )}
@@ -1420,7 +1517,7 @@ export default function CampaignDetailsPage() {
 
               {/* Email Body Preview */}
               <div>
-                <p className="text-sm font-medium text-neutral-700 mb-3">Message content</p>
+                <p className="text-sm font-medium text-neutral-700 mb-3">{t('Message content')}</p>
                 <div className="border-2 border-neutral-200 rounded-lg overflow-hidden bg-white">
                   <div className="p-6 max-h-96 overflow-y-auto">
                     <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{__html: DOMPurify.sanitize(c.body)}} />
@@ -1433,26 +1530,26 @@ export default function CampaignDetailsPage() {
           {/* Campaign Details */}
           <Card>
             <CardHeader>
-              <CardTitle>Campaign info</CardTitle>
-              <CardDescription>Configuration and metadata</CardDescription>
+              <CardTitle>{t('Campaign info')}</CardTitle>
+              <CardDescription>{t('Configuration and metadata')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Audience */}
               <div className="pb-3 border-b border-neutral-100">
-                <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-2">Audience</p>
+                <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-2">{t('Audience')}</p>
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-neutral-400" />
                   <div>
                     <p className="text-sm font-medium text-neutral-900">
-                      {c.audienceType === CampaignAudienceType.ALL && 'All Subscribed Contacts'}
+                      {c.audienceType === CampaignAudienceType.ALL && t('All Subscribed Contacts')}
                       {c.audienceType === CampaignAudienceType.SEGMENT &&
-                        (segments?.find(s => s.id === c.segmentId)?.name || 'Selected Segment')}
-                      {c.audienceType === CampaignAudienceType.FILTERED && 'Filtered Contacts'}
+                        (segments?.find(s => s.id === c.segmentId)?.name || t('Selected Segment'))}
+                      {c.audienceType === CampaignAudienceType.FILTERED && t('Filtered Contacts')}
                     </p>
                     {c.audienceType === CampaignAudienceType.SEGMENT &&
                       segments?.find(s => s.id === c.segmentId)?.memberCount && (
                         <p className="text-xs text-neutral-500">
-                          {segments.find(s => s.id === c.segmentId)!.memberCount.toLocaleString()} contacts
+                          {segments.find(s => s.id === c.segmentId)!.memberCount.toLocaleString()} {t('contacts')}
                         </p>
                       )}
                   </div>
@@ -1462,7 +1559,7 @@ export default function CampaignDetailsPage() {
               {/* Scheduling Info */}
               {c.scheduledFor && (
                 <div className="pb-3 border-b border-neutral-100">
-                  <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-2">Scheduled for</p>
+                  <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-2">{t('Scheduled for')}</p>
                   <div className="flex items-start gap-2">
                     <Calendar className="h-4 w-4 text-neutral-400 mt-0.5" />
                     <div className="space-y-2">
@@ -1471,11 +1568,11 @@ export default function CampaignDetailsPage() {
                           {formatFullDateTime(new Date(c.scheduledFor))}
                         </p>
                         <p className="text-xs text-neutral-500 mt-1">
-                          UTC: {formatUTCDateTime(new Date(c.scheduledFor))}
+                          {t('UTC:')}{' '}{formatUTCDateTime(new Date(c.scheduledFor))}
                         </p>
                       </div>
                       {c.status === CampaignStatus.SCHEDULED && (
-                        <p className="text-xs text-neutral-500">Recipient count will be recalculated at send time</p>
+                        <p className="text-xs text-neutral-500">{t('Recipient count will be recalculated at send time')}</p>
                       )}
                     </div>
                   </div>
@@ -1485,7 +1582,7 @@ export default function CampaignDetailsPage() {
               {/* Sent At */}
               {c.sentAt && (
                 <div className="pb-3 border-b border-neutral-100">
-                  <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-2">Sent on</p>
+                  <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide mb-2">{t('Sent on')}</p>
                   <div className="flex items-center gap-2">
                     <Send className="h-4 w-4 text-neutral-400" />
                     <p className="text-sm font-medium text-neutral-900">{formatFullDateTime(new Date(c.sentAt))}</p>
@@ -1509,7 +1606,7 @@ export default function CampaignDetailsPage() {
         onConfirm={handleCancel}
         title={cancelCopy.title}
         description={cancelCopy.description}
-        cancelText="Keep sending"
+        cancelText={t('Keep sending')}
         icon={CircleStop}
         confirmText={cancelCopy.confirmText}
         variant="destructive"

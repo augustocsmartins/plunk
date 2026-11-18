@@ -1,9 +1,24 @@
-import {Command, CommandGroup, CommandItem, CommandList, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@plunk/ui';
+import {canScopeWaitToExecution} from '@plunk/shared';
+import {
+  Command,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Switch,
+} from '@plunk/ui';
 import {useState} from 'react';
 import {toast} from 'sonner';
 import useSWR from 'swr';
 
 import {type EditStepDialogProps, getStepConfig, StepDialogShell, useStepUpdate} from './shared';
+import {t} from '../../lib/i18n';
 
 type TimeUnit = 'minutes' | 'hours' | 'days';
 
@@ -49,6 +64,7 @@ export function WaitForEventStepDialog({step, workflowId, open, onOpenChange, on
   const [eventPopoverOpen, setEventPopoverOpen] = useState(false);
   const [timeoutAmount, setTimeoutAmount] = useState(initialTimeout.amount);
   const [timeoutUnit, setTimeoutUnit] = useState<TimeUnit>(initialUnit);
+  const [onlyThisExecution, setOnlyThisExecution] = useState(config.scope === 'execution');
 
   const {data: eventNamesData} = useSWR<{eventNames: string[]}>(open ? '/events/names' : null, {
     revalidateOnFocus: false,
@@ -60,21 +76,30 @@ export function WaitForEventStepDialog({step, workflowId, open, onOpenChange, on
     e.preventDefault();
 
     if (!eventName) {
-      toast.error('Event name is required');
+      toast.error(t('Event name is required'));
       return;
     }
 
     const amount = parseInt(timeoutAmount, 10);
     if (amount > MAX_BY_UNIT[timeoutUnit]) {
-      toast.error(`Timeout cannot exceed 365 days (${MAX_BY_UNIT[timeoutUnit]} ${timeoutUnit})`);
+      toast.error(t('Timeout cannot exceed 365 days ({value} {timeoutUnit})', {value: MAX_BY_UNIT[timeoutUnit], timeoutUnit: timeoutUnit}));
       return;
     }
 
     const timeoutSeconds = amount > 0 ? amount * SECONDS_PER_UNIT[timeoutUnit] : 0;
 
+    // The scope only applies to email events an execution's own emails produce
+    const scoped = onlyThisExecution && canScopeWaitToExecution(eventName);
+
+    // A scoped wait whose email is never sent or opened would otherwise wait forever
+    if (scoped && timeoutSeconds === 0) {
+      toast.error(t('Set a timeout when waiting only for emails from this run'));
+      return;
+    }
+
     const ok = await update({
       name,
-      config: {eventName, timeout: timeoutSeconds},
+      config: {eventName, timeout: timeoutSeconds, ...(scoped ? {scope: 'execution'} : {})},
     });
 
     if (ok) {
@@ -100,7 +125,7 @@ export function WaitForEventStepDialog({step, workflowId, open, onOpenChange, on
     >
       <div className="space-y-4">
         <div>
-          <Label htmlFor="editEventName">Event name</Label>
+          <Label htmlFor="editEventName">{t('Event name')}</Label>
           <div className="relative">
             <Input
               id="editEventName"
@@ -115,7 +140,7 @@ export function WaitForEventStepDialog({step, workflowId, open, onOpenChange, on
                 setTimeout(() => setEventPopoverOpen(false), 150);
               }}
               required
-              placeholder="e.g., email.click, user.upgraded"
+              placeholder={t('e.g., email.click, user.upgraded')}
               className="mt-1.5"
               autoComplete="off"
             />
@@ -145,7 +170,7 @@ export function WaitForEventStepDialog({step, workflowId, open, onOpenChange, on
                             setEventPopoverOpen(false);
                           }}
                         >
-                          Use &ldquo;{eventName.trim()}&rdquo;
+                          {t('Use “')}{eventName.trim()}&rdquo;
                         </CommandItem>
                       )}
                     </CommandGroup>
@@ -156,8 +181,22 @@ export function WaitForEventStepDialog({step, workflowId, open, onOpenChange, on
           </div>
         </div>
 
+        {canScopeWaitToExecution(eventName) && (
+          <div className="flex items-start gap-3 p-4 bg-neutral-50 rounded-lg border border-neutral-200">
+            <Switch id="editEventScope" checked={onlyThisExecution} onCheckedChange={setOnlyThisExecution} />
+            <div className="flex-1">
+              <Label htmlFor="editEventScope" className="font-medium cursor-pointer">
+                {t('Only emails from this run')}
+              </Label>
+              <p className="text-xs text-neutral-500 mt-1">
+                {t('Count the event only for emails this workflow sent to the contact in this run. Otherwise any email the contact receives counts. Requires a timeout, in case the email is never sent or opened.')}
+              </p>
+            </div>
+          </div>
+        )}
+
         <div>
-          <Label htmlFor="editEventTimeoutAmount">Timeout (optional)</Label>
+          <Label htmlFor="editEventTimeoutAmount">{t('Timeout (optional)')}</Label>
           <div className="flex gap-2 mt-1.5">
             <Input
               id="editEventTimeoutAmount"
@@ -174,15 +213,14 @@ export function WaitForEventStepDialog({step, workflowId, open, onOpenChange, on
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="minutes">Minutes</SelectItem>
-                <SelectItem value="hours">Hours</SelectItem>
-                <SelectItem value="days">Days</SelectItem>
+                <SelectItem value="minutes">{t('Minutes')}</SelectItem>
+                <SelectItem value="hours">{t('Hours')}</SelectItem>
+                <SelectItem value="days">{t('Days')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <p className="text-xs text-neutral-500 mt-1.5">
-            If not received, the workflow continues after this time. Set it to 0 to wait until the event arrives, with
-            no time limit; until then the execution stays active.
+            {t('If not received, the workflow continues after this time. Set it to 0 to wait until the event arrives, with no time limit; until then the execution stays active.')}
           </p>
         </div>
       </div>

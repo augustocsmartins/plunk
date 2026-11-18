@@ -10,6 +10,7 @@ import {OnboardingLayout} from '../../components/onboarding/OnboardingLayout';
 import {useActiveProject} from '../../lib/contexts/ActiveProjectProvider';
 import {useOnboardingGate} from '../../lib/hooks/useOnboardingGate';
 import {useOnboardingPath} from '../../lib/hooks/useOnboardingPath';
+import {t} from '../../lib/i18n';
 
 interface SetupStep {
   id: string;
@@ -25,27 +26,27 @@ const steps: SetupStep[] = [
   {
     id: 'domain',
     icon: ShieldCheck,
-    title: 'Verify your sender domain',
-    description: 'Two DNS records prove you own the address your campaigns send from.',
+    title: t('Verify your sender domain'),
+    description: t('Two DNS records prove you own the address your campaigns send from.'),
     href: '/settings?tab=domains',
-    cta: 'Verify domain',
+    cta: t('Verify domain'),
     required: true,
   },
   {
     id: 'contacts',
     icon: Users,
-    title: 'Add your contacts',
-    description: 'Import a CSV, paste a list, or sync contacts from your app.',
+    title: t('Add your contacts'),
+    description: t('Import a CSV, paste a list, or sync contacts from your app.'),
     href: '/contacts',
-    cta: 'Add contacts',
+    cta: t('Add contacts'),
   },
   {
     id: 'campaign',
     icon: Mail,
-    title: 'Draft your first campaign',
-    description: 'Compose in the editor, preview, and schedule — or send when you are ready.',
+    title: t('Draft your first campaign'),
+    description: t('Compose in the editor, preview, and schedule — or send when you are ready.'),
     href: '/campaigns/create',
-    cta: 'Draft campaign',
+    cta: t('Draft campaign'),
   },
 ];
 
@@ -74,15 +75,15 @@ export default function OnboardingMarketing() {
 
   return (
     <>
-      <NextSeo title="Set up your campaigns" />
+      <NextSeo title={t('Set up your campaigns')} />
       <OnboardingLayout step={2}>
         <div className="flex flex-col gap-6">
           <header className="flex flex-col gap-2">
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">
-              Set up for campaigns.
+              {t('Set up for campaigns.')}
             </h1>
             <p className="text-base text-neutral-600 max-w-xl leading-relaxed">
-              Three steps to your first broadcast. Start anywhere — you can come back to finish the rest.
+              {t('Three steps to your first broadcast. Start anywhere — you can come back to finish the rest.')}
             </p>
           </header>
 
@@ -111,7 +112,7 @@ export default function OnboardingMarketing() {
                         <h2 className="text-sm font-semibold text-neutral-900">{step.title}</h2>
                         {step.required && (
                           <span className="rounded bg-neutral-900 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white">
-                            Required
+                            {t('Required')}
                           </span>
                         )}
                       </div>
@@ -138,10 +139,10 @@ export default function OnboardingMarketing() {
               className="inline-flex items-center gap-1.5 text-sm font-medium text-neutral-500 hover:text-neutral-900 transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back
+              {t('Back')}
             </Link>
             <Button onClick={handleContinue}>
-              Continue to dashboard
+              {t('Continue to dashboard')}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>

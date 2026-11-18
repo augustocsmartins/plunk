@@ -29,6 +29,7 @@ import {
   bodyHasListManagementLink,
   buildEmailHeaders,
   classifyEmail,
+  RECIPIENT_OVERRIDE_HEADER,
   senderOneClickUrl,
   withSourceEmail,
 } from '../services/EmailHeaderService.js';
@@ -91,6 +92,25 @@ function deriveWorkerConcurrency(rateLimit: number): number {
 }
 
 /**
+ * Finalize the email's campaign if this was its last outstanding email, without ever
+ * throwing. Every caller has already decided the email's fate: on the success paths SES
+ * has the message, and an exception from here would land in the catch below and mark a
+ * delivered email FAILED; on the failure path it would replace the send error being
+ * rethrown. A finalization that fails here is picked up by the stalled-campaign sweep.
+ */
+async function finalizeCampaign(campaignId: string | null): Promise<void> {
+  if (!campaignId) {
+    return;
+  }
+
+  try {
+    await CampaignService.finalizeIfDone(campaignId);
+  } catch (error) {
+    signale.error(`[EMAIL-PROCESSOR] Failed to finalize campaign ${campaignId}:`, error);
+  }
+}
+
+/**
  * Send one email. Exported so it can be tested without a queue; the worker below is a thin
  * wrapper around it.
  */
@@ -100,8 +120,8 @@ export async function processEmailJob(emailId: string): Promise<void> {
     include: {
       contact: true,
       project: true,
-      template: {select: {type: true}},
-      campaign: {select: {type: true, status: true}},
+      template: {select: {type: true, tracking: true}},
+      campaign: {select: {type: true, status: true, tracking: true}},
     },
   });
 
@@ -162,7 +182,7 @@ export async function processEmailJob(emailId: string): Promise<void> {
       where: {id: emailId},
       data: {
         status: EmailStatus.FAILED,
-        error: `Campaign ${email.campaign.status.toLowerCase()}`,
+        error: CampaignService.skippedEmailError(email.campaign.status),
       },
     });
 
@@ -185,9 +205,7 @@ export async function processEmailJob(emailId: string): Promise<void> {
 
     // Cancelled emails are terminal for the campaign — finalize so it doesn't
     // stay stuck in SENDING forever waiting on emails that will never be sent.
-    if (email.campaignId) {
-      await CampaignService.finalizeIfDone(email.campaignId);
-    }
+    await finalizeCampaign(email.campaignId);
     return;
   }
 
@@ -243,12 +261,12 @@ export async function processEmailJob(emailId: string): Promise<void> {
         : undefined;
 
     // Check for custom recipient override in headers
-    const recipientEmail = customHeaders?.['X-Plunk-Recipient-Override'] || email.contact.email;
+    const recipientEmail = customHeaders?.[RECIPIENT_OVERRIDE_HEADER] || email.contact.email;
 
     // Remove internal headers before sending
     const publicHeaders = customHeaders ? {...customHeaders} : undefined;
-    if (publicHeaders && 'X-Plunk-Recipient-Override' in publicHeaders) {
-      delete publicHeaders['X-Plunk-Recipient-Override'];
+    if (publicHeaders && RECIPIENT_OVERRIDE_HEADER in publicHeaders) {
+      delete publicHeaders[RECIPIENT_OVERRIDE_HEADER];
     }
 
     // Build the outbound headers: standards-based defaults for the email class
@@ -268,8 +286,15 @@ export async function processEmailJob(emailId: string): Promise<void> {
       ? {name: email.toName, email: recipientEmail}
       : recipientEmail;
 
-    // Determine tracking based on project settings and email type
-    const shouldTrack = EmailService.shouldTrackEmail(email.project.tracking, email.sourceType);
+    // Determine tracking: the send's own override, then the campaign's or template's
+    // setting, then the project's tracking mode for this email type
+    const shouldTrack = EmailService.resolveTracking({
+      trackingMode: email.project.tracking,
+      sourceType: email.sourceType,
+      emailOverride: email.trackingOverride,
+      campaignTracking: email.campaign?.tracking,
+      templateTracking: email.template?.tracking,
+    });
 
     // Check for phishing/dangerous content before sending
     const phishingCheck = await SecurityService.checkPhishingContent(
@@ -351,9 +376,7 @@ export async function processEmailJob(emailId: string): Promise<void> {
     if (marked.count === 0) {
       signale.warn(`[EMAIL-PROCESSOR] Email ${emailId} was already marked sent, skipping duplicate side effects`);
 
-      if (email.campaignId) {
-        await CampaignService.finalizeIfDone(email.campaignId);
-      }
+      await finalizeCampaign(email.campaignId);
 
       return;
     }
@@ -394,9 +417,7 @@ export async function processEmailJob(emailId: string): Promise<void> {
       sentAt: new Date().toISOString(),
     });
 
-    if (email.campaignId) {
-      await CampaignService.finalizeIfDone(email.campaignId);
-    }
+    await finalizeCampaign(email.campaignId);
   } catch (error) {
     signale.error(`[EMAIL-PROCESSOR] Failed to send email ${emailId}:`, error);
 
@@ -412,6 +433,12 @@ export async function processEmailJob(emailId: string): Promise<void> {
     // FAILED is terminal: a retry finds the email no longer PENDING and stops. It never
     // reached the recipient, so it must not hold back the next send of its notification.
     await ThrottleService.releaseForEmail(emailId);
+
+    // Terminal for the campaign too, and for the same reason the retry cannot help: this is
+    // the last chance to finalize it. When the tail of a send fails -- SES rejecting every
+    // remaining email once the daily quota is spent is the usual case -- no success path
+    // runs after the last failure, and without this the campaign stays SENDING forever.
+    await finalizeCampaign(email.campaignId);
 
     throw error; // Re-throw to trigger retry
   }

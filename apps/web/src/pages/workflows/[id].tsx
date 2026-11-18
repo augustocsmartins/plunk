@@ -57,6 +57,7 @@ import {EditStepDialog} from '../../components/workflow-steps';
 import {ReactFlowProvider} from '@xyflow/react';
 import {WorkflowSchemas} from '@plunk/shared';
 import dayjs from 'dayjs';
+import {t as tx} from '../../lib/i18n';
 
 interface WorkflowWithDetails extends Workflow {
   steps: (WorkflowStep & {
@@ -120,11 +121,11 @@ export default function WorkflowEditorPage() {
     setDialog({type: 'cancelOne', executionId, cancelling: true});
     try {
       await network.fetch('DELETE', `/workflows/${id}/executions/${executionId}`);
-      toast.success('Execution canceled');
+      toast.success(tx('Execution canceled'));
       setDialog({type: 'none'});
       void mutate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t cancel the execution. Try again.');
+      toast.error(error instanceof Error ? error.message : tx('Couldn’t cancel the execution. Try again.'));
       setDialog({type: 'cancelOne', executionId, cancelling: false});
     }
   };
@@ -134,11 +135,11 @@ export default function WorkflowEditorPage() {
     setDialog(d => (d.type === 'cancelAll' ? {...d, cancelling: true} : d));
     try {
       const result = await network.fetch<{cancelled: number}>('POST', `/workflows/${id}/executions/cancel-all`);
-      toast.success(`Canceled ${result.cancelled} execution${result.cancelled === 1 ? '' : 's'}`);
+      toast.success(tx('Canceled {cancelled} execution{value}', {cancelled: result.cancelled, value: result.cancelled === 1 ? '' : 's'}));
       setDialog({type: 'none'});
       void mutate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t cancel those executions. Try again.');
+      toast.error(error instanceof Error ? error.message : tx('Couldn’t cancel those executions. Try again.'));
       setDialog(d => (d.type === 'cancelAll' ? {...d, cancelling: false} : d));
     }
   };
@@ -149,7 +150,7 @@ export default function WorkflowEditorPage() {
 
     // Check if there are any steps
     if (workflow.steps.length === 0) {
-      errors.push('Workflow must have at least one step');
+      errors.push(tx('Workflow must have at least one step'));
       return {valid: false, errors};
     }
 
@@ -160,13 +161,17 @@ export default function WorkflowEditorPage() {
       switch (step.type) {
         case 'SEND_EMAIL':
           if (!step.templateId) {
-            errors.push(`"${step.name}" step is missing an email template`);
+            errors.push(tx('"{name}" step is missing an email template', {name: step.name}));
           }
           break;
 
         case 'DELAY':
-          if (!config.amount || !config.unit) {
-            errors.push(`"${step.name}" step is missing delay configuration (amount or unit)`);
+          if (config.mode === 'until') {
+            if (typeof config.until !== 'string' || !config.until.trim()) {
+              errors.push(tx('"{name}" step is missing the date to wait until', {name: step.name}));
+            }
+          } else if (!config.amount || !config.unit) {
+            errors.push(tx('"{name}" step is missing delay configuration (amount or unit)', {name: step.name}));
           }
           break;
 
@@ -174,10 +179,10 @@ export default function WorkflowEditorPage() {
           if (config.mode === 'multi') {
             // Multi-branch validation
             if (!config.field) {
-              errors.push(`"${step.name}" step is missing condition field`);
+              errors.push(tx('"{name}" step is missing condition field', {name: step.name}));
             }
             if (!Array.isArray(config.branches) || config.branches.length === 0) {
-              errors.push(`"${step.name}" step needs at least one branch`);
+              errors.push(tx('"{name}" step needs at least one branch', {name: step.name}));
             }
           } else {
             // Extract field name from both legacy format (object) and new format (string)
@@ -191,25 +196,38 @@ export default function WorkflowEditorPage() {
             }
 
             if (!fieldValue || !config.operator) {
-              errors.push(`"${step.name}" step is missing condition configuration (field or operator)`);
+              errors.push(tx('"{name}" step is missing condition configuration (field or operator)', {name: step.name}));
             }
             // Check if value is required for this operator
             const operatorNeedsValue = !['exists', 'notExists'].includes(String(config.operator || ''));
             if (operatorNeedsValue && (config.value === undefined || config.value === null || config.value === '')) {
-              errors.push(`"${step.name}" step is missing a value for the condition`);
+              errors.push(tx('"{name}" step is missing a value for the condition', {name: step.name}));
             }
           }
           break;
 
         case 'WAIT_FOR_EVENT':
           if (!config.eventName) {
-            errors.push(`"${step.name}" step is missing event name`);
+            errors.push(tx('"{name}" step is missing event name', {name: step.name}));
           }
           break;
 
+        case 'SEND_WHATSAPP': {
+          const message = typeof config.message === 'string' ? config.message.trim() : '';
+          if (!message) {
+            errors.push(tx('"{name}" step is missing a message', {name: step.name}));
+          }
+          const recipient =
+            config.recipient && typeof config.recipient === 'object' ? (config.recipient as Record<string, unknown>) : {};
+          if (recipient.type === 'CUSTOM' && !recipient.customPhone) {
+            errors.push(tx('"{name}" step is missing a phone number', {name: step.name}));
+          }
+          break;
+        }
+
         case 'WEBHOOK':
           if (!config.url) {
-            errors.push(`"${step.name}" step is missing webhook URL`);
+            errors.push(tx('"{name}" step is missing webhook URL', {name: step.name}));
           }
           break;
 
@@ -221,7 +239,7 @@ export default function WorkflowEditorPage() {
             config.subscriptionAction !== 'none' &&
             config.subscriptionAction !== '';
           if (!hasUpdates && !hasSubscriptionAction) {
-            errors.push(`"${step.name}" step is missing contact updates or a subscription action`);
+            errors.push(tx('"{name}" step is missing contact updates or a subscription action', {name: step.name}));
           }
           break;
         }
@@ -237,14 +255,14 @@ export default function WorkflowEditorPage() {
         const hasOutgoing = step.outgoingTransitions && step.outgoingTransitions.length > 0;
 
         if (!hasIncoming && !hasOutgoing) {
-          errors.push(`"${step.name}" step is not connected to the workflow`);
+          errors.push(tx('"{name}" step is not connected to the workflow', {name: step.name}));
         }
       }
     });
 
     // Check if there's a TRIGGER step
     if (triggerSteps.length === 0) {
-      errors.push('Workflow must have a trigger step');
+      errors.push(tx('Workflow must have a trigger step'));
     }
 
     // Check for CONDITION steps that don't have all required branches connected
@@ -270,13 +288,13 @@ export default function WorkflowEditorPage() {
         if (missingBranches.length > 0) {
           if ((config as any).mode === 'multi') {
             const branchNames = missingBranches.map(id => {
-              if (id === 'default') return 'Default';
+              if (id === 'default') return tx('Default');
               const branch = (config as any).branches?.find((b: any) => b.id === id);
               return branch?.name || id;
             });
-            errors.push(`"${step.name}" condition step is missing connections for: ${branchNames.join(', ')}`);
+            errors.push(tx('"{name}" condition step is missing connections for: {value}', {name: step.name, value: branchNames.join(', ')}));
           } else {
-            errors.push(`"${step.name}" condition step must have both YES and NO branches connected`);
+            errors.push(tx('"{name}" condition step must have both YES and NO branches connected', {name: step.name}));
           }
         }
       }
@@ -294,7 +312,7 @@ export default function WorkflowEditorPage() {
       if (!validation.valid) {
         toast.error(
           <div>
-            <div className="font-semibold mb-1">Cannot enable workflow</div>
+            <div className="font-semibold mb-1">{tx('Cannot enable workflow')}</div>
             <ul className="list-disc list-inside text-sm">
               {validation.errors.map((error, i) => (
                 <li key={i}>{error}</li>
@@ -311,10 +329,10 @@ export default function WorkflowEditorPage() {
       await network.fetch<Workflow, typeof WorkflowSchemas.update>('PATCH', `/workflows/${id}`, {
         enabled: !workflow.enabled,
       });
-      toast.success(`Workflow ${!workflow.enabled ? 'enabled' : 'disabled'}`);
+      toast.success(tx('Workflow {value}', {value: !workflow.enabled ? 'enabled' : 'disabled'}));
       void mutate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t change the workflow. Try again.');
+      toast.error(error instanceof Error ? error.message : tx('Couldn’t change the workflow. Try again.'));
     }
   };
 
@@ -325,21 +343,21 @@ export default function WorkflowEditorPage() {
   } & EntryRulePayload) => {
     try {
       await network.fetch<Workflow, typeof WorkflowSchemas.update>('PATCH', `/workflows/${id}`, data);
-      toast.success('Workflow updated');
+      toast.success(tx('Workflow updated'));
       void mutate();
       setDialog({type: 'none'});
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t save the workflow. Try again.');
+      toast.error(error instanceof Error ? error.message : tx('Couldn’t save the workflow. Try again.'));
     }
   };
 
   const handleDelete = async () => {
     try {
       await network.fetch('DELETE', `/workflows/${id}`);
-      toast.success('Workflow deleted');
+      toast.success(tx('Workflow deleted'));
       void router.push('/workflows');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t delete the workflow. Try again.');
+      toast.error(error instanceof Error ? error.message : tx('Couldn’t delete the workflow. Try again.'));
     }
   };
 
@@ -398,12 +416,12 @@ export default function WorkflowEditorPage() {
                 {workflow.enabled ? (
                   <>
                     <Power className="h-3 w-3 sm:mr-1" />
-                    <span className="hidden sm:inline">Active</span>
+                    <span className="hidden sm:inline">{tx('Active')}</span>
                   </>
                 ) : (
                   <>
                     <PowerOff className="h-3 w-3 sm:mr-1" />
-                    <span className="hidden sm:inline">Disabled</span>
+                    <span className="hidden sm:inline">{tx('Disabled')}</span>
                   </>
                 )}
               </span>
@@ -413,14 +431,14 @@ export default function WorkflowEditorPage() {
             )}
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
-            <Button variant="ghost" size="icon" onClick={() => setDialog({type: 'settings'})} aria-label="Settings">
+            <Button variant="ghost" size="icon" onClick={() => setDialog({type: 'settings'})} aria-label={tx('Settings')}>
               <Settings className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setDialog({type: 'delete'})}
-              aria-label="Delete workflow"
+              aria-label={tx('Delete workflow')}
               className="text-neutral-400 hover:text-red-600 hover:bg-red-50"
             >
               <Trash2 className="h-4 w-4" />
@@ -430,12 +448,12 @@ export default function WorkflowEditorPage() {
               {workflow.enabled ? (
                 <>
                   <PowerOff className="h-4 w-4" />
-                  Disable
+                  {tx('Disable')}
                 </>
               ) : (
                 <>
                   <Power className="h-4 w-4" />
-                  Enable
+                  {tx('Enable')}
                 </>
               )}
             </Button>
@@ -447,22 +465,23 @@ export default function WorkflowEditorPage() {
           <Alert>
             <Info className="h-4 w-4" />
             <AlertTitle>
-              {workflow.enabled ? 'Workflow is active with running executions' : 'Workflow has active executions'}
+              {workflow.enabled ? tx('Workflow is active with running executions') : tx('Workflow has active executions')}
             </AlertTitle>
             <AlertDescription>
               <p>
-                <strong>{activeExecutionsCount}</strong> contact{activeExecutionsCount !== 1 ? 's are' : ' is'} part way
-                through this workflow
-                {!workflow.enabled && ', and disabling it does not stop them'}. Until they finish, you can&apos;t:
+                <strong>{activeExecutionsCount}</strong>{' '}
+                {activeExecutionsCount !== 1
+                  ? tx('contacts are part way through this workflow')
+                  : tx('contact is part way through this workflow')}
+                {!workflow.enabled && tx(', and disabling it does not stop them')}. {tx("Until they finish, you can't:")}
               </p>
               <ul className="list-disc list-inside space-y-1 mt-2">
-                <li>Delete steps or transitions</li>
-                <li>Change step settings, such as templates or conditions</li>
-                <li>Change the trigger</li>
+                <li>{tx('Delete steps or transitions')}</li>
+                <li>{tx('Change step settings, such as templates or conditions')}</li>
+                <li>{tx('Change the trigger')}</li>
               </ul>
               <p className="mt-2">
-                Renaming and repositioning steps still works. To change anything else, wait them out or cancel them from
-                the Executions tab.
+                {tx('Renaming and repositioning steps still works. To change anything else, wait them out or cancel them from the Executions tab.')}
               </p>
             </AlertDescription>
           </Alert>
@@ -476,9 +495,9 @@ export default function WorkflowEditorPage() {
               return (
                 <Alert variant="warning">
                   <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>Workflow has validation errors</AlertTitle>
+                  <AlertTitle>{tx('Workflow has validation errors')}</AlertTitle>
                   <AlertDescription>
-                    <p className="mb-2">Fix the following issues before enabling this workflow:</p>
+                    <p className="mb-2">{tx('Fix the following issues before enabling this workflow:')}</p>
                     <ul className="list-disc list-inside space-y-1">
                       {validation.errors.map((error, i) => (
                         <li key={i}>{error}</li>
@@ -492,12 +511,12 @@ export default function WorkflowEditorPage() {
               return (
                 <Alert>
                   <Power className="h-4 w-4" />
-                  <AlertTitle>Workflow is disabled</AlertTitle>
+                  <AlertTitle>{tx('Workflow is disabled')}</AlertTitle>
                   <AlertDescription className="flex items-center justify-between gap-4">
-                    <span>Contacts won&apos;t be processed until this workflow is enabled.</span>
+                    <span>{tx('Contacts won\'t be processed until this workflow is enabled.')}</span>
                     <Button size="sm" onClick={handleToggleEnabled} className="shrink-0">
                       <Power className="h-3.5 w-3.5" />
-                      Enable
+                      {tx('Enable')}
                     </Button>
                   </AlertDescription>
                 </Alert>
@@ -517,7 +536,7 @@ export default function WorkflowEditorPage() {
                   : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
               }`}
             >
-              Workflow builder
+              {tx('Workflow builder')}
             </button>
             <button
               onClick={() => setActiveTab('executions')}
@@ -527,7 +546,7 @@ export default function WorkflowEditorPage() {
                   : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
               }`}
             >
-              Executions
+              {tx('Executions')}
             </button>
           </nav>
         </div>
@@ -536,9 +555,9 @@ export default function WorkflowEditorPage() {
         {activeTab === 'builder' ? (
           <Card>
             <CardHeader>
-              <CardTitle>Workflow builder</CardTitle>
+              <CardTitle>{tx('Workflow builder')}</CardTitle>
               <CardDescription>
-                Click the <strong>+</strong> buttons to add and connect steps to your workflow.
+                {tx('Click the')}{' '}<strong>+</strong> {tx('buttons to add and connect steps to your workflow.')}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
@@ -552,12 +571,12 @@ export default function WorkflowEditorPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Workflow executions</CardTitle>
-                  <CardDescription>View and manage all executions of this workflow</CardDescription>
+                  <CardTitle>{tx('Workflow executions')}</CardTitle>
+                  <CardDescription>{tx('View and manage all executions of this workflow')}</CardDescription>
                 </div>
                 {activeExecutionsCount > 0 && (
                   <Button variant="outline" onClick={() => setDialog({type: 'cancelAll', cancelling: false})}>
-                    Cancel All Active ({activeExecutionsCount})
+                    {tx('Cancel All Active (')}{activeExecutionsCount})
                   </Button>
                 )}
               </div>
@@ -566,8 +585,8 @@ export default function WorkflowEditorPage() {
               {!executionsData?.executions.length ? (
                 <EmptyState
                   icon={Users}
-                  title="No executions yet"
-                  description="This workflow hasn't been executed yet. Enable it to start processing contacts."
+                  title={tx('No executions yet')}
+                  description={tx('This workflow hasn\'t been executed yet. Enable it to start processing contacts.')}
                 />
               ) : (
                 <div className="overflow-x-auto">
@@ -575,19 +594,19 @@ export default function WorkflowEditorPage() {
                     <thead className="bg-neutral-50 border-b border-neutral-200">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                          Contact
+                          {tx('Contact')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                          Status
+                          {tx('Status')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                          Current step
+                          {tx('Current step')}
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                          Started
+                          {tx('Started')}
                         </th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                          Actions
+                          {tx('Actions')}
                         </th>
                       </tr>
                     </thead>
@@ -633,7 +652,7 @@ export default function WorkflowEditorPage() {
                                 onClick={() => setDialog({type: 'cancelOne', executionId: execution.id, cancelling: false})}
                                 disabled={dialog.type === 'cancelOne' && dialog.cancelling}
                               >
-                                Cancel
+                                {tx('Cancel')}
                               </Button>
                             )}
                           </td>
@@ -676,23 +695,23 @@ export default function WorkflowEditorPage() {
                 return handleCancelExecution(dialog.executionId);
               }
             }}
-            title="Cancel this execution?"
+            title={tx('Cancel this execution?')}
             icon={CircleStop}
             description={
               dialog.type === 'cancelOne' && executionsData?.executions ? (
                 <>
-                  Stops this workflow for{' '}
+                  {tx('Stops this workflow for')}{' '}
                   <strong>
-                    {executionsData.executions.find(e => e.id === dialog.executionId)?.contact.email || 'this contact'}
+                    {executionsData.executions.find(e => e.id === dialog.executionId)?.contact.email || tx('this contact')}
                   </strong>
-                  . They won&apos;t receive any remaining emails or actions from it. This can&apos;t be undone.
+                  {tx('. They won\'t receive any remaining emails or actions from it. This can\'t be undone.')}
                 </>
               ) : (
-                "The contact won't receive any remaining emails or actions from this workflow. This can't be undone."
+                tx('The contact won\'t receive any remaining emails or actions from this workflow. This can\'t be undone.')
               )
             }
-            confirmText="Cancel execution"
-            cancelText="Keep running"
+            confirmText={tx('Cancel execution')}
+            cancelText={tx('Keep running')}
             variant="destructive"
             status={dialog.type === 'cancelOne' && dialog.cancelling ? 'loading' : 'idle'}
           />
@@ -702,17 +721,16 @@ export default function WorkflowEditorPage() {
             open={dialog.type === 'cancelAll'}
             onOpenChange={open => !open && setDialog({type: 'none'})}
             onConfirm={handleCancelAllExecutions}
-            title="Cancel every active execution?"
+            title={tx('Cancel every active execution?')}
             icon={CircleStop}
             description={
               <>
-                Stops this workflow for all <strong>{activeExecutionsCount}</strong> contact
-                {activeExecutionsCount !== 1 ? 's' : ''} currently in it. They won&apos;t receive any remaining emails
-                or actions. This can&apos;t be undone.
+                {tx('Stops this workflow for all')}{' '}<strong>{activeExecutionsCount}</strong> {tx('contact')}
+                {activeExecutionsCount !== 1 ? 's' : ''} {tx('currently in it. They won\'t receive any remaining emails or actions. This can\'t be undone.')}
               </>
             }
-            confirmText={`Cancel ${activeExecutionsCount} execution${activeExecutionsCount !== 1 ? 's' : ''}`}
-            cancelText="Keep running"
+            confirmText={tx('Cancel {activeExecutionsCount} execution{value}', {activeExecutionsCount: activeExecutionsCount, value: activeExecutionsCount !== 1 ? 's' : ''})}
+            cancelText={tx('Keep running')}
             variant="destructive"
             status={dialog.type === 'cancelAll' && dialog.cancelling ? 'loading' : 'idle'}
           />
@@ -722,9 +740,9 @@ export default function WorkflowEditorPage() {
             open={dialog.type === 'delete'}
             onOpenChange={open => !open && setDialog({type: 'none'})}
             onConfirm={handleDelete}
-            title={`Delete ${workflow.name}?`}
-            description="Its steps and execution history are deleted too. This can't be undone."
-            confirmText="Delete workflow"
+            title={tx('Delete {name}?', {name: workflow.name})}
+            description={tx('Its steps and execution history are deleted too. This can\'t be undone.')}
+            confirmText={tx('Delete workflow')}
             variant="destructive"
           />
         </>
@@ -790,18 +808,18 @@ function SettingsDialog({workflow, open, onOpenChange, onSave}: SettingsDialogPr
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Workflow settings</DialogTitle>
+          <DialogTitle>{tx('Workflow settings')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="name">Name
+            <Label htmlFor="name">{tx('Name')}
             <span className="text-red-500"> *</span>
           </Label>
             <Input id="name" type="text" value={name} onChange={e => setName(e.target.value)} required />
           </div>
 
           <div>
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">{tx('Description')}</Label>
             <textarea
               id="description"
               value={description}
@@ -812,7 +830,7 @@ function SettingsDialog({workflow, open, onOpenChange, onSave}: SettingsDialogPr
           </div>
 
           <div>
-            <Label htmlFor="eventName">Trigger event
+            <Label htmlFor="eventName">{tx('Trigger event')}
             <span className="text-red-500"> *</span>
           </Label>
             <div className="relative">
@@ -828,7 +846,7 @@ function SettingsDialog({workflow, open, onOpenChange, onSave}: SettingsDialogPr
                 onBlur={() => {
                   setTimeout(() => setEventPopoverOpen(false), 150);
                 }}
-                placeholder="e.g., user.signup, email.open"
+                placeholder={tx('e.g., user.signup, email.open')}
                 required
                 autoComplete="off"
               />
@@ -850,7 +868,7 @@ function SettingsDialog({workflow, open, onOpenChange, onSave}: SettingsDialogPr
                             value={eventName.trim()}
                             onSelect={() => { setEventName(eventName.trim()); setEventPopoverOpen(false); }}
                           >
-                            Use &ldquo;{eventName.trim()}&rdquo;
+                            {tx('Use “')}{eventName.trim()}&rdquo;
                           </CommandItem>
                         )}
                       </CommandGroup>
@@ -860,7 +878,7 @@ function SettingsDialog({workflow, open, onOpenChange, onSave}: SettingsDialogPr
               )}
             </div>
             <p className="text-xs text-neutral-500 mt-1">
-              The event that triggers this workflow to start for a contact
+              {tx('The event that triggers this workflow to start for a contact')}
             </p>
           </div>
 
@@ -868,10 +886,10 @@ function SettingsDialog({workflow, open, onOpenChange, onSave}: SettingsDialogPr
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-              Cancel
+              {tx('Cancel')}
             </Button>
             <Button type="submit" disabled={isSubmitting || entryRuleError(entryRule) !== null}>
-              {isSubmitting ? 'Saving…' : 'Save Changes'}
+              {isSubmitting ? tx('Saving…') : tx('Save Changes')}
             </Button>
           </DialogFooter>
         </form>

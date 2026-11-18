@@ -2,6 +2,7 @@ import {AnimatePresence, motion} from 'framer-motion';
 import {Check, Copy, Eye, EyeOff, RefreshCw} from 'lucide-react';
 import {useState} from 'react';
 import {Button} from '@plunk/ui';
+import {t} from '../lib/i18n';
 
 interface ApiKeyDisplayProps {
   label: string;
@@ -61,7 +62,7 @@ export function ApiKeyDisplay({
               variant="outline"
               size="icon"
               onClick={() => setShowKey(!showKey)}
-              title={showKey ? 'Hide key' : 'Show key'}
+              title={showKey ? t('Hide key') : t('Show key')}
               className="h-9 w-9"
             >
               {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -72,7 +73,7 @@ export function ApiKeyDisplay({
             variant="outline"
             size="icon"
             onClick={handleCopy}
-            title="Copy to clipboard"
+            title={t('Copy to clipboard')}
             className="h-9 w-9 overflow-hidden"
           >
             <AnimatePresence mode="wait" initial={false}>
@@ -106,7 +107,7 @@ export function ApiKeyDisplay({
               size="icon"
               onClick={handleRegenerate}
               disabled={isRegenerating}
-              title="Regenerate key"
+              title={t('Regenerate key')}
               className="h-9 w-9"
             >
               <RefreshCw className={`h-4 w-4 ${isRegenerating ? 'animate-spin' : ''}`} />

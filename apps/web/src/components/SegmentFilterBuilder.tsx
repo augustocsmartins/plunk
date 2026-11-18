@@ -18,47 +18,48 @@ import {memo, useCallback, useMemo, useState} from 'react';
 import useSWR from 'swr';
 
 import {useContactFields} from '../lib/hooks/useContacts';
+import {t} from '../lib/i18n';
 
 const STANDARD_OPERATORS: {value: SegmentFilterOperator; label: string; description: string}[] = [
-  {value: 'equals', label: 'Equals', description: 'Exact match'},
-  {value: 'notEquals', label: 'Not equals', description: 'Anything other than this value'},
-  {value: 'contains', label: 'Contains', description: 'Value includes this text'},
-  {value: 'notContains', label: 'Does not contain', description: 'Value does not include this text'},
-  {value: 'greaterThan', label: 'Greater than', description: 'Value is higher than'},
-  {value: 'lessThan', label: 'Less than', description: 'Value is lower than'},
-  {value: 'greaterThanOrEqual', label: 'Greater than or equal', description: 'Value is at least'},
-  {value: 'lessThanOrEqual', label: 'Less than or equal', description: 'Value is at most'},
-  {value: 'exists', label: 'Has a value', description: 'Field is set to anything'},
-  {value: 'notExists', label: 'Has no value', description: 'Field is empty or unset'},
-  {value: 'within', label: 'Less than X ago', description: 'Date is within the last X days/hours'},
-  {value: 'olderThan', label: 'More than X ago', description: 'Date is older than X days/hours'},
+  {value: 'equals', label: t('Equals'), description: t('Exact match')},
+  {value: 'notEquals', label: t('Not equals'), description: t('Anything other than this value')},
+  {value: 'contains', label: t('Contains'), description: t('Value includes this text')},
+  {value: 'notContains', label: t('Does not contain'), description: t('Value does not include this text')},
+  {value: 'greaterThan', label: t('Greater than'), description: t('Value is higher than')},
+  {value: 'lessThan', label: t('Less than'), description: t('Value is lower than')},
+  {value: 'greaterThanOrEqual', label: t('Greater than or equal'), description: t('Value is at least')},
+  {value: 'lessThanOrEqual', label: t('Less than or equal'), description: t('Value is at most')},
+  {value: 'exists', label: t('Has a value'), description: t('Field is set to anything')},
+  {value: 'notExists', label: t('Has no value'), description: t('Field is empty or unset')},
+  {value: 'within', label: t('Less than X ago'), description: t('Date is within the last X days/hours')},
+  {value: 'olderThan', label: t('More than X ago'), description: t('Date is older than X days/hours')},
 ];
 
 const EVENT_OPERATORS: {value: SegmentFilterOperator; label: string; description: string}[] = [
-  {value: 'triggered', label: 'Ever occurred', description: 'This event has happened at least once'},
-  {value: 'triggeredWithin', label: 'Occurred within', description: 'Happened at least once in the last X days/hours'},
-  {value: 'triggeredOlderThan', label: 'Occurred, but not recently', description: 'Has happened before, but not in the last X days/hours'},
-  {value: 'notTriggered', label: 'Never occurred', description: 'This event has never happened'},
-  {value: 'notTriggeredWithin', label: 'Not occurred within', description: 'Has not happened in the last X days/hours — includes contacts who never triggered this'},
+  {value: 'triggered', label: t('Ever occurred'), description: t('This event has happened at least once')},
+  {value: 'triggeredWithin', label: t('Occurred within'), description: t('Happened at least once in the last X days/hours')},
+  {value: 'triggeredOlderThan', label: t('Occurred, but not recently'), description: t('Has happened before, but not in the last X days/hours')},
+  {value: 'notTriggered', label: t('Never occurred'), description: t('This event has never happened')},
+  {value: 'notTriggeredWithin', label: t('Not occurred within'), description: t('Has not happened in the last X days/hours — includes contacts who never triggered this')},
 ];
 
 const SEGMENT_OPERATORS: {value: SegmentFilterOperator; label: string; description: string}[] = [
-  {value: 'memberOfSegment', label: 'Is member of', description: 'Contact is currently in this segment'},
-  {value: 'notMemberOfSegment', label: 'Is not member of', description: 'Contact is not in this segment'},
+  {value: 'memberOfSegment', label: t('Is member of'), description: t('Contact is currently in this segment')},
+  {value: 'notMemberOfSegment', label: t('Is not member of'), description: t('Contact is not in this segment')},
 ];
 
 const TIME_UNITS = [
-  {value: 'minutes', label: 'Minutes'},
-  {value: 'hours', label: 'Hours'},
-  {value: 'days', label: 'Days'},
+  {value: 'minutes', label: t('Minutes')},
+  {value: 'hours', label: t('Hours')},
+  {value: 'days', label: t('Days')},
 ] as const;
 
 const STANDARD_FIELDS = [
   // Contact fields
-  {value: 'email', label: 'Email', type: 'string', category: 'Contact fields'},
-  {value: 'subscribed', label: 'Subscribed', type: 'boolean', category: 'Contact fields'},
-  {value: 'createdAt', label: 'Created at', type: 'date', category: 'Contact fields'},
-  {value: 'updatedAt', label: 'Updated at', type: 'date', category: 'Contact fields'},
+  {value: 'email', label: t('Email'), type: 'string', category: 'Contact fields'},
+  {value: 'subscribed', label: t('Subscribed'), type: 'boolean', category: 'Contact fields'},
+  {value: 'createdAt', label: t('Created at'), type: 'date', category: 'Contact fields'},
+  {value: 'updatedAt', label: t('Updated at'), type: 'date', category: 'Contact fields'},
 ] as const;
 
 interface FieldOption {
@@ -369,7 +370,7 @@ const FilterRow = memo(function FilterRow({filter, onChange, onRemove, available
       <div className="flex-1 grid grid-cols-3 gap-3">
         {/* Field Selection */}
         <div className="space-y-1.5">
-          <Label className="text-xs text-neutral-600">Field</Label>
+          <Label className="text-xs text-neutral-600">{t('Field')}</Label>
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -386,7 +387,7 @@ const FilterRow = memo(function FilterRow({filter, onChange, onRemove, available
               <div className="flex items-center border-b px-3 py-2">
                 <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                 <Input
-                  placeholder="Search fields, events, or email activity…"
+                  placeholder={t('Search fields, events, or email activity…')}
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   className="border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -394,7 +395,7 @@ const FilterRow = memo(function FilterRow({filter, onChange, onRemove, available
               </div>
               <div className="max-h-[300px] overflow-y-auto p-1">
                 {Object.keys(filteredGroups).length === 0 ? (
-                  <div className="py-6 text-center text-sm text-neutral-500">No fields or events found.</div>
+                  <div className="py-6 text-center text-sm text-neutral-500">{t('No fields or events found.')}</div>
                 ) : (
                   Object.entries(filteredGroups).map(([category, fields]) => (
                     <div key={category} className="py-1">
@@ -433,7 +434,7 @@ const FilterRow = memo(function FilterRow({filter, onChange, onRemove, available
 
         {/* Operator Selection */}
         <div className="space-y-1.5">
-          <Label className="text-xs text-neutral-600">Operator</Label>
+          <Label className="text-xs text-neutral-600">{t('Operator')}</Label>
           <Select
             value={filter.operator}
             onValueChange={(v: SegmentFilterOperator) => {
@@ -493,10 +494,10 @@ const FilterRow = memo(function FilterRow({filter, onChange, onRemove, available
 
         {/* Value Input */}
         <div className="space-y-1.5">
-          <Label className="text-xs text-neutral-600">Value</Label>
+          <Label className="text-xs text-neutral-600">{t('Value')}</Label>
           {!needsValue ? (
             <div className="h-9 flex items-center text-sm text-neutral-400 px-3 bg-neutral-100 rounded border border-neutral-200">
-              No value needed
+              {t('No value needed')}
             </div>
           ) : needsUnit ? (
             <div className="flex gap-1">
@@ -532,8 +533,8 @@ const FilterRow = memo(function FilterRow({filter, onChange, onRemove, available
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="true">True</SelectItem>
-                <SelectItem value="false">False</SelectItem>
+                <SelectItem value="true">{t('True')}</SelectItem>
+                <SelectItem value="false">{t('False')}</SelectItem>
               </SelectContent>
             </Select>
           ) : fieldType === 'number' ? (
@@ -545,7 +546,7 @@ const FilterRow = memo(function FilterRow({filter, onChange, onRemove, available
                 onChange({...filter, value: val === '' ? 0 : parseFloat(val) || 0});
               }}
               className="text-sm bg-white"
-              placeholder="e.g., 30"
+              placeholder={t('e.g., 30')}
             />
           ) : fieldType === 'date' ? (
             <Input
@@ -560,7 +561,7 @@ const FilterRow = memo(function FilterRow({filter, onChange, onRemove, available
               value={String(filter.value ?? '')}
               onChange={e => onChange({...filter, value: e.target.value})}
               className="text-sm bg-white"
-              placeholder="e.g., pro"
+              placeholder={t('e.g., pro')}
             />
           )}
         </div>
@@ -645,7 +646,7 @@ function FilterGroupComponent({group, onChange, onRemove, depth = 0, availableFi
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <GripVertical className="h-4 w-4 text-neutral-400" />
-          <span className="text-sm font-medium text-neutral-700">Filter Group {depth > 0 && `(Nested)`}</span>
+          <span className="text-sm font-medium text-neutral-700">{t('Filter Group')}{' '}{depth > 0 && t('(Nested)')}</span>
         </div>
         {onRemove && (
           <Button type="button" variant="destructiveGhost" size="sm" onClick={onRemove}>
@@ -668,7 +669,7 @@ function FilterGroupComponent({group, onChange, onRemove, depth = 0, availableFi
         {group.conditions && (
           <div className="mt-4">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs font-medium text-neutral-600 uppercase tracking-wide">Nested conditions</span>
+              <span className="text-xs font-medium text-neutral-600 uppercase tracking-wide">{t('Nested conditions')}</span>
               <Button
                 type="button"
                 variant="destructiveGhost"
@@ -676,7 +677,7 @@ function FilterGroupComponent({group, onChange, onRemove, depth = 0, availableFi
                 onClick={removeNestedCondition}
                 className="h-6 text-xs"
               >
-                Remove nested
+                {t('Remove nested')}
               </Button>
             </div>
             <FilterConditionComponent
@@ -691,12 +692,12 @@ function FilterGroupComponent({group, onChange, onRemove, depth = 0, availableFi
         <div className="flex gap-2 pt-2">
           <Button type="button" variant="outline" size="sm" onClick={addFilter} className="flex-1">
             <Plus className="h-3 w-3 mr-1" />
-            Add filter
+            {t('Add filter')}
           </Button>
           {!group.conditions && (
             <Button type="button" variant="outline" size="sm" onClick={addNestedCondition} className="flex-1">
               <Plus className="h-3 w-3 mr-1" />
-              Add nested condition
+              {t('Add nested condition')}
             </Button>
           )}
         </div>
@@ -751,7 +752,7 @@ function FilterConditionComponent({condition, onChange, depth = 0, availableFiel
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-neutral-600">Groups are combined with:</span>
+          <span className="text-sm font-medium text-neutral-600">{t('Groups are combined with:')}</span>
           <Button
             type="button"
             variant={condition.logic === 'AND' ? 'default' : 'outline'}
@@ -787,7 +788,7 @@ function FilterConditionComponent({condition, onChange, depth = 0, availableFiel
 
       <Button type="button" variant="outline" onClick={addGroup} className="w-full">
         <Plus className="h-4 w-4 mr-2" />
-        Add group
+        {t('Add group')}
       </Button>
     </div>
   );
@@ -803,7 +804,7 @@ export function SegmentFilterBuilder({condition, onChange, currentSegmentId}: Se
   const {fields, loading} = useAvailableOptions(currentSegmentId);
 
   if (loading) {
-    return <div className="text-sm text-neutral-500 py-4">Loading available fields and events...</div>;
+    return <div className="text-sm text-neutral-500 py-4">{t('Loading available fields and events...')}</div>;
   }
 
   return <FilterConditionComponent condition={condition} onChange={onChange} availableFields={fields} />;

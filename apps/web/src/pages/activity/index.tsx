@@ -6,23 +6,24 @@ import {ContactFilter} from '../../components/ContactFilter';
 import {DashboardLayout} from '../../components/DashboardLayout';
 import {FilterPill} from '../../components/data-table';
 import {useActiveProject} from '../../lib/contexts/ActiveProjectProvider';
+import {t as tx} from '../../lib/i18n';
 
 const CATEGORIES = [
-  {value: 'emails', label: 'Emails', types: []},
-  {value: 'events', label: 'Events', types: ['event.triggered']},
-  {value: 'subscriptions', label: 'Subscriptions', types: ['contact.subscribed', 'contact.unsubscribed']},
-  {value: 'workflows', label: 'Workflows', types: ['workflow.started', 'workflow.completed']},
+  {value: 'emails', label: tx('Emails'), types: []},
+  {value: 'events', label: tx('Events'), types: ['event.triggered']},
+  {value: 'subscriptions', label: tx('Subscriptions'), types: ['contact.subscribed', 'contact.unsubscribed']},
+  {value: 'workflows', label: tx('Workflows'), types: ['workflow.started', 'workflow.completed']},
 ] as const;
 type Category = (typeof CATEGORIES)[number]['value'];
 
 const EMAIL_STATUSES = [
-  {value: 'sent', label: 'Sent', type: 'email.sent'},
-  {value: 'delivered', label: 'Delivered', type: 'email.delivered'},
-  {value: 'opened', label: 'Opened', type: 'email.opened'},
-  {value: 'clicked', label: 'Clicked', type: 'email.clicked'},
-  {value: 'bounced', label: 'Bounced', type: 'email.bounced'},
-  {value: 'complaint', label: 'Complaints', type: 'email.complaint'},
-  {value: 'received', label: 'Received', type: 'email.received'},
+  {value: 'sent', label: tx('Sent'), type: 'email.sent'},
+  {value: 'delivered', label: tx('Delivered'), type: 'email.delivered'},
+  {value: 'opened', label: tx('Opened'), type: 'email.opened'},
+  {value: 'clicked', label: tx('Clicked'), type: 'email.clicked'},
+  {value: 'bounced', label: tx('Bounced'), type: 'email.bounced'},
+  {value: 'complaint', label: tx('Complaints'), type: 'email.complaint'},
+  {value: 'received', label: tx('Received'), type: 'email.received'},
 ] as const;
 type EmailStatus = (typeof EMAIL_STATUSES)[number]['value'];
 
@@ -71,32 +72,32 @@ export default function ActivityPage() {
     (filters.type.length === 0 || filters.type.includes('emails') || filters.type.includes('workflows'));
 
   const emptyMessage = filters.contact
-    ? 'Nothing has happened for this contact yet. Their emails and events will show up here.'
+    ? tx('Nothing has happened for this contact yet. Their emails and events will show up here.')
     : types !== undefined
-      ? 'Nothing matches these filters yet.'
+      ? tx('Nothing matches these filters yet.')
       : undefined;
 
   return (
     <>
-      <NextSeo title="Activity" />
+      <NextSeo title={tx('Activity')} />
       <DashboardLayout>
         <div className="space-y-6">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900">Activity</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900">{tx('Activity')}</h1>
             <p className="mt-2 text-sm text-neutral-500">
-              Every email, event and workflow run in this project, newest first. Open a row for the details.
+              {tx('Every email, event and workflow run in this project, newest first. Open a row for the details.')}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <FilterPill
-              title="Type"
+              title={tx('Type')}
               options={CATEGORIES.map(({value, label}) => ({value, label}))}
               selected={filters.type}
               onChange={next => void setFilters({type: next as Category[]})}
             />
             <FilterPill
-              title="Email status"
+              title={tx('Email status')}
               options={EMAIL_STATUSES.map(({value, label}) => ({value, label}))}
               selected={filters.status}
               onChange={next => void setFilters({status: next as EmailStatus[]})}
@@ -108,7 +109,7 @@ export default function ActivityPage() {
                 onClick={() => void setFilters({type: [], status: [], contact: null})}
                 className="ml-1 rounded text-sm text-neutral-500 underline-offset-4 hover:text-neutral-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
               >
-                Clear filters
+                {tx('Clear filters')}
               </button>
             )}
           </div>

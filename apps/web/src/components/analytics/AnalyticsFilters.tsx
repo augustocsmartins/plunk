@@ -12,6 +12,7 @@ import {
 } from '../../lib/hooks/useAnalytics';
 import {FilterPill} from '../data-table';
 import {Segmented} from '../Segmented';
+import {t} from '../../lib/i18n';
 
 export function AnalyticsFilters({filters, showStream}: {filters: Filters; showStream: boolean}) {
   const {range, setState, bounds} = filters;
@@ -20,17 +21,17 @@ export function AnalyticsFilters({filters, showStream}: {filters: Filters; showS
     <div className="flex flex-wrap items-center gap-2">
       {/* Kept in place when it does not apply, so the controls do not shift between tabs */}
       <FilterPill
-        title="Stream"
+        title={t('Stream')}
         multiple={false}
         options={STREAM_OPTIONS.filter(o => o.value !== 'all').map(({value, label}) => ({value, label}))}
         selected={showStream && filters.stream.value !== 'all' ? [filters.stream.value] : []}
         onChange={next => setState({stream: (next[0] as StreamOption | undefined) ?? 'all'})}
         disabledReason={
-          showStream ? undefined : 'Contacts are not tied to a stream, so this tab always covers all of them'
+          showStream ? undefined : t('Contacts are not tied to a stream, so this tab always covers all of them')
         }
       />
       <Segmented
-        label="Period"
+        label={t('Period')}
         size="md"
         value={range === 'custom' ? null : range}
         options={RANGE_PRESETS}
@@ -38,7 +39,7 @@ export function AnalyticsFilters({filters, showStream}: {filters: Filters; showS
       />
       <CustomRange filters={filters} />
       <span className="sr-only" aria-live="polite">
-        {`Showing ${bounds.first.format('MMMM D')} to ${bounds.last.format('MMMM D, YYYY')}`}
+        {t('Showing {value} to {value2}', {value: bounds.first.format('MMMM D'), value2: bounds.last.format('MMMM D, YYYY')})}
       </span>
     </div>
   );
@@ -68,7 +69,7 @@ function CustomRange({filters}: {filters: Filters}) {
   const sameYear = bounds.first.year() === bounds.last.year() && bounds.last.year() === dayjs().year();
   const label = active
     ? `${bounds.first.format(sameYear ? 'MMM D' : 'MMM D, YYYY')} – ${bounds.last.format(sameYear ? 'MMM D' : 'MMM D, YYYY')}`
-    : 'Custom';
+    : t('Custom');
 
   return (
     <Popover
@@ -107,8 +108,8 @@ function CustomRange({filters}: {filters: Filters}) {
         <div className="flex items-center justify-between gap-4 border-t border-neutral-100 px-3 py-2.5">
           <p className="text-xs text-neutral-500">
             {pending?.from && pending.to
-              ? `${dayjs(pending.to).diff(pending.from, 'day') + 1} days selected`
-              : `Pick a start and end day, up to ${MAX_CUSTOM_DAYS} days`}
+              ? t('{value} days selected', {value: dayjs(pending.to).diff(pending.from, 'day') + 1})
+              : t('Pick a start and end day, up to {MAX_CUSTOM_DAYS} days', {MAX_CUSTOM_DAYS: MAX_CUSTOM_DAYS})}
           </p>
           <Button
             size="sm"
@@ -123,7 +124,7 @@ function CustomRange({filters}: {filters: Filters}) {
               setOpen(false);
             }}
           >
-            Apply
+            {t('Apply')}
           </Button>
         </div>
       </PopoverContent>

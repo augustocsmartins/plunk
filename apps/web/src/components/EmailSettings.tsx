@@ -1,5 +1,6 @@
 import {Input, Label} from '@plunk/ui';
 import {EmailDomainInput} from './EmailDomainInput';
+import {t} from '../lib/i18n';
 
 interface EmailSettingsProps {
   from: string;
@@ -22,15 +23,12 @@ export function EmailSettings({
   onFromNameChange,
   onReplyToChange,
   fromPlaceholder = 'hello',
-  fromNamePlaceholder = 'Your Company',
+  fromNamePlaceholder = t('Your Company'),
   replyToPlaceholder,
   layout = 'grid',
 }: EmailSettingsProps) {
-  // Use from email's local part as the reply-to placeholder if not provided
-  // Extract local part (before @) since the domain is shown in a dropdown
-  // Fall back to fromPlaceholder when from is empty (since reply-to defaults to from)
-  const fromLocalPart = from.includes('@') ? from.split('@')[0] : from;
-  const effectiveReplyToPlaceholder = replyToPlaceholder || fromLocalPart || fromPlaceholder;
+  // Reply-to defaults to the from address, so show it as the placeholder
+  const effectiveReplyToPlaceholder = replyToPlaceholder || from || t('Same as From email');
   const GridWrapper = layout === 'grid' ? 'div' : 'div';
   const gridClassName = layout === 'grid' ? 'grid gap-4 md:grid-cols-2' : 'space-y-4';
 
@@ -40,7 +38,7 @@ export function EmailSettings({
         <div>
           <EmailDomainInput
             id="from"
-            label="From email"
+            label={t('From email')}
             value={from}
             onChange={onFromChange}
             required
@@ -49,7 +47,7 @@ export function EmailSettings({
         </div>
 
         <div>
-          <Label htmlFor="fromName">From name</Label>
+          <Label htmlFor="fromName">{t('From name')}</Label>
           <Input
             id="fromName"
             type="text"
@@ -58,20 +56,24 @@ export function EmailSettings({
             placeholder={fromNamePlaceholder}
           />
           <p className="text-xs text-neutral-500 mt-1">
-            The sender name that appears in the recipient&apos;s inbox. Defaults to your project name if not set.
+            {t('The sender name that appears in the recipient\'s inbox. Defaults to your project name if not set.')}
           </p>
         </div>
       </GridWrapper>
 
       <GridWrapper className={layout === 'grid' ? 'grid gap-4 md:grid-cols-2' : ''}>
         <div>
-          <EmailDomainInput
+          <Label htmlFor="replyTo">{t('Reply-To email')}</Label>
+          <Input
             id="replyTo"
-            label="Reply-To email"
+            type="email"
             value={replyTo}
-            onChange={onReplyToChange}
+            onChange={e => onReplyToChange(e.target.value)}
             placeholder={effectiveReplyToPlaceholder}
           />
+          <p className="text-xs text-neutral-500 mt-1">
+            {t('Where replies are sent. Can be on any domain. Defaults to the From email if not set.')}
+          </p>
         </div>
       </GridWrapper>
     </div>

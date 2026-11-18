@@ -1,6 +1,7 @@
 import {Button, EmptyState} from '@plunk/ui';
 import {FilterX} from 'lucide-react';
 import type {LucideIcon} from 'lucide-react';
+import {t} from '../../lib/i18n';
 
 interface NoResultsStateProps {
   /** Icon for the empty state — usually the same icon the page uses elsewhere. */
@@ -22,16 +23,16 @@ export function NoResultsState({icon = FilterX, itemNoun, onClear}: NoResultsSta
   return (
     <EmptyState
       icon={icon}
-      title="No results match your filters"
+      title={t('No results match your filters')}
       description={
         itemNoun
-          ? `No ${itemNoun} match the current search and filters. Try adjusting or clearing them.`
-          : 'No items match the current search and filters. Try adjusting or clearing them.'
+          ? t('No {itemNoun} match the current search and filters. Try adjusting or clearing them.', {itemNoun: itemNoun})
+          : t('No items match the current search and filters. Try adjusting or clearing them.')
       }
       action={
         <Button type="button" variant="outline" onClick={onClear}>
           <FilterX className="h-4 w-4" />
-          Clear filters
+          {t('Clear filters')}
         </Button>
       }
     />

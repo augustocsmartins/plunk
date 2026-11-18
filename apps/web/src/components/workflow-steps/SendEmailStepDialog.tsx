@@ -6,6 +6,7 @@ import {toast} from 'sonner';
 import {TemplateSearchPicker} from '../TemplateSearchPicker';
 
 import {type EditStepDialogProps, getStepConfig, StepDialogShell, useStepUpdate} from './shared';
+import {t} from '../../lib/i18n';
 
 export function SendEmailStepDialog({step, workflowId, open, onOpenChange, onSuccess}: EditStepDialogProps) {
   const config = getStepConfig(step);
@@ -24,17 +25,17 @@ export function SendEmailStepDialog({step, workflowId, open, onOpenChange, onSuc
     e.preventDefault();
 
     if (!templateId) {
-      toast.error('Please select a template');
+      toast.error(t('Please select a template'));
       return;
     }
 
     if (recipientType === 'CUSTOM') {
       if (!customEmail.trim()) {
-        toast.error('Please enter a custom email address');
+        toast.error(t('Please enter a custom email address'));
         return;
       }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customEmail)) {
-        toast.error('Please enter a valid email address');
+        toast.error(t('Please enter a valid email address'));
         return;
       }
     }
@@ -70,7 +71,7 @@ export function SendEmailStepDialog({step, workflowId, open, onOpenChange, onSuc
       <div className="space-y-4">
         <div>
           <div className="flex items-center justify-between">
-            <Label htmlFor="editTemplate">Email template</Label>
+            <Label htmlFor="editTemplate">{t('Email template')}</Label>
             {templateId && (
               <a
                 href={`/templates/${templateId}`}
@@ -78,7 +79,7 @@ export function SendEmailStepDialog({step, workflowId, open, onOpenChange, onSuc
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-blue-600 transition-colors"
               >
-                Edit template
+                {t('Edit template')}
                 <ExternalLink className="h-3 w-3" />
               </a>
             )}
@@ -87,7 +88,7 @@ export function SendEmailStepDialog({step, workflowId, open, onOpenChange, onSuc
         </div>
 
         <div>
-          <Label htmlFor="editRecipientType">Send to</Label>
+          <Label htmlFor="editRecipientType">{t('Send to')}</Label>
           <Select value={recipientType} onValueChange={value => setRecipientType(value as 'CONTACT' | 'CUSTOM')}>
             <SelectTrigger id="editRecipientType" className="mt-1.5">
               <SelectValue />
@@ -95,13 +96,13 @@ export function SendEmailStepDialog({step, workflowId, open, onOpenChange, onSuc
             <SelectContent>
               <SelectItemWithDescription
                 value="CONTACT"
-                title="Contact"
-                description="Send to the contact that triggered the workflow"
+                title={t('Contact')}
+                description={t('Send to the contact that triggered the workflow')}
               />
               <SelectItemWithDescription
                 value="CUSTOM"
-                title="Custom email"
-                description="Send to a specific email address"
+                title={t('Custom email')}
+                description={t('Send to a specific email address')}
               />
             </SelectContent>
           </Select>
@@ -109,14 +110,14 @@ export function SendEmailStepDialog({step, workflowId, open, onOpenChange, onSuc
 
         {recipientType === 'CUSTOM' && (
           <div>
-            <Label htmlFor="editCustomEmail">Email address</Label>
+            <Label htmlFor="editCustomEmail">{t('Email address')}</Label>
             <Input
               id="editCustomEmail"
               type="email"
               value={customEmail}
               onChange={e => setCustomEmail(e.target.value)}
               required
-              placeholder="e.g., admin@example.com"
+              placeholder={t('e.g., admin@example.com')}
               className="mt-1.5"
             />
           </div>

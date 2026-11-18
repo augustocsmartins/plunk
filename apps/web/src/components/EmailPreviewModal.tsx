@@ -3,6 +3,7 @@ import {useEffect, useRef, useState} from 'react';
 
 import {wrapEmailWithStyles} from '../lib/emailStyles';
 import {Segmented} from './Segmented';
+import {t} from '../lib/i18n';
 
 export interface EmailPreviewModalProps {
   open: boolean;
@@ -22,8 +23,8 @@ export interface EmailPreviewModalProps {
 type PreviewDevice = 'desktop' | 'mobile';
 
 const DEVICES = [
-  {value: 'desktop', label: 'Desktop'},
-  {value: 'mobile', label: 'Mobile'},
+  {value: 'desktop', label: t('Desktop')},
+  {value: 'mobile', label: t('Mobile')},
 ] as const;
 
 /**
@@ -45,7 +46,7 @@ export function EmailPreviewModal({
   const [device, setDevice] = useState<PreviewDevice>('desktop');
   const mobile = device === 'mobile';
 
-  const sender = fromName || from || 'Unknown sender';
+  const sender = fromName || from || t('Unknown sender');
   const recipient = toName && toEmail ? `${toName} <${toEmail}>` : toName || toEmail;
 
   return (
@@ -53,12 +54,12 @@ export function EmailPreviewModal({
       <DialogContent className="flex h-[90vh] max-w-5xl flex-col gap-0 overflow-hidden p-0">
         <div className="flex min-h-16 shrink-0 items-center justify-between gap-4 border-b border-neutral-200 py-3 pl-5 pr-14">
           <div className="min-w-0">
-            <DialogTitle className="text-sm font-medium">Email preview</DialogTitle>
+            <DialogTitle className="text-sm font-medium">{t('Email preview')}</DialogTitle>
             <DialogDescription className="sr-only">
-              How this email looks to the person who received it
+              {t('How this email looks to the person who received it')}
             </DialogDescription>
           </div>
-          <Segmented label="Preview width" value={device} options={DEVICES} onChange={setDevice} />
+          <Segmented label={t('Preview width')} value={device} options={DEVICES} onChange={setDevice} />
         </div>
 
         <div className="flex-1 overflow-y-auto bg-neutral-100 px-4 py-6 sm:px-8 sm:py-8">
@@ -92,7 +93,7 @@ export function EmailPreviewModal({
                   </p>
                   {recipient && <p className="truncate text-xs text-neutral-500">to {recipient}</p>}
                   {replyTo && replyTo !== from && (
-                    <p className="truncate text-xs text-neutral-500">replies go to {replyTo}</p>
+                    <p className="truncate text-xs text-neutral-500">{t('replies go to')}{' '}{replyTo}</p>
                   )}
                 </div>
               </div>
@@ -101,9 +102,9 @@ export function EmailPreviewModal({
             {body !== undefined ? (
               <EmailBody html={body} />
             ) : failed ? (
-              <p className="px-8 py-16 text-center text-sm text-neutral-500">This email didn&apos;t load.</p>
+              <p className="px-8 py-16 text-center text-sm text-neutral-500">{t('This email didn\'t load.')}</p>
             ) : (
-              <div className="flex justify-center px-8 py-16 text-neutral-400" aria-label="Loading email">
+              <div className="flex justify-center px-8 py-16 text-neutral-400" aria-label={t('Loading email')}>
                 <IconSpinner />
               </div>
             )}
@@ -161,7 +162,7 @@ function EmailBody({html}: {html: string}) {
   return (
     <iframe
       ref={frame}
-      title="Email content"
+      title={t('Email content')}
       sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
       srcDoc={srcDoc}
       className={cn('block w-full border-0 transition-opacity duration-150', loaded ? 'opacity-100' : 'opacity-0')}

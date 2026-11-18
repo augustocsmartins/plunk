@@ -32,7 +32,7 @@ import {
 } from 'lucide-react';
 import {NextSeo} from 'next-seo';
 import Link from 'next/link';
-import {useEffect, useMemo} from 'react';
+import {useMemo} from 'react';
 import useSWR from 'swr';
 import {AnimatedNumber} from '../components/AnimatedNumber';
 import {ApiKeyDisplay} from '../components/ApiKeyDisplay';
@@ -47,24 +47,25 @@ import {useProjectSetupState} from '../lib/hooks/useProjectSetupState';
 import {useProjectSecurity} from '../lib/hooks/useProjectSecurity';
 import {useConfig} from '../lib/hooks/useConfig';
 import {useUser} from '../lib/hooks/useUser';
+import {t} from '../lib/i18n';
 
 function getGreeting(): string {
   const hour = new Date().getHours();
-  if (hour >= 23 || hour < 5) return 'Working late';
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (hour >= 23 || hour < 5) return t('Working late');
+  if (hour < 12) return t('Good morning');
+  if (hour < 18) return t('Good afternoon');
+  return t('Good evening');
 }
 
 function relativeTime(date: Date): string {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
-  if (seconds < 60) return 'just now';
+  if (seconds < 60) return t('just now');
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 60) return t('{minutes}m ago', {minutes});
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return t('{hours}h ago', {hours});
   const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
+  if (days < 7) return t('{days}d ago', {days});
   return date.toLocaleDateString(undefined, {month: 'short', day: 'numeric'});
 }
 
@@ -86,7 +87,7 @@ function computeTrend(current: number, previous: number): TrendInfo {
 function TrendChip({trend, label}: {trend: TrendInfo; label?: string}) {
   if (trend.direction === 'none') {
     return (
-      <p className="mt-1 text-xs text-neutral-400 tabular-nums">{label ?? 'No data yet'}</p>
+      <p className="mt-1 text-xs text-neutral-400 tabular-nums">{label ?? t('No data yet')}</p>
     );
   }
 
@@ -100,9 +101,9 @@ function TrendChip({trend, label}: {trend: TrendInfo; label?: string}) {
   const {Icon, color, bg} = config;
   const text =
     trend.direction === 'new'
-      ? 'New'
+      ? t('New')
       : trend.direction === 'flat'
-        ? 'No change'
+        ? t('No change')
         : `${trend.pct.toFixed(trend.pct >= 100 ? 0 : 1)}%`;
 
   return (
@@ -111,7 +112,7 @@ function TrendChip({trend, label}: {trend: TrendInfo; label?: string}) {
         <Icon className="h-3 w-3" strokeWidth={2.5} />
         {text}
       </span>
-      <span className="text-neutral-400">vs previous 30d</span>
+      <span className="text-neutral-400">{t('vs previous 30d')}</span>
     </div>
   );
 }
@@ -139,40 +140,40 @@ function snoozeReason(a: Activity): 'snooze' | 'snooze_expired' | undefined {
 function activityVisual(a: Activity): ActivityVisual {
   switch (a.type) {
     case 'email.sent':
-      return {icon: Send, tone: 'neutral', label: 'Sent'};
+      return {icon: Send, tone: 'neutral', label: t('Sent')};
     case 'email.delivered':
-      return {icon: Inbox, tone: 'green', label: 'Delivered'};
+      return {icon: Inbox, tone: 'green', label: t('Delivered')};
     case 'email.opened':
-      return {icon: Eye, tone: 'green', label: 'Opened'};
+      return {icon: Eye, tone: 'green', label: t('Opened')};
     case 'email.clicked':
-      return {icon: MousePointerClick, tone: 'blue', label: 'Clicked'};
+      return {icon: MousePointerClick, tone: 'blue', label: t('Clicked')};
     case 'email.bounced':
-      return {icon: XCircle, tone: 'red', label: 'Bounced'};
+      return {icon: XCircle, tone: 'red', label: t('Bounced')};
     case 'email.complaint':
-      return {icon: AlertCircle, tone: 'red', label: 'Complaint'};
+      return {icon: AlertCircle, tone: 'red', label: t('Complaint')};
     case 'event.triggered':
-      return {icon: Zap, tone: 'amber', label: 'Event'};
+      return {icon: Zap, tone: 'amber', label: t('Event')};
     // Snoozing rides on the two subscription events rather than adding its own, so the row's
     // label comes from the event's `reason`. Without this a two-week pause would show up here
     // as a lost subscriber.
     case 'contact.subscribed':
       return snoozeReason(a) === 'snooze_expired'
-        ? {icon: Clock, tone: 'green', label: 'Resumed'}
-        : {icon: UserPlus, tone: 'green', label: 'Subscribed'};
+        ? {icon: Clock, tone: 'green', label: t('Resumed')}
+        : {icon: UserPlus, tone: 'green', label: t('Subscribed')};
     case 'contact.unsubscribed':
       return snoozeReason(a) === 'snooze'
-        ? {icon: Clock, tone: 'neutral', label: 'Snoozed'}
-        : {icon: UserMinus, tone: 'neutral', label: 'Unsubscribed'};
+        ? {icon: Clock, tone: 'neutral', label: t('Snoozed')}
+        : {icon: UserMinus, tone: 'neutral', label: t('Unsubscribed')};
     case 'campaign.sent':
-      return {icon: Mail, tone: 'neutral', label: 'Campaign'};
+      return {icon: Mail, tone: 'neutral', label: t('Campaign')};
     case 'campaign.scheduled':
-      return {icon: Calendar, tone: 'blue', label: 'Scheduled'};
+      return {icon: Calendar, tone: 'blue', label: t('Scheduled')};
     case 'workflow.started':
     case 'workflow.completed':
     case 'workflow.email.scheduled':
-      return {icon: Workflow, tone: 'amber', label: 'Workflow'};
+      return {icon: Workflow, tone: 'amber', label: t('Workflow')};
     default:
-      return {icon: Zap, tone: 'neutral', label: 'Event'};
+      return {icon: Zap, tone: 'neutral', label: t('Event')};
   }
 }
 
@@ -215,7 +216,7 @@ function LivePulse({count}: {count: number}) {
         />
       </span>
       <span className="tabular-nums">
-        {isLive ? `${count.toLocaleString()} ${count === 1 ? 'event' : 'events'} in the last 5 min` : 'Quiet right now'}
+        {isLive ? t('{count} {value} in the last 5 min', {count: count.toLocaleString(), value: count === 1 ? 'event' : 'events'}) : t('Quiet right now')}
       </span>
     </div>
   );
@@ -314,50 +315,48 @@ export default function Index() {
 
   const projectName = activeProject?.name;
   const subtitle = useMemo(() => {
-    if (isLoading) return 'Catching up on the last 30 days.';
+    if (isLoading) return t('Catching up on the last 30 days.');
     if (totalEmailsSent === 0) {
-      if (totalContacts === 0) return `${projectName ?? 'Your project'} is fresh. Time to send the first email.`;
-      return `${totalContacts.toLocaleString()} ${totalContacts === 1 ? 'contact' : 'contacts'} ready. Time to send something.`;
+      if (totalContacts === 0) {
+        return t('{project} is fresh. Time to send the first email.', {project: projectName ?? t('Your project')});
+      }
+      return t('{count} {noun} ready. Time to send something.', {
+        count: totalContacts.toLocaleString(),
+        noun: totalContacts === 1 ? t('contact') : t('contacts'),
+      });
     }
-    const projectLabel = projectName ? `${projectName} sent` : 'You sent';
-    const base = `${projectLabel} ${totalEmailsSent.toLocaleString()} ${totalEmailsSent === 1 ? 'email' : 'emails'} in the last 30 days.`;
-    if (openRate >= 40) return `${base} Open rate is well above average.`;
-    if (openRate >= 25) return `${base} Open rate is healthy.`;
+    const vars = {
+      count: totalEmailsSent.toLocaleString(),
+      noun: totalEmailsSent === 1 ? t('email') : t('emails'),
+    };
+    const base = projectName
+      ? t('{project} sent {count} {noun} in the last 30 days.', {...vars, project: projectName})
+      : t('You sent {count} {noun} in the last 30 days.', vars);
+    if (openRate >= 40) return `${base} ${t('Open rate is well above average.')}`;
+    if (openRate >= 25) return `${base} ${t('Open rate is healthy.')}`;
     return base;
   }, [isLoading, totalEmailsSent, totalContacts, openRate, projectName]);
 
   // Friendly console message for the developer audience. Once per session.
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const w = window as unknown as {__plunkHi?: boolean};
-    if (w.__plunkHi) return;
-    w.__plunkHi = true;
-    // eslint-disable-next-line no-console
-    console.log(
-      '%cPlunk%c  Built for developers who care about email.\nFound a rough edge? support@useplunk.com',
-      'font: 600 14px ui-sans-serif, system-ui; color: #0a0a0a; background: #f5f5f5; padding: 2px 8px; border-radius: 4px;',
-      'color: #525252; font: 12px ui-sans-serif, system-ui;',
-    );
-  }, []);
 
   // totalCampaigns intentionally unused — replaced by Deliverability card below
   void totalCampaigns;
 
   const stats = [
     {
-      name: 'Total contacts',
+      name: t('Total contacts'),
       value: totalContacts,
       icon: Users,
       format: (n: number) => n.toLocaleString(),
     },
     {
-      name: 'Emails sent',
+      name: t('Emails sent'),
       value: totalEmailsSent,
       icon: Mail,
       format: (n: number) => n.toLocaleString(),
     },
     {
-      name: 'Open rate',
+      name: t('Open rate'),
       value: openRate,
       icon: TrendingUp,
       format: (n: number) => `${n.toFixed(1)}%`,
@@ -368,7 +367,7 @@ export default function Index() {
   const sevenDay = securityMetrics?.status.sevenDay;
   const allTime = securityMetrics?.status.allTime;
   const delivWindow = sevenDay && sevenDay.total > 0 ? sevenDay : allTime;
-  const delivWindowLabel = sevenDay && sevenDay.total > 0 ? 'Last 7 days' : 'All time';
+  const delivWindowLabel = sevenDay && sevenDay.total > 0 ? t('Last 7 days') : t('All time');
   const deliveryRate =
     delivWindow && delivWindow.total > 0 ? ((delivWindow.total - delivWindow.bounces) / delivWindow.total) * 100 : 0;
   const bounceRate = delivWindow?.bounceRate ?? 0;
@@ -383,7 +382,7 @@ export default function Index() {
       : bounceLevel === 'warning' || complaintLevel === 'warning'
         ? 'warning'
         : 'healthy';
-  const healthLabel = !hasDelivData ? 'No data yet' : worstLevel === 'healthy' ? 'Healthy' : worstLevel === 'warning' ? 'Watch' : 'Critical';
+  const healthLabel = !hasDelivData ? t('No data yet') : worstLevel === 'healthy' ? t('Healthy') : worstLevel === 'warning' ? t('Watch') : t('Critical');
   const healthDot =
     !hasDelivData ? 'bg-neutral-300' : worstLevel === 'healthy' ? 'bg-emerald-500' : worstLevel === 'warning' ? 'bg-amber-500' : 'bg-red-500';
   const healthText =
@@ -394,7 +393,7 @@ export default function Index() {
 
   return (
     <>
-      <NextSeo title="Dashboard" />
+      <NextSeo title={t('Dashboard')} />
       <DashboardLayout>
         <div className="space-y-8">
           <HomeNotice
@@ -471,7 +470,7 @@ export default function Index() {
               <Card className="relative overflow-hidden h-full transition-colors duration-200 hover:border-neutral-300">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardDescription>Deliverability</CardDescription>
+                    <CardDescription>{t('Deliverability')}</CardDescription>
                     <div className="inline-flex items-center gap-1.5 rounded-full bg-neutral-50 border border-neutral-200/60 px-2 py-0.5">
                       <span className="relative flex h-1.5 w-1.5">
                         {hasDelivData && worstLevel === 'healthy' && (
@@ -492,7 +491,7 @@ export default function Index() {
                     )}
                   </CardTitle>
                   <p className="mt-1 text-xs text-neutral-500">
-                    {hasDelivData ? 'delivered' : 'No emails sent yet'}
+                    {hasDelivData ? t('delivered') : t('No emails sent yet')}
                     {hasDelivData && <span className="text-neutral-400"> · {delivWindowLabel}</span>}
                   </p>
                 </CardHeader>
@@ -501,11 +500,11 @@ export default function Index() {
                     <div className="flex items-center gap-4 text-[11px] text-neutral-500 tabular-nums">
                       <span className="inline-flex items-center gap-1.5">
                         <ShieldCheck className="h-3 w-3 text-neutral-400" />
-                        Bounce <span className="font-medium text-neutral-700">{bounceRate.toFixed(2)}%</span>
+                        {t('Bounce')}{' '}<span className="font-medium text-neutral-700">{bounceRate.toFixed(2)}%</span>
                       </span>
                       <span className="inline-flex items-center gap-1.5">
                         <AlertCircle className="h-3 w-3 text-neutral-400" />
-                        Complaint <span className="font-medium text-neutral-700">{complaintRate.toFixed(3)}%</span>
+                        {t('Complaint')}{' '}<span className="font-medium text-neutral-700">{complaintRate.toFixed(3)}%</span>
                       </span>
                     </div>
                   </div>
@@ -529,11 +528,11 @@ export default function Index() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle>Recent activity</CardTitle>
-                      <CardDescription>Live feed of what’s happening across your project</CardDescription>
+                      <CardTitle>{t('Recent activity')}</CardTitle>
+                      <CardDescription>{t('Live feed of what’s happening across your project')}</CardDescription>
                     </div>
                     <Button asChild variant="ghost" size="sm">
-                      <Link href="/activity">View all</Link>
+                      <Link href="/activity">{t('View all')}</Link>
                     </Button>
                   </div>
                 </CardHeader>
@@ -556,9 +555,9 @@ export default function Index() {
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100">
                         <Inbox className="h-5 w-5 text-neutral-400" />
                       </div>
-                      <p className="text-sm font-medium text-neutral-700">Nothing has happened yet</p>
+                      <p className="text-sm font-medium text-neutral-700">{t('Nothing has happened yet')}</p>
                       <p className="text-xs text-neutral-500 max-w-xs">
-                        Send your first email or trigger an event and you’ll see it land here in real time.
+                        {t('Send your first email or trigger an event and you’ll see it land here in real time.')}
                       </p>
                     </div>
                   ) : (
@@ -578,26 +577,26 @@ export default function Index() {
           {/* API Keys — full-width slim band with the two keys side-by-side */}
           <Card>
             <CardHeader>
-              <CardTitle>API keys</CardTitle>
-              <CardDescription>Use these keys to integrate with Plunk</CardDescription>
+              <CardTitle>{t('API keys')}</CardTitle>
+              <CardDescription>{t('Use these keys to integrate with Plunk')}</CardDescription>
             </CardHeader>
             <CardContent>
               {activeProject ? (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
                   <ApiKeyDisplay
-                    label="Public key"
+                    label={t('Public key')}
                     value={activeProject.public}
-                    description="Use this key for client-side integrations"
+                    description={t('Use this key for client-side integrations')}
                   />
                   <ApiKeyDisplay
-                    label="Secret key"
+                    label={t('Secret key')}
                     value={activeProject.secret}
-                    description="Keep this key secure and never expose it publicly"
+                    description={t('Keep this key secure and never expose it publicly')}
                     isSecret
                   />
                 </div>
               ) : (
-                <p className="text-sm text-neutral-500">No project selected</p>
+                <p className="text-sm text-neutral-500">{t('No project selected')}</p>
               )}
             </CardContent>
           </Card>

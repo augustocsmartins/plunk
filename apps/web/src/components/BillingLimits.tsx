@@ -26,6 +26,7 @@ import {AnimatePresence, motion} from 'framer-motion';
 import type {z} from 'zod';
 import {type BillingLimitsData, type CategoryLimit, useBillingLimits} from '../lib/hooks/useBillingLimits';
 import {network} from '../lib/network';
+import {getIntlLocale, t} from '../lib/i18n';
 
 // Price per email in the smallest currency unit (e.g., cents for USD/EUR)
 const PRICE_PER_EMAIL = 0.1; // 0.001 USD/EUR = 0.1 cents
@@ -45,7 +46,7 @@ const formatEmailCost = (emailCount: number, currency: string | null): string =>
   const costInCents = emailCount * PRICE_PER_EMAIL;
 
   try {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(getIntlLocale(), {
       style: 'currency',
       currency: currency.toUpperCase(),
       minimumFractionDigits: 2,
@@ -109,12 +110,12 @@ export function BillingLimits({projectId, tier, billingEnabled}: BillingLimitsPr
       // Revalidate SWR cache
       await mutate();
       setIsEditing(false);
-      setSuccessMessage('Billing limits updated');
+      setSuccessMessage(t('Billing limits updated'));
 
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Couldn’t save your billing limits. Try again.');
+      setErrorMessage(error instanceof Error ? error.message : t('Couldn’t save your billing limits. Try again.'));
     }
   };
 
@@ -143,8 +144,8 @@ export function BillingLimits({projectId, tier, billingEnabled}: BillingLimitsPr
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Billing limits</CardTitle>
-          <CardDescription>Set monthly limits for each email category</CardDescription>
+          <CardTitle>{t('Billing limits')}</CardTitle>
+          <CardDescription>{t('Set monthly limits for each email category')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-4">
@@ -158,11 +159,11 @@ export function BillingLimits({projectId, tier, billingEnabled}: BillingLimitsPr
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Billing limits</CardTitle>
+        <CardTitle>{t('Billing limits')}</CardTitle>
         <CardDescription>
           {tier === 'paid'
-            ? 'Set monthly limits for each email category. Limits reset on the 1st of each month.'
-            : 'Free tier projects have a total limit of 1,000 emails per month across all categories.'}
+            ? t('Set monthly limits for each email category. Limits reset on the 1st of each month.')
+            : t('Free tier projects have a total limit of 1,000 emails per month across all categories.')}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -173,8 +174,7 @@ export function BillingLimits({projectId, tier, billingEnabled}: BillingLimitsPr
               <AlertCircle className="h-4 w-4" />
               <div className="ml-2">
                 <p className="text-sm">
-                  You&apos;re on the free tier with 1,000 emails per month. Upgrade to a paid subscription for unlimited
-                  emails or custom limits.
+                  {t('You\'re on the free tier with 1,000 emails per month. Upgrade to a paid subscription for unlimited emails or custom limits.')}
                 </p>
               </div>
             </Alert>
@@ -229,7 +229,7 @@ export function BillingLimits({projectId, tier, billingEnabled}: BillingLimitsPr
 
               {canEditLimits && (
                 <div className="flex justify-end pt-4">
-                  <Button onClick={() => setIsEditing(true)}>Edit limits</Button>
+                  <Button onClick={() => setIsEditing(true)}>{t('Edit limits')}</Button>
                 </div>
               )}
             </div>
@@ -249,18 +249,18 @@ export function BillingLimits({projectId, tier, billingEnabled}: BillingLimitsPr
                         : null;
                     return (
                       <FormItem>
-                        <FormLabel>Workflow emails limit</FormLabel>
+                        <FormLabel>{t('Workflow emails limit')}</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
-                            placeholder="Unlimited"
+                            placeholder={t('Unlimited')}
                             {...field}
                             value={field.value ?? ''}
                             onChange={e => field.onChange(e.target.value === '' ? null : e.target.value)}
                           />
                         </FormControl>
                         <FormDescription>
-                          Maximum workflow emails per month. Leave empty for unlimited.
+                          {t('Maximum workflow emails per month. Leave empty for unlimited.')}
                           {estimatedCost && <span className="text-neutral-500"> ≈ {estimatedCost}/month</span>}
                         </FormDescription>
                         <FormMessage />
@@ -279,18 +279,18 @@ export function BillingLimits({projectId, tier, billingEnabled}: BillingLimitsPr
                         : null;
                     return (
                       <FormItem>
-                        <FormLabel>Campaign emails limit</FormLabel>
+                        <FormLabel>{t('Campaign emails limit')}</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
-                            placeholder="Unlimited"
+                            placeholder={t('Unlimited')}
                             {...field}
                             value={field.value ?? ''}
                             onChange={e => field.onChange(e.target.value === '' ? null : e.target.value)}
                           />
                         </FormControl>
                         <FormDescription>
-                          Maximum campaign emails per month. Leave empty for unlimited.
+                          {t('Maximum campaign emails per month. Leave empty for unlimited.')}
                           {estimatedCost && <span className="text-neutral-500"> ≈ {estimatedCost}/month</span>}
                         </FormDescription>
                         <FormMessage />
@@ -309,18 +309,18 @@ export function BillingLimits({projectId, tier, billingEnabled}: BillingLimitsPr
                         : null;
                     return (
                       <FormItem>
-                        <FormLabel>Transactional emails limit</FormLabel>
+                        <FormLabel>{t('Transactional emails limit')}</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
-                            placeholder="Unlimited"
+                            placeholder={t('Unlimited')}
                             {...field}
                             value={field.value ?? ''}
                             onChange={e => field.onChange(e.target.value === '' ? null : e.target.value)}
                           />
                         </FormControl>
                         <FormDescription>
-                          Maximum transactional emails per month. Leave empty for unlimited.
+                          {t('Maximum transactional emails per month. Leave empty for unlimited.')}
                           {estimatedCost && <span className="text-neutral-500"> ≈ {estimatedCost}/month</span>}
                         </FormDescription>
                         <FormMessage />
@@ -339,18 +339,18 @@ export function BillingLimits({projectId, tier, billingEnabled}: BillingLimitsPr
                         : null;
                     return (
                       <FormItem>
-                        <FormLabel>Inbound emails limit</FormLabel>
+                        <FormLabel>{t('Inbound emails limit')}</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
-                            placeholder="Unlimited"
+                            placeholder={t('Unlimited')}
                             {...field}
                             value={field.value ?? ''}
                             onChange={e => field.onChange(e.target.value === '' ? null : e.target.value)}
                           />
                         </FormControl>
                         <FormDescription>
-                          Maximum inbound emails per month. Leave empty for unlimited.
+                          {t('Maximum inbound emails per month. Leave empty for unlimited.')}
                           {estimatedCost && <span className="text-neutral-500"> ≈ {estimatedCost}/month</span>}
                         </FormDescription>
                         <FormMessage />
@@ -361,10 +361,10 @@ export function BillingLimits({projectId, tier, billingEnabled}: BillingLimitsPr
 
                 <div className="flex justify-end gap-2 pt-4">
                   <Button type="button" variant="outline" onClick={handleCancel}>
-                    Cancel
+                    {t('Cancel')}
                   </Button>
                   <Button type="submit" disabled={form.formState.isSubmitting}>
-                    {form.formState.isSubmitting ? 'Saving…' : 'Save Changes'}
+                    {form.formState.isSubmitting ? t('Saving…') : t('Save Changes')}
                   </Button>
                 </div>
               </form>
@@ -401,7 +401,7 @@ const UsageDisplay = memo(function UsageDisplay({category, usage, currency}: Usa
     return <Check className="h-4 w-4" />;
   }, [usage.isBlocked, usage.isWarning]);
 
-  const limitText = usage.limit === null ? 'Unlimited' : usage.limit.toLocaleString();
+  const limitText = usage.limit === null ? t('Unlimited') : usage.limit.toLocaleString();
 
   // Calculate monetary values
   const usageCost = currency ? formatEmailCost(usage.usage, currency) : null;
@@ -414,7 +414,7 @@ const UsageDisplay = memo(function UsageDisplay({category, usage, currency}: Usa
           <h3 className="font-medium text-neutral-900">{category}</h3>
           <div className="flex items-baseline gap-2 mt-1">
             <p className="text-sm text-neutral-600">
-              {usage.usage.toLocaleString()} / {limitText} emails
+              {usage.usage.toLocaleString()} / {limitText} {t('emails')}
             </p>
             {currency && (
               <>
@@ -430,7 +430,7 @@ const UsageDisplay = memo(function UsageDisplay({category, usage, currency}: Usa
         <div className={`flex items-center gap-2 ${statusColor}`}>
           {statusIcon}
           <span className="text-sm font-medium">
-            {usage.limit === null ? 'Unlimited' : `${Math.round(usage.percentage)}%`}
+            {usage.limit === null ? t('Unlimited') : `${Math.round(usage.percentage)}%`}
           </span>
         </div>
       </div>
@@ -444,7 +444,7 @@ const UsageDisplay = memo(function UsageDisplay({category, usage, currency}: Usa
               <AlertCircle className="h-4 w-4" />
               <div className="ml-2">
                 <p className="text-sm">
-                  <strong>Limit reached:</strong> No more {category.toLowerCase()} emails can be sent this month.
+                  <strong>{t('Limit reached:')}</strong> {t('No more')}{' '}{category.toLowerCase()} {t('emails can be sent this month.')}
                 </p>
               </div>
             </Alert>
@@ -455,8 +455,8 @@ const UsageDisplay = memo(function UsageDisplay({category, usage, currency}: Usa
               <AlertTriangle className="h-4 w-4" />
               <div className="ml-2">
                 <p className="text-sm">
-                  <strong>Warning:</strong> You&apos;ve used {Math.round(usage.percentage)}% of your{' '}
-                  {category.toLowerCase()} email limit.
+                  <strong>{t('Warning:')}</strong> {t('You\'ve used')}{' '}{Math.round(usage.percentage)}{t('% of your')}{' '}
+                  {category.toLowerCase()} {t('email limit.')}
                 </p>
               </div>
             </Alert>

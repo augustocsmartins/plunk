@@ -5,7 +5,6 @@ import {
   API_URI,
   AWS_SES_REGION,
   DASHBOARD_URI,
-  DISABLE_SIGNUPS,
   GITHUB_OAUTH_ENABLED,
   GOOGLE_OAUTH_ENABLED,
   LANDING_URI,
@@ -19,8 +18,10 @@ import {
   SMTP_PORT_SUBMISSION,
   STRIPE_ENABLED,
   TRACKING_TOGGLE_ENABLED,
+  WHATSAPP_ENABLED,
   WIKI_URI,
 } from '../app/constants.js';
+import {UserService} from '../services/UserService.js';
 
 @Controller('config')
 export class Config {
@@ -29,7 +30,9 @@ export class Config {
    * Expose a unified view of instance capabilities and feature flags for frontends.
    */
   @Get('')
-  public getConfig(req: Request, res: Response) {
+  public async getConfig(req: Request, res: Response) {
+    const signupsDisabled = !(await UserService.signupsAllowed());
+
     return res.status(200).json({
       environment: NODE_ENV,
       urls: {
@@ -50,13 +53,16 @@ export class Config {
           google: GOOGLE_OAUTH_ENABLED,
         },
         signup: {
-          signupsDisabled: DISABLE_SIGNUPS,
+          signupsDisabled,
         },
         email: {
           trackingToggleEnabled: TRACKING_TOGGLE_ENABLED,
         },
         sponsor: {
           enabled: SHOW_SPONSOR,
+        },
+        whatsapp: {
+          enabled: WHATSAPP_ENABLED,
         },
         smtp: {
           enabled: SMTP_ENABLED,

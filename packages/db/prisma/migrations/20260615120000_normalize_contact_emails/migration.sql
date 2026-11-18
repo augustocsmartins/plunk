@@ -75,17 +75,24 @@ SET "contactId" = m.survivor_id
 FROM _contact_merge_map m
 WHERE ev."contactId" = m.dup_id;
 
--- segment_memberships has a composite PK (contactId, segmentId). Drop any
--- duplicate membership the survivor already holds for the same segment, then
--- reassign the rest.
-DELETE FROM segment_memberships dsm
-USING _contact_merge_map m
-WHERE dsm."contactId" = m.dup_id
-  AND EXISTS (
-    SELECT 1 FROM segment_memberships ssm
-    WHERE ssm."contactId" = m.survivor_id
-      AND ssm."segmentId" = dsm."segmentId"
-  );
+-- Collapse the entire merge group, including the survivor, before reassignment.
+-- An active membership wins over an exited one; only one row per segment survives.
+WITH ranked_memberships AS (
+  SELECT sm.ctid AS row_id,
+         ROW_NUMBER() OVER (
+           PARTITION BY m.survivor_id, sm."segmentId"
+           ORDER BY (sm."exitedAt" IS NOT NULL), sm."enteredAt", sm."contactId"
+         ) AS rn
+  FROM segment_memberships sm
+  JOIN (
+    SELECT dup_id AS cid, survivor_id FROM _contact_merge_map
+    UNION
+    SELECT survivor_id, survivor_id FROM _contact_merge_map
+  ) m ON m.cid = sm."contactId"
+)
+DELETE FROM segment_memberships sm
+USING ranked_memberships r
+WHERE sm.ctid = r.row_id AND r.rn > 1;
 
 UPDATE segment_memberships dsm
 SET "contactId" = m.survivor_id

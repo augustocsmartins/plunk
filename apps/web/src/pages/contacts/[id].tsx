@@ -26,6 +26,7 @@ import {toast} from 'sonner';
 import useSWR from 'swr';
 import {ContactSchemas} from '@plunk/shared';
 import dayjs from 'dayjs';
+import {t} from '../../lib/i18n';
 
 export default function ContactDetailPage() {
   const router = useRouter();
@@ -58,10 +59,10 @@ export default function ContactDetailPage() {
         },
         typeof ContactSchemas.create
       >('PATCH', `/contacts/${id}`, {email, subscribed, data: customData});
-      toast.success('Contact updated');
+      toast.success(t('Contact updated'));
       void mutate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t save the contact. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t save the contact. Try again.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -70,10 +71,10 @@ export default function ContactDetailPage() {
   const handleDelete = async () => {
     try {
       await network.fetch('DELETE', `/contacts/${id}`);
-      toast.success('Contact deleted');
+      toast.success(t('Contact deleted'));
       void router.push('/contacts');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t delete the contact. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t delete the contact. Try again.'));
     }
   };
 
@@ -82,9 +83,9 @@ export default function ContactDetailPage() {
       await navigator.clipboard.writeText(text);
       setCopiedId(copyId);
       setTimeout(() => setCopiedId(null), 2000);
-      toast.success(`${label} copied to clipboard`);
+      toast.success(t('{label} copied to clipboard', {label: label}));
     } catch {
-      toast.error('Couldn’t copy to your clipboard.');
+      toast.error(t('Couldn’t copy to your clipboard.'));
     }
   };
 
@@ -102,14 +103,14 @@ export default function ContactDetailPage() {
     return (
       <DashboardLayout>
         <div className="text-center py-12">
-          <h3 className="text-lg font-medium text-neutral-900 mb-2">Contact not found</h3>
+          <h3 className="text-lg font-medium text-neutral-900 mb-2">{t('Contact not found')}</h3>
           <p className="text-neutral-500 mb-6">
-            The contact you&apos;re looking for doesn&apos;t exist or has been deleted.
+            {t('The contact you\'re looking for doesn\'t exist or has been deleted.')}
           </p>
           <Button asChild>
             <Link href="/contacts">
               <ArrowLeft className="h-4 w-4" />
-              Back to contacts
+              {t('Back to contacts')}
             </Link>
           </Button>
         </div>
@@ -149,17 +150,17 @@ export default function ContactDetailPage() {
                     }`}
                   >
                     {status === 'snoozed'
-                      ? `Snoozed until ${formatSnoozedUntil(contact.snoozedUntil)}`
+                      ? t('Snoozed until {value}', {value: formatSnoozedUntil(contact.snoozedUntil)})
                       : status === 'subscribed'
-                        ? 'Subscribed'
-                        : 'Unsubscribed'}
+                        ? t('Subscribed')
+                        : t('Unsubscribed')}
                   </span>
                 </p>
               </div>
             </div>
             <Button variant="destructive" onClick={() => setShowDeleteDialog(true)} className="flex-shrink-0">
               <Trash2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Delete contact</span>
+              <span className="hidden sm:inline">{t('Delete contact')}</span>
             </Button>
           </div>
 
@@ -168,12 +169,12 @@ export default function ContactDetailPage() {
             <div className="lg:col-span-2 space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Contact information</CardTitle>
+                  <CardTitle>{t('Contact information')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                      <Label htmlFor="email">Email address</Label>
+                      <Label htmlFor="email">{t('Email address')}</Label>
                       <Input
                         id="email"
                         type="email"
@@ -187,17 +188,17 @@ export default function ContactDetailPage() {
                     <div className="flex items-center justify-between gap-4">
                       <div>
                         <Label htmlFor="subscribed" className="font-medium cursor-pointer">
-                          Subscribed to emails
+                          {t('Subscribed to emails')}
                         </Label>
                         <p className="text-xs text-neutral-500 mt-0.5">
                           {subscribed
-                            ? 'Receives emails from campaigns and workflows'
+                            ? t('Receives emails from campaigns and workflows')
                             : status === 'snoozed'
                               ? // Saying only "will not receive emails" would hide the fact that
                                 // this reverses itself, and that turning the switch on here is
                                 // what ends it early.
-                                `Snoozed — resumes automatically on ${formatSnoozedUntil(contact.snoozedUntil)}`
-                              : 'Will not receive emails'}
+                                t('Snoozed — resumes automatically on {value}', {value: formatSnoozedUntil(contact.snoozedUntil)})
+                              : t('Will not receive emails')}
                         </p>
                       </div>
                       <Switch id="subscribed" checked={subscribed} onCheckedChange={setSubscribed} />
@@ -215,7 +216,7 @@ export default function ContactDetailPage() {
 
                     <Button type="submit" disabled={isSubmitting}>
                       <Save className="h-4 w-4" />
-                      {isSubmitting ? 'Saving…' : 'Save Changes'}
+                      {isSubmitting ? t('Saving…') : t('Save Changes')}
                     </Button>
                   </form>
                 </CardContent>
@@ -224,7 +225,7 @@ export default function ContactDetailPage() {
               {/* Activity Feed */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Activity</CardTitle>
+                  <CardTitle>{t('Activity')}</CardTitle>
                 </CardHeader>
                 {/* The feed brings its own row padding and day headings */}
                 <CardContent className="border-t border-neutral-100 p-0">
@@ -237,20 +238,20 @@ export default function ContactDetailPage() {
             <div className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Details</CardTitle>
+                  <CardTitle>{t('Details')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-start gap-3">
                     <Database className="h-5 w-5 text-neutral-500 mt-0.5 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-neutral-900">Contact ID</p>
+                      <p className="text-sm font-medium text-neutral-900">{t('Contact ID')}</p>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <p className="text-xs text-neutral-500 font-mono break-all flex-1">{contact.id}</p>
                         <button
                           type="button"
-                          onClick={() => copyToClipboard(contact.id, 'Contact ID', 'contact-id')}
+                          onClick={() => copyToClipboard(contact.id, t('Contact ID'), 'contact-id')}
                           className="flex-shrink-0 text-neutral-400 hover:text-neutral-700 transition-colors"
-                          aria-label="Copy contact ID"
+                          aria-label={t('Copy contact ID')}
                         >
                           <AnimatePresence mode="wait" initial={false}>
                             {copiedId === 'contact-id' ? (
@@ -281,7 +282,7 @@ export default function ContactDetailPage() {
                   </div>
 
                   <div>
-                    <p className="text-sm font-medium text-neutral-900">Created</p>
+                    <p className="text-sm font-medium text-neutral-900">{t('Created')}</p>
                     <div className="group relative inline-block cursor-help">
                       <p className="text-sm text-neutral-500">{dayjs(contact.createdAt).fromNow()}</p>
                       <div className="hidden group-hover:block absolute z-10 w-48 p-2 bg-neutral-900 text-white text-xs rounded shadow-md bottom-full left-0 mb-1 whitespace-nowrap">
@@ -291,7 +292,7 @@ export default function ContactDetailPage() {
                   </div>
 
                   <div>
-                    <p className="text-sm font-medium text-neutral-900">Last updated</p>
+                    <p className="text-sm font-medium text-neutral-900">{t('Last updated')}</p>
                     <div className="group relative inline-block cursor-help">
                       <p className="text-sm text-neutral-500">{dayjs(contact.updatedAt).fromNow()}</p>
                       <div className="hidden group-hover:block absolute z-10 w-48 p-2 bg-neutral-900 text-white text-xs rounded shadow-md bottom-full left-0 mb-1 whitespace-nowrap">
@@ -305,11 +306,11 @@ export default function ContactDetailPage() {
               {/* Public Links Card */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Public links</CardTitle>
+                  <CardTitle>{t('Public links')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="space-y-2">
-                    <p className="text-xs font-medium text-neutral-700">Subscribe page</p>
+                    <p className="text-xs font-medium text-neutral-700">{t('Subscribe page')}</p>
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
@@ -318,7 +319,7 @@ export default function ContactDetailPage() {
                         onClick={() => window.open(`${window.location.origin}/subscribe/${contact.id}`, '_blank')}
                       >
                         <ExternalLink className="h-3 w-3" />
-                        Open
+                        {t('Open')}
                       </Button>
                       <Button
                         variant="outline"
@@ -327,7 +328,7 @@ export default function ContactDetailPage() {
                         onClick={() =>
                           copyToClipboard(
                             `${window.location.origin}/subscribe/${contact.id}`,
-                            'Subscribe link',
+                            t('Subscribe link'),
                             'subscribe',
                           )
                         }
@@ -360,7 +361,7 @@ export default function ContactDetailPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <p className="text-xs font-medium text-neutral-700">Unsubscribe page</p>
+                    <p className="text-xs font-medium text-neutral-700">{t('Unsubscribe page')}</p>
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
@@ -369,7 +370,7 @@ export default function ContactDetailPage() {
                         onClick={() => window.open(`${window.location.origin}/unsubscribe/${contact.id}`, '_blank')}
                       >
                         <ExternalLink className="h-3 w-3" />
-                        Open
+                        {t('Open')}
                       </Button>
                       <Button
                         variant="outline"
@@ -378,7 +379,7 @@ export default function ContactDetailPage() {
                         onClick={() =>
                           copyToClipboard(
                             `${window.location.origin}/unsubscribe/${contact.id}`,
-                            'Unsubscribe link',
+                            t('Unsubscribe link'),
                             'unsubscribe',
                           )
                         }
@@ -411,7 +412,7 @@ export default function ContactDetailPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <p className="text-xs font-medium text-neutral-700">Manage preferences</p>
+                    <p className="text-xs font-medium text-neutral-700">{t('Manage preferences')}</p>
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
@@ -420,7 +421,7 @@ export default function ContactDetailPage() {
                         onClick={() => window.open(`${window.location.origin}/manage/${contact.id}`, '_blank')}
                       >
                         <Settings className="h-3 w-3" />
-                        Open
+                        {t('Open')}
                       </Button>
                       <Button
                         variant="outline"
@@ -429,7 +430,7 @@ export default function ContactDetailPage() {
                         onClick={() =>
                           copyToClipboard(
                             `${window.location.origin}/manage/${contact.id}`,
-                            'Manage preferences link',
+                            t('Manage preferences link'),
                             'manage',
                           )
                         }
@@ -470,9 +471,9 @@ export default function ContactDetailPage() {
           open={showDeleteDialog}
           onOpenChange={setShowDeleteDialog}
           onConfirm={handleDelete}
-          title={`Delete ${contact.email}?`}
-          description="Their events and email history are deleted too. This can't be undone."
-          confirmText="Delete contact"
+          title={t('Delete {email}?', {email: contact.email})}
+          description={t('Their events and email history are deleted too. This can\'t be undone.')}
+          confirmText={t('Delete contact')}
           variant="destructive"
         />
       </DashboardLayout>

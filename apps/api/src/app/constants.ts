@@ -180,6 +180,25 @@ export const EMAIL_VERIFICATION_RATE_WINDOW = 3600; // 1 hour in seconds
 export const PASSWORD_CHANGE_RATE_LIMIT = 5; // Max 5 attempts per window
 export const PASSWORD_CHANGE_RATE_WINDOW = 900; // 15 minutes in seconds
 
+// Failed password logins on POST /auth/login. Set a limit to 0 to disable that counter.
+// The per-IP counter keys on req.ip. Express is not configured to trust proxy headers, so
+// behind a reverse proxy (including the nginx in the Docker image) that is the proxy's
+// address and the counter would be shared by every user. It is off by default for that reason.
+function loginRateLimitEnv(key: keyof NodeJS.ProcessEnv, defaultValue: string, min: number): number {
+  const value = Number(validateEnv(key, defaultValue));
+
+  // A window of 0 or a non-number would create counters that never expire.
+  if (!Number.isInteger(value) || value < min) {
+    throw new Error(`${key} must be an integer >= ${min}`);
+  }
+
+  return value;
+}
+
+export const LOGIN_RATE_LIMIT_PER_EMAIL = loginRateLimitEnv('LOGIN_RATE_LIMIT_PER_EMAIL', '5', 0);
+export const LOGIN_RATE_LIMIT_PER_IP = loginRateLimitEnv('LOGIN_RATE_LIMIT_PER_IP', '0', 0);
+export const LOGIN_RATE_LIMIT_WINDOW = loginRateLimitEnv('LOGIN_RATE_LIMIT_WINDOW', '900', 1); // seconds
+
 // Phishing Detection (optional)
 // OpenRouter API integration for content safety checks
 export const OPENROUTER_API_KEY = validateEnv('OPENROUTER_API_KEY', '');
@@ -189,3 +208,13 @@ export const PHISHING_DETECTION_ENABLED = OPENROUTER_API_KEY !== '';
 export const PHISHING_CONFIDENCE_THRESHOLD = Number(validateEnv('PHISHING_CONFIDENCE_THRESHOLD', '95')); // Confidence % required to auto-disable project from a single detection
 export const PHISHING_CUMULATIVE_THRESHOLD = Number(validateEnv('PHISHING_CUMULATIVE_THRESHOLD', '3')); // Number of phishing detections before auto-disable (default 3)
 export const PHISHING_CUMULATIVE_WINDOW_MS = Number(validateEnv('PHISHING_CUMULATIVE_WINDOW_MS', '3600000')); // Time window for cumulative tracking in ms (default 1 hour)
+
+// WhatsApp (optional) — Evolution API, transactional messages only (API + workflows)
+// One Evolution instance is provisioned per project using the admin token below.
+export const EVOLUTION_BASE_URL = validateEnv('EVOLUTION_BASE_URL', '').replace(/\/+$/, '');
+export const EVOLUTION_ADMIN_TOKEN = validateEnv('EVOLUTION_ADMIN_TOKEN', '');
+export const WHATSAPP_ENABLED = EVOLUTION_BASE_URL !== '' && EVOLUTION_ADMIN_TOKEN !== '';
+// Public base URL Evolution calls back for message status (defaults to API_URI)
+export const WHATSAPP_WEBHOOK_BASE_URL = validateEnv('WHATSAPP_WEBHOOK_BASE_URL', API_URI).replace(/\/+$/, '');
+// Messages sent per minute across all projects; keeps numbers below WhatsApp's spam heuristics
+export const WHATSAPP_RATE_LIMIT_PER_MINUTE = Number(validateEnv('WHATSAPP_RATE_LIMIT_PER_MINUTE', '20'));

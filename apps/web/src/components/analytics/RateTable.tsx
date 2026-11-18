@@ -1,6 +1,7 @@
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow, cn} from '@plunk/ui';
 import {ArrowDown, ArrowUp} from 'lucide-react';
 import {type ReactNode, useMemo, useState} from 'react';
+import {t} from '../../lib/i18n';
 
 export interface Column<Row> {
   key: string;
@@ -116,7 +117,7 @@ export function RateTable<Row>({
                 onRowClick && 'cursor-pointer',
                 active && 'bg-neutral-50 data-[state=selected]:bg-neutral-50',
               )}
-              title={muted ? `Fewer than ${minVolume} emails, so rates are not reliable` : undefined}
+              title={muted ? t('Fewer than {minVolume} emails, so rates are not reliable', {minVolume: minVolume}) : undefined}
             >
               {columns.map(column => (
                 <TableCell

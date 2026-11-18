@@ -6,6 +6,7 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
 import {network} from '../lib/network';
 import {ActivityItem} from './ActivityItem';
+import {t} from '../lib/i18n';
 
 export interface ActivityFeedProps {
   /** Comma-separated activity types; all types when omitted */
@@ -167,9 +168,9 @@ export function ActivityFeed({typeFilter, contactId, showScheduled = !contactId,
   if (error) {
     return (
       <div className="px-5 py-12 text-center">
-        <p className="text-sm text-neutral-600">Activity didn&apos;t load.</p>
+        <p className="text-sm text-neutral-600">{t('Activity didn\'t load.')}</p>
         <Button onClick={() => void load()} variant="outline" size="sm" className="mt-3">
-          Try again
+          {t('Try again')}
         </Button>
       </div>
     );
@@ -185,7 +186,7 @@ export function ActivityFeed({typeFilter, contactId, showScheduled = !contactId,
             className="inline-flex h-7 items-center gap-1.5 rounded-full bg-neutral-900 px-3 text-xs font-medium text-white hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
           >
             <ArrowUp className="h-3 w-3" aria-hidden />
-            {incoming.length >= PAGE_SIZE ? `${PAGE_SIZE}+ new` : `${incoming.length} new`}
+            {incoming.length >= PAGE_SIZE ? t('{PAGE_SIZE}+ new', {PAGE_SIZE: PAGE_SIZE}) : `${incoming.length} new`}
           </button>
         </div>
       )}
@@ -202,11 +203,11 @@ export function ActivityFeed({typeFilter, contactId, showScheduled = !contactId,
               className={`h-3.5 w-3.5 transition-transform duration-150 motion-reduce:transition-none ${scheduledOpen ? 'rotate-90' : ''}`}
               aria-hidden
             />
-            Scheduled
+            {t('Scheduled')}
             <span className="tabular-nums text-neutral-400">{scheduled.length}</span>
             {!scheduledOpen && scheduled[0] && (
               <span className="ml-auto truncate font-normal text-neutral-500">
-                Next {dayjs(scheduled[0].timestamp).format('ddd, MMM D [at] HH:mm')}
+                {t('Next')}{' '}{dayjs(scheduled[0].timestamp).format('ddd, MMM D [at] HH:mm')}
               </span>
             )}
           </button>
@@ -223,8 +224,8 @@ export function ActivityFeed({typeFilter, contactId, showScheduled = !contactId,
       {activities.length === 0 ? (
         <EmptyState
           icon={ActivityIcon}
-          title="No activity yet"
-          description={emptyMessage ?? 'Emails, events and workflow runs show up here as they happen.'}
+          title={t('No activity yet')}
+          description={emptyMessage ?? t('Emails, events and workflow runs show up here as they happen.')}
         />
       ) : (
         days.map(day => (
@@ -244,29 +245,29 @@ export function ActivityFeed({typeFilter, contactId, showScheduled = !contactId,
       {hasMore ? (
         <div className="flex flex-col items-center gap-2 border-t border-neutral-100 px-4 py-6 text-center">
           {beyondWindow && activities.length > 0 && (
-            <p className="text-sm text-neutral-500">That&apos;s everything from the last {FIRST_WINDOW_DAYS} days.</p>
+            <p className="text-sm text-neutral-500">{t('That\'s everything from the last')}{' '}{FIRST_WINDOW_DAYS} {t('days.')}</p>
           )}
           <Button onClick={() => void loadMore()} variant="outline" size="sm" disabled={isLoadingMore}>
             {isLoadingMore ? (
               <>
                 <IconSpinner size="sm" />
-                Loading
+                {t('Loading')}
               </>
             ) : beyondWindow ? (
               activities.length === 0 ? (
-                `Look further back than ${FIRST_WINDOW_DAYS} days`
+                t('Look further back than {FIRST_WINDOW_DAYS} days', {FIRST_WINDOW_DAYS: FIRST_WINDOW_DAYS})
               ) : (
-                'Show older activity'
+                t('Show older activity')
               )
             ) : (
-              'Load more'
+              t('Load more')
             )}
           </Button>
         </div>
       ) : (
         activities.length > 0 && (
           <p className="border-t border-neutral-100 py-6 text-center text-sm text-neutral-400">
-            You&apos;ve reached the end of the activity feed
+            {t('You\'ve reached the end of the activity feed')}
           </p>
         )
       )}
@@ -284,9 +285,9 @@ function groupByDay(activities: Activity[]) {
     let group = groups[groups.length - 1];
     if (!group || group.key !== key) {
       const label = day.isSame(today)
-        ? 'Today'
+        ? t('Today')
         : day.isSame(today.subtract(1, 'day'))
-          ? 'Yesterday'
+          ? t('Yesterday')
           : day.format(day.year() === today.year() ? 'dddd, MMMM D' : 'dddd, MMMM D, YYYY');
       group = {key, label, items: []};
       groups.push(group);
@@ -299,7 +300,7 @@ function groupByDay(activities: Activity[]) {
 
 function FeedSkeleton() {
   return (
-    <div aria-busy="true" aria-label="Loading activity">
+    <div aria-busy="true" aria-label={t('Loading activity')}>
       <div className="px-6 pt-5 pb-1">
         <Skeleton className="h-3 w-16" />
       </div>

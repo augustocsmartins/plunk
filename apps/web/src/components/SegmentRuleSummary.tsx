@@ -1,4 +1,5 @@
 import type {FilterCondition, SegmentFilter} from '@plunk/types';
+import {t as tx} from '../lib/i18n';
 
 /**
  * One readable token per filter, e.g. `plan = pro`, `user.signup in last 30d`.
@@ -11,9 +12,9 @@ interface RulePart {
 }
 
 const STANDARD_FIELD_LABELS: Record<string, string> = {
-  email: 'Email',
-  createdAt: 'Created',
-  updatedAt: 'Updated',
+  email: tx('Email'),
+  createdAt: tx('Created'),
+  updatedAt: tx('Updated'),
 };
 
 const UNIT_SHORT: Record<string, string> = {minutes: 'm', hours: 'h', days: 'd'};
@@ -21,7 +22,7 @@ const UNIT_SHORT: Record<string, string> = {minutes: 'm', hours: 'h', days: 'd'}
 function fieldLabel(field: string, segmentNames: Map<string, string>): string {
   if (field.startsWith('data.')) return field.slice(5);
   if (field.startsWith('event.')) return field.slice(6);
-  if (field.startsWith('segment.')) return segmentNames.get(field.slice(8)) ?? 'a deleted segment';
+  if (field.startsWith('segment.')) return segmentNames.get(field.slice(8)) ?? tx('a deleted segment');
   return STANDARD_FIELD_LABELS[field] ?? field;
 }
 
@@ -38,7 +39,7 @@ function describeFilter(filter: SegmentFilter, segmentNames: Map<string, string>
   // The subscribed flag reads better as a state than as `subscribed = true`.
   if (filter.field === 'subscribed' && (filter.operator === 'equals' || filter.operator === 'notEquals')) {
     const isSubscribed = (filter.value === true) === (filter.operator === 'equals');
-    return {field: isSubscribed ? 'Subscribed' : 'Unsubscribed'};
+    return {field: isSubscribed ? tx('Subscribed') : tx('Unsubscribed')};
   }
 
   switch (filter.operator) {
@@ -169,7 +170,7 @@ export function SegmentRuleSummary({condition, segmentNames, maxRules = 3, class
           </span>
         ) : token.kind === 'nested' ? (
           <span key={i} className="rounded-md border border-dashed border-neutral-200 px-1.5 py-0.5 text-neutral-500">
-            {token.count} nested
+            {token.count} {tx('nested')}
           </span>
         ) : (
           <span key={i} className="inline-flex max-w-full items-center gap-1 rounded-md bg-neutral-100 px-1.5 py-0.5">
@@ -179,7 +180,7 @@ export function SegmentRuleSummary({condition, segmentNames, maxRules = 3, class
           </span>
         ),
       )}
-      {hidden > 0 && <span className="text-neutral-400">+{hidden} more</span>}
+      {hidden > 0 && <span className="text-neutral-400">+{hidden} {tx('more')}</span>}
     </div>
   );
 }

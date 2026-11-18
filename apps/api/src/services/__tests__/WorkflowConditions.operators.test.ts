@@ -18,7 +18,6 @@ import {factories, getPrismaClient} from '../../../../../test/helpers';
 // Mock QueueService to prevent actual job queueing
 vi.mock('../QueueService', () => ({
   QueueService: {
-    queueWorkflowStep: vi.fn(async () => ({id: 'mock-job-id'})),
     queueEmail: vi.fn(async () => ({id: 'mock-email-job-id'})),
     queueWorkflowTimeout: vi.fn(async () => ({id: 'mock-timeout-job-id'})),
   },
@@ -328,6 +327,40 @@ describe('Workflow CONDITION Step - Comprehensive Operator Tests', () => {
         const branch = await getConditionBranch(execution.id, conditionStep.id);
         // notContains only matches when field EXISTS and doesn't contain substring
         expect(branch).toBe('no');
+      });
+    });
+
+    describe('contact.email (case-insensitive, consistent with SegmentService)', () => {
+      async function branchForEmail(operator: string, toValue: (email: string) => string) {
+        const {execution, triggerStep, conditionStep, contact} = await createConditionalWorkflow(
+          {},
+          {field: 'contact.email', operator, value: ''},
+        );
+        await prisma.workflowStep.update({
+          where: {id: conditionStep.id},
+          data: {config: {field: 'contact.email', operator, value: toValue(contact.email)}},
+        });
+
+        await WorkflowExecutionService.processStepExecution(execution.id, triggerStep.id);
+        await WorkflowExecutionService.processStepExecution(execution.id, conditionStep.id);
+
+        return getConditionBranch(execution.id, conditionStep.id);
+      }
+
+      it('should match equals regardless of case', async () => {
+        expect(await branchForEmail('equals', email => email.toUpperCase())).toBe('yes');
+      });
+
+      it('should not match notEquals for the same address in another case', async () => {
+        expect(await branchForEmail('notEquals', email => email.toUpperCase())).toBe('no');
+      });
+
+      it('should match contains regardless of case', async () => {
+        expect(await branchForEmail('contains', () => '@TEST.COM')).toBe('yes');
+      });
+
+      it('should not match notContains when the substring differs only in case', async () => {
+        expect(await branchForEmail('notContains', () => '@TEST.COM')).toBe('no');
       });
     });
   });

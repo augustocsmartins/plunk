@@ -4,7 +4,6 @@ import type {NextFunction, Request, Response} from 'express';
 import {
   API_URI,
   DASHBOARD_URI,
-  DISABLE_SIGNUPS,
   GOOGLE_OAUTH_CLIENT,
   GOOGLE_OAUTH_ENABLED,
   GOOGLE_OAUTH_SECRET,
@@ -80,7 +79,7 @@ export class Google {
 
     if (!user) {
       // Check if signups are disabled
-      if (DISABLE_SIGNUPS) {
+      if (!(await UserService.signupsAllowed())) {
         throw new BadRequest('New user signups are currently disabled');
       }
 

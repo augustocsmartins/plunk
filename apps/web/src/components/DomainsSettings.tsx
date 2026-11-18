@@ -25,6 +25,7 @@ import {AnimatePresence, motion} from 'framer-motion';
 import {Check, CheckCircle2, ChevronDown, Copy, Globe, RefreshCw, Trash2, XCircle} from 'lucide-react';
 import {useConfig} from '../lib/hooks/useConfig';
 import {useAddDomain, useCheckDomainVerification, useDomains, useRemoveDomain} from '../lib/hooks/useDomains';
+import {t} from '../lib/i18n';
 
 function AnimatedCopyIcon({isCopied}: {isCopied: boolean}) {
   return (
@@ -108,7 +109,7 @@ function DnsFieldRow({
           <Button
             variant="ghost"
             size="sm"
-            aria-label={`Copy ${field.label.toLowerCase()}`}
+            aria-label={t('Copy {value}', {value: field.label.toLowerCase()})}
             onClick={() => onCopy(field.value, copyKey)}
             className={`h-5 w-5 shrink-0 overflow-hidden p-0 transition-colors ${
               isCopied ? 'text-green-600' : 'text-neutral-400 hover:text-neutral-900'
@@ -322,9 +323,9 @@ export function DomainsSettings({projectId}: DomainsSettingsProps) {
 
       await mutateDomains();
       form.reset();
-      showMessage('success', `Domain ${values.domain} added. Add the DNS records below to verify it.`);
+      showMessage('success', t('Domain {domain} added. Add the DNS records below to verify it.', {domain: values.domain}));
     } catch (error) {
-      showMessage('error', error instanceof Error ? error.message : 'Couldn’t add the domain. Check the spelling and try again.');
+      showMessage('error', error instanceof Error ? error.message : t('Couldn’t add the domain. Check the spelling and try again.'));
     }
   };
 
@@ -358,10 +359,10 @@ export function DomainsSettings({projectId}: DomainsSettingsProps) {
       if (status.verified) {
         showMessage('success', `Domain ${status.domain} is verified!`);
       } else {
-        showMessage('error', `Domain ${status.domain} is not yet verified. Please check your DNS records.`);
+        showMessage('error', t('Domain {domain} is not yet verified. Please check your DNS records.', {domain: status.domain}));
       }
     } catch (error) {
-      showMessage('error', error instanceof Error ? error.message : 'Couldn’t check verification. Try again in a moment.');
+      showMessage('error', error instanceof Error ? error.message : t('Couldn’t check verification. Try again in a moment.'));
     } finally {
       setCheckingVerification(null);
     }
@@ -378,7 +379,7 @@ export function DomainsSettings({projectId}: DomainsSettingsProps) {
       }
       showMessage('success', `Domain ${domainToRemove.name} deleted`);
     } catch (error) {
-      showMessage('error', error instanceof Error ? error.message : 'Couldn’t delete the domain. Try again.');
+      showMessage('error', error instanceof Error ? error.message : t('Couldn’t delete the domain. Try again.'));
     } finally {
       setDomainToRemove(null);
     }
@@ -399,7 +400,7 @@ export function DomainsSettings({projectId}: DomainsSettingsProps) {
     if (status && typeof status === 'object' && 'verified' in status) {
       return status;
     }
-    return {verified: domain.verified, tokens: domain.dkimTokens, status: domain.verified ? 'Success' : 'Pending'};
+    return {verified: domain.verified, tokens: domain.dkimTokens, status: domain.verified ? t('Success') : t('Pending')};
   };
 
   return (
@@ -407,8 +408,8 @@ export function DomainsSettings({projectId}: DomainsSettingsProps) {
       {/* Add Domain Form */}
       <Card>
         <CardHeader>
-          <CardTitle>Add domain</CardTitle>
-          <CardDescription>Send from your own address instead of a Plunk one.</CardDescription>
+          <CardTitle>{t('Add domain')}</CardTitle>
+          <CardDescription>{t('Send from your own address instead of a Plunk one.')}</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -418,9 +419,9 @@ export function DomainsSettings({projectId}: DomainsSettingsProps) {
                 name="domain"
                 render={({field}) => (
                   <FormItem>
-                    <FormLabel>Domain</FormLabel>
+                    <FormLabel>{t('Domain')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="example.com" {...field} />
+                      <Input placeholder={t('example.com')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -453,7 +454,7 @@ export function DomainsSettings({projectId}: DomainsSettingsProps) {
 
               <div className="flex justify-end">
                 <Button type="submit" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? 'Adding…' : 'Add Domain'}
+                  {form.formState.isSubmitting ? t('Adding…') : t('Add Domain')}
                 </Button>
               </div>
             </form>
@@ -464,7 +465,7 @@ export function DomainsSettings({projectId}: DomainsSettingsProps) {
       {/* Domains List */}
       <Card>
         <CardHeader>
-          <CardTitle>Your domains</CardTitle>
+          <CardTitle>{t('Your domains')}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -474,8 +475,8 @@ export function DomainsSettings({projectId}: DomainsSettingsProps) {
           ) : !domains || domains.length === 0 ? (
             <EmptyState
               icon={Globe}
-              title="No domains added"
-              description="Add a custom domain above to send emails from your own address."
+              title={t('No domains added')}
+              description={t('Add a custom domain above to send emails from your own address.')}
             />
           ) : (
             <div className="space-y-4">
@@ -487,15 +488,15 @@ export function DomainsSettings({projectId}: DomainsSettingsProps) {
                 const dnsGroups: DnsRecordGroup[] = [
                   {
                     key: 'sending',
-                    label: 'Sending',
-                    hint: 'Required',
+                    label: t('Sending'),
+                    hint: t('Required'),
                     collapsible: false,
                     records: ((status.tokens as string[] | null) ?? []).map((token, index) => ({
                       key: `dkim-${index}`,
                       type: 'CNAME',
                       fields: [
-                        {label: 'Name', value: `${token}._domainkey`, suffix: `.${domain.domain}`},
-                        {label: 'Value', value: `${token}.dkim.amazonses.com`},
+                        {label: t('Name'), value: `${token}._domainkey`, suffix: `.${domain.domain}`},
+                        {label: t('Value'), value: `${token}.dkim.amazonses.com`},
                       ],
                     })),
                   },
@@ -505,44 +506,44 @@ export function DomainsSettings({projectId}: DomainsSettingsProps) {
                   dnsGroups.push(
                     {
                       key: 'mail-from',
-                      label: 'Custom MAIL FROM domain',
-                      hint: 'Optional',
+                      label: t('Custom MAIL FROM domain'),
+                      hint: t('Optional'),
                       collapsible: true,
-                      description: `Routes bounces and complaints through ${mailFromHost} and improves deliverability.`,
+                      description: t('Routes bounces and complaints through {mailFromHost} and improves deliverability.', {mailFromHost: mailFromHost}),
                       records: [
                         {
                           key: 'mail-from-mx',
                           type: 'MX',
                           fields: [
-                            {label: 'Name', value: mailFromSubdomain, suffix: `.${domain.domain}`},
-                            {label: 'Priority', value: '10'},
-                            {label: 'Value', value: `feedback-smtp.${sesRegion}.amazonses.com`},
+                            {label: t('Name'), value: mailFromSubdomain, suffix: `.${domain.domain}`},
+                            {label: t('Priority'), value: '10'},
+                            {label: t('Value'), value: `feedback-smtp.${sesRegion}.amazonses.com`},
                           ],
                         },
                         {
                           key: 'mail-from-spf',
                           type: 'TXT',
                           fields: [
-                            {label: 'Name', value: mailFromSubdomain, suffix: `.${domain.domain}`},
-                            {label: 'Value', value: '"v=spf1 include:amazonses.com ~all"'},
+                            {label: t('Name'), value: mailFromSubdomain, suffix: `.${domain.domain}`},
+                            {label: t('Value'), value: '"v=spf1 include:amazonses.com ~all"'},
                           ],
                         },
                       ],
                     },
                     {
                       key: 'inbound',
-                      label: 'Inbound email',
-                      hint: 'Optional',
+                      label: t('Inbound email'),
+                      hint: t('Optional'),
                       collapsible: true,
-                      description: `Receive email sent to addresses at ${domain.domain}.`,
+                      description: t('Receive email sent to addresses at {domain}.', {domain: domain.domain}),
                       records: [
                         {
                           key: 'inbound-mx',
                           type: 'MX',
                           fields: [
-                            {label: 'Name', value: '@', suffix: ` (${domain.domain})`},
-                            {label: 'Priority', value: '10'},
-                            {label: 'Value', value: `inbound-smtp.${sesRegion}.amazonaws.com`},
+                            {label: t('Name'), value: '@', suffix: ` (${domain.domain})`},
+                            {label: t('Priority'), value: '10'},
+                            {label: t('Value'), value: `inbound-smtp.${sesRegion}.amazonaws.com`},
                           ],
                         },
                       ],
@@ -557,12 +558,12 @@ export function DomainsSettings({projectId}: DomainsSettingsProps) {
                         {status.verified ? (
                           <Badge variant="success" className="flex items-center gap-1">
                             <CheckCircle2 className="h-3 w-3" />
-                            Verified
+                            {t('Verified')}
                           </Badge>
                         ) : (
                           <Badge variant="warning" className="flex items-center gap-1">
                             <XCircle className="h-3 w-3" />
-                            Pending
+                            {t('Pending')}
                           </Badge>
                         )}
                       </div>
@@ -611,19 +612,18 @@ export function DomainsSettings({projectId}: DomainsSettingsProps) {
                               expandedDomains[domain.id] ? 'rotate-180' : ''
                             }`}
                           />
-                          <span>{status.verified ? 'View DNS Records' : 'DNS Configuration Required'}</span>
+                          <span>{status.verified ? t('View DNS Records') : t('DNS Configuration Required')}</span>
                         </button>
 
                         {expandedDomains[domain.id] && (
                           <div className="mt-3">
                             {!status.verified && (
                               <p className="text-xs text-neutral-600">
-                                Copy each record into your DNS provider, then hit refresh above. DNS changes can take up
-                                to 48 hours to propagate.
+                                {t('Copy each record into your DNS provider, then hit refresh above. DNS changes can take up to 48 hours to propagate.')}
                               </p>
                             )}
                             <p className="mt-0.5 text-xs text-neutral-500">
-                              Names are relative to {domain.domain}. Add it back if your provider asks for the full name.
+                              {t('Names are relative to')}{' '}{domain.domain}{t('. Add it back if your provider asks for the full name.')}
                             </p>
 
                             <div className="mt-2">
@@ -652,9 +652,9 @@ export function DomainsSettings({projectId}: DomainsSettingsProps) {
         open={showRemoveDialog}
         onOpenChange={setShowRemoveDialog}
         onConfirm={handleRemoveDomain}
-        title={`Delete ${domainToRemove?.name}?`}
-        description="You'll stop being able to send from this address until you add and verify it again."
-        confirmText="Delete domain"
+        title={t('Delete {name}?', {name: domainToRemove?.name})}
+        description={t('You\'ll stop being able to send from this address until you add and verify it again.')}
+        confirmText={t('Delete domain')}
         variant="destructive"
       />
     </div>

@@ -14,11 +14,12 @@ import {formatCount, formatRate, metric, type MetricKey, thresholdTone} from './
 import {Segmented} from '../Segmented';
 import {Panel, PanelEmpty, PanelError, RowsSkeleton} from './primitives';
 import {type Column, RateTable} from './RateTable';
+import {t} from '../../lib/i18n';
 
 const KINDS = [
-  {value: 'campaigns', label: 'Campaigns'},
-  {value: 'templates', label: 'Templates'},
-  {value: 'workflows', label: 'Workflows'},
+  {value: 'campaigns', label: t('Campaigns')},
+  {value: 'templates', label: t('Templates')},
+  {value: 'workflows', label: t('Workflows')},
 ] as const satisfies readonly {value: AnalyticsLeaderboardKind; label: string}[];
 
 /** Below this many sends a rate says more about chance than about the email */
@@ -85,26 +86,26 @@ function Leaderboard({filters}: {filters: AnalyticsFilters}) {
         );
       },
     },
-    {key: 'sent', label: 'Sent', render: row => formatCount(row.sent), sortValue: row => row.sent},
-    rate('openRate', 'Opened'),
-    rate('clickRate', 'Clicked'),
-    rate('clickToOpenRate', 'Click-to-open'),
-    rate('bounceRate', 'Bounced'),
-    rate('unsubscribeRate', 'Unsubscribed'),
+    {key: 'sent', label: t('Sent'), render: row => formatCount(row.sent), sortValue: row => row.sent},
+    rate('openRate', t('Opened')),
+    rate('clickRate', t('Clicked')),
+    rate('clickToOpenRate', t('Click-to-open')),
+    rate('bounceRate', t('Bounced')),
+    rate('unsubscribeRate', t('Unsubscribed')),
   ];
 
   const description =
     kind === 'campaigns'
-      ? 'Campaigns that started sending in this period. Sort by any column; sends under 50 recipients sort last.'
+      ? t('Campaigns that started sending in this period. Sort by any column; sends under 50 recipients sort last.')
       : kind === 'templates'
-        ? 'Transactional emails by template. Sort by any column; templates with under 50 sends sort last.'
-        : 'Emails sent by each workflow. Sort by any column; workflows with under 50 sends sort last.';
+        ? t('Transactional emails by template. Sort by any column; templates with under 50 sends sort last.')
+        : t('Emails sent by each workflow. Sort by any column; workflows with under 50 sends sort last.');
 
   return (
     <Panel
-      title="Performance"
+      title={t('Performance')}
       description={description}
-      actions={<Segmented label="Group by" value={kind} options={KINDS} onChange={setKind} />}
+      actions={<Segmented label={t('Group by')} value={kind} options={KINDS} onChange={setKind} />}
     >
       {error && !rows ? (
         <PanelError onRetry={() => void mutate()} />
@@ -113,10 +114,10 @@ function Leaderboard({filters}: {filters: AnalyticsFilters}) {
       ) : rows.length === 0 ? (
         <PanelEmpty>
           {kind === 'campaigns'
-            ? 'No campaigns were sent in this period.'
+            ? t('No campaigns were sent in this period.')
             : kind === 'templates'
-              ? 'No transactional emails were sent in this period.'
-              : 'No workflow emails were sent in this period.'}
+              ? t('No transactional emails were sent in this period.')
+              : t('No workflow emails were sent in this period.')}
         </PanelEmpty>
       ) : (
         <div className="border-t border-neutral-100">
@@ -144,21 +145,21 @@ function Links({filters}: {filters: AnalyticsFilters}) {
 
   return (
     <Panel
-      title="Most clicked links"
-      description={data ? `${formatCount(data.totalClicks)} clicks in this period` : 'Clicks in this period'}
+      title={t('Most clicked links')}
+      description={data ? t('{value} clicks in this period', {value: formatCount(data.totalClicks)}) : t('Clicks in this period')}
     >
       {error && !data ? (
         <PanelError onRetry={() => void mutate()} />
       ) : !data ? (
         <RowsSkeleton rows={8} />
       ) : data.links.length === 0 ? (
-        <PanelEmpty height={240}>No links were clicked in this period.</PanelEmpty>
+        <PanelEmpty height={240}>{t('No links were clicked in this period.')}</PanelEmpty>
       ) : (
         <ol className="divide-y divide-neutral-100 border-t border-neutral-100">
           <li className="flex items-center gap-4 px-5 py-2 text-xs font-medium text-neutral-500" aria-hidden>
-            <span className="flex-1">Link</span>
-            <span className="w-14 text-right">Clicks</span>
-            <span className="w-14 text-right">People</span>
+            <span className="flex-1">{t('Link')}</span>
+            <span className="w-14 text-right">{t('Clicks')}</span>
+            <span className="w-14 text-right">{t('People')}</span>
           </li>
           {data.links.slice(0, 10).map(link => {
             const {head, tail} = splitUrl(link.url);
@@ -210,8 +211,8 @@ function splitUrl(url: string): {head: string; tail: string} {
 // HEATMAP
 // =============================================================================
 
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const DAYS = [t('Mon'), t('Tue'), t('Wed'), t('Thu'), t('Fri'), t('Sat'), t('Sun')];
+const DAY_NAMES = [t('Monday'), t('Tuesday'), t('Wednesday'), t('Thursday'), t('Friday'), t('Saturday'), t('Sunday')];
 const hour = (h: number) => `${String(h).padStart(2, '0')}:00`;
 
 function Heatmap({filters}: {filters: AnalyticsFilters}) {
@@ -237,19 +238,19 @@ function Heatmap({filters}: {filters: AnalyticsFilters}) {
 
   return (
     <Panel
-      title="When people engage"
+      title={t('When people engage')}
       description={
         peak
-          ? `Busiest: ${DAY_NAMES[peak.day]} ${hour(peak.hour)} to ${hour((peak.hour + 1) % 24)}, ${filters.bounds.tz.replace(/_/g, ' ')} time.`
-          : 'First opens and clicks by weekday and hour'
+          ? t('Busiest: {value} {value2} to {value3}, {value4} time.', {value: DAY_NAMES[peak.day], value2: hour(peak.hour), value3: hour((peak.hour + 1) % 24), value4: filters.bounds.tz.replace(/_/g, ' ')})
+          : t('First opens and clicks by weekday and hour')
       }
       actions={
         <Segmented
-          label="Measure"
+          label={t('Measure')}
           value={measure}
           options={[
-            {value: 'opens', label: 'Opens'},
-            {value: 'clicks', label: 'Clicks'},
+            {value: 'opens', label: t('Opens')},
+            {value: 'clicks', label: t('Clicks')},
           ]}
           onChange={setMeasure}
         />
@@ -260,12 +261,12 @@ function Heatmap({filters}: {filters: AnalyticsFilters}) {
       ) : !data ? (
         <RowsSkeleton rows={7} />
       ) : total === 0 ? (
-        <PanelEmpty height={240}>Nobody has {measure === 'opens' ? 'opened' : 'clicked'} an email in this period.</PanelEmpty>
+        <PanelEmpty height={240}>{t('Nobody has')}{' '}{measure === 'opens' ? t('opened') : t('clicked')} {t('an email in this period.')}</PanelEmpty>
       ) : (
         <div className="overflow-x-auto px-5 pb-5">
           <table className="w-full min-w-[420px] table-fixed border-separate border-spacing-[2px]">
             <caption className="sr-only">
-              First {measure} per weekday and hour. Busiest hour has {formatCount(max)}.
+              {t('First')}{' '}{measure} {t('per weekday and hour. Busiest hour has')}{' '}{formatCount(max)}.
             </caption>
             <thead>
               <tr>
@@ -304,7 +305,7 @@ function Heatmap({filters}: {filters: AnalyticsFilters}) {
             </tbody>
           </table>
           <p className="mt-3 text-xs leading-5 text-neutral-500">
-            Engagement follows when you send, so read this as a hint for scheduling rather than a rule.
+            {t('Engagement follows when you send, so read this as a hint for scheduling rather than a rule.')}
           </p>
         </div>
       )}

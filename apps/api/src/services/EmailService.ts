@@ -3,13 +3,13 @@ import {EmailSourceType, EmailStatus, TrackingMode} from '@plunk/db';
 import {toPrismaJson} from '@plunk/types';
 import signale from 'signale';
 
-import {DASHBOARD_URI, LANDING_URI, STRIPE_ENABLED} from '../app/constants.js';
+import {DASHBOARD_URI} from '../app/constants.js';
 import {prisma} from '../database/prisma.js';
 import {ConflictError, ErrorCode, HttpException, NotFound} from '../exceptions/index.js';
 import {createTranslatorSync, renderTemplate} from '@plunk/shared';
 
 import {BillingLimitService} from './BillingLimitService.js';
-import {withSourceEmail} from './EmailHeaderService.js';
+import {RECIPIENT_OVERRIDE_HEADER, withSourceEmail} from './EmailHeaderService.js';
 import {QueueService} from './QueueService.js';
 import {ThrottleService} from './ThrottleService.js';
 
@@ -37,6 +37,7 @@ interface SendEmailParams {
   workflowExecutionId?: string;
   workflowStepExecutionId?: string;
   recipientEmail?: string; // Optional custom recipient email (overrides contact.email)
+  tracking?: boolean; // Transactional only: overrides the template's and project's tracking for this email
   isTransactional?: boolean; // Override source type to TRANSACTIONAL (e.g. for transactional campaigns)
   scheduledFor?: Date; // Transactional only: hold the email until then (`delivery.at`)
 }
@@ -101,6 +102,7 @@ export class EmailService {
         attachments: params.attachments ? toPrismaJson(params.attachments) : undefined,
         sourceType: EmailSourceType.TRANSACTIONAL,
         templateId: params.templateId,
+        trackingOverride: params.tracking,
         status: params.scheduledFor ? EmailStatus.SCHEDULED : EmailStatus.PENDING,
         scheduledFor: params.scheduledFor,
       },
@@ -332,7 +334,7 @@ export class EmailService {
     // If custom recipient email is provided, store it in headers for later use
     const emailHeaders = params.headers ? {...params.headers} : {};
     if (params.recipientEmail) {
-      emailHeaders['X-Plunk-Recipient-Override'] = params.recipientEmail;
+      emailHeaders[RECIPIENT_OVERRIDE_HEADER] = params.recipientEmail;
     }
 
     const email = await prisma.email.create({
@@ -379,6 +381,27 @@ export class EmailService {
       subject: renderTemplate(subject, data),
       body: renderTemplate(body, data),
     };
+  }
+
+  /**
+   * Decide whether one email is tracked. The most specific setting wins: the `tracking`
+   * field of the `POST /v1/send` call that created it, then its campaign's or template's
+   * own setting, then the project's tracking mode for its source type. Null at any level
+   * means "no opinion", so the decision falls through to the next.
+   */
+  public static resolveTracking(params: {
+    trackingMode: TrackingMode;
+    sourceType: EmailSourceType;
+    emailOverride?: boolean | null;
+    campaignTracking?: boolean | null;
+    templateTracking?: boolean | null;
+  }): boolean {
+    return (
+      params.emailOverride ??
+      params.campaignTracking ??
+      params.templateTracking ??
+      this.shouldTrackEmail(params.trackingMode, params.sourceType)
+    );
   }
 
   /**
@@ -775,8 +798,7 @@ export class EmailService {
   }
 
   /**
-   * Compile HTML email with optional unsubscribe footer and badge
-   * Adds unsubscribe link and Plunk badge for free tier users (only when billing is enabled)
+   * Compile HTML email with optional unsubscribe footer
    */
   public static compile({
     content,
@@ -834,42 +856,8 @@ export class EmailService {
         })()
       : '';
 
-    // Add Plunk badge if billing is enabled and project has no subscription (free tier)
-    const badgeHtml =
-      STRIPE_ENABLED && project.subscription === null
-        ? `<table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
-          <tbody>
-            <tr>
-              <td style="direction:ltr;font-size:0px;padding:20px 0;text-align:center;">
-                <div class="mj-column-per-100 mj-outlook-group-fix" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;">
-                  <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
-                    <tbody>
-                      <tr>
-                        <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                          <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;border-spacing:0px;">
-                            <tbody>
-                              <tr>
-                                <td style="width:180px;">
-                                  <a href="${LANDING_URI}?ref=badge" target="_blank">
-                                    <img alt="Powered by Plunk" height="auto" src="https://cdn.useplunk.com/badge.png" style="border:0;display:block;outline:none;text-decoration:none;height:auto;width:100%;font-size:13px;" width="180" />
-                                  </a>
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>`
-        : '';
 
-    // Combine footer and badge
-    const footerHtml = `${unsubscribeHtml}${badgeHtml}`;
+    const footerHtml = unsubscribeHtml;
 
     // Insert before closing body tag if it exists, otherwise append
     if (html.includes('</body>')) {

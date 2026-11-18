@@ -28,6 +28,7 @@ import {createImportWorker} from './import-processor.js';
 import {createMeterWorker} from './meter-processor.js';
 import {createScheduledCampaignWorker} from './scheduled-processor.js';
 import {createSegmentCountWorker} from './segment-count-processor.js';
+import {createWhatsAppWorker} from './whatsapp-processor.js';
 import {createWorkflowWorker} from './workflow-processor-queue.js';
 
 const workers: {name: string; worker: Worker}[] = [];
@@ -130,6 +131,11 @@ async function startWorkers() {
     const cardVerificationSweepWorker = createCardVerificationSweepWorker();
     workers.push({name: 'card-verification-sweep', worker: cardVerificationSweepWorker});
     signale.success('[WORKER] Card verification sweep worker started');
+
+    // Start WhatsApp worker
+    const whatsappWorker = createWhatsAppWorker();
+    workers.push({name: 'whatsapp', worker: whatsappWorker});
+    signale.success('[WORKER] WhatsApp worker started');
 
     signale.success('[WORKER] All workers started successfully');
 

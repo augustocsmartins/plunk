@@ -1,6 +1,6 @@
 import type {Workflow, WorkflowExecution, WorkflowStep, WorkflowTransition} from '@plunk/db';
 import {Prisma, WorkflowExecutionStatus} from '@plunk/db';
-import {formatDuration} from '@plunk/shared';
+import {formatDuration, WorkflowStepConfigSchemas} from '@plunk/shared';
 import type {
   PaginatedResponse,
   WorkflowExecutionWithDetails,
@@ -22,6 +22,18 @@ import {WorkflowEntryService} from './WorkflowEntryService.js';
 import {WorkflowExecutionService} from './WorkflowExecutionService.js';
 
 export class WorkflowService {
+  private static validateStepConfig(type: WorkflowStep['type'], config: Prisma.JsonValue): void {
+    // Validate the new mode on save while preserving existing duration and draft writes.
+    if (type !== 'DELAY' || !config || typeof config !== 'object' || Array.isArray(config) || config.mode !== 'until') {
+      return;
+    }
+
+    const result = WorkflowStepConfigSchemas.delay.safeParse(config);
+    if (!result.success) {
+      throw new BadRequest(result.error.issues[0]?.message || 'Invalid delay configuration');
+    }
+  }
+
   private static async validateStepTemplate(projectId: string, templateId?: string | null): Promise<void> {
     if (templateId === undefined || templateId === null) {
       return;
@@ -580,6 +592,8 @@ export class WorkflowService {
 
     await this.validateStepTemplate(projectId, data.templateId);
 
+    this.validateStepConfig(data.type, data.config);
+
     // Create the new step
     const newStep = await prisma.workflowStep.create({
       data: {
@@ -671,7 +685,10 @@ export class WorkflowService {
 
     if (data.name !== undefined) updateData.name = data.name;
     if (data.position !== undefined) updateData.position = toPrismaJson(data.position);
-    if (data.config !== undefined) updateData.config = toPrismaJson(data.config);
+    if (data.config !== undefined) {
+      this.validateStepConfig(step.type, data.config);
+      updateData.config = toPrismaJson(data.config);
+    }
     if (data.templateId !== undefined) {
       if (data.templateId === null) {
         updateData.template = {disconnect: true};
@@ -897,7 +914,8 @@ export class WorkflowService {
    *
    * Purely additive — no step is removed and nothing becomes unreachable — so
    * unlike splice/delete this does not need to guard against in-flight executions.
-   * An execution parked on A simply picks up the new step on its next hop.
+   * An execution parked on A simply picks up the new step on its next hop, a DELAY
+   * included, since it looks up its next step when the delay ends.
    */
   public static async insertStepOnTransition(
     projectId: string,
@@ -939,6 +957,8 @@ export class WorkflowService {
     }
 
     await this.validateStepTemplate(projectId, data.templateId);
+
+    this.validateStepConfig(data.type, data.config);
 
     return prisma.$transaction(async tx => {
       const newStep = await tx.workflowStep.create({

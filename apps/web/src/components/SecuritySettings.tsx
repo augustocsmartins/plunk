@@ -1,6 +1,7 @@
 import {Alert, AlertDescription, AlertTitle, Card, CardContent, CardDescription, CardHeader, CardTitle} from '@plunk/ui';
 import {AlertCircle, AlertTriangle, CheckCircle, Shield} from 'lucide-react';
 import type {ProjectSecurityMetrics, SecurityLevel} from '@plunk/types';
+import {t} from '../lib/i18n';
 
 interface SecuritySettingsProps {
   metrics: ProjectSecurityMetrics;
@@ -8,9 +9,9 @@ interface SecuritySettingsProps {
 }
 
 const STATUS_CONFIG: Record<SecurityLevel, {color: string; icon: typeof CheckCircle; bg: string; label: string}> = {
-  healthy: {color: 'text-green-600', icon: CheckCircle, bg: 'bg-green-100', label: 'Healthy'},
-  warning: {color: 'text-amber-700', icon: AlertTriangle, bg: 'bg-amber-100', label: 'Warning'},
-  critical: {color: 'text-red-600', icon: AlertCircle, bg: 'bg-red-100', label: 'Critical'},
+  healthy: {color: 'text-green-600', icon: CheckCircle, bg: 'bg-green-100', label: t('Healthy')},
+  warning: {color: 'text-amber-700', icon: AlertTriangle, bg: 'bg-amber-100', label: t('Warning')},
+  critical: {color: 'text-red-600', icon: AlertCircle, bg: 'bg-red-100', label: t('Critical')},
 };
 
 function getOverallLevel(status: ProjectSecurityMetrics['status']): SecurityLevel {
@@ -24,11 +25,11 @@ export function SecuritySettings({metrics, isLoading}: SecuritySettingsProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Security overview</CardTitle>
-          <CardDescription>Monitor your project&apos;s email health and reputation</CardDescription>
+          <CardTitle>{t('Security overview')}</CardTitle>
+          <CardDescription>{t('Monitor your project\'s email health and reputation')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-neutral-500">Loading security metrics...</p>
+          <p className="text-sm text-neutral-500">{t('Loading security metrics...')}</p>
         </CardContent>
       </Card>
     );
@@ -48,11 +49,11 @@ export function SecuritySettings({metrics, isLoading}: SecuritySettingsProps) {
               <Shield className={`h-5 w-5 ${overallConfig.color}`} />
             </div>
             <div>
-              <CardTitle>Security overview</CardTitle>
+              <CardTitle>{t('Security overview')}</CardTitle>
               <CardDescription>
-                {overallLevel === 'healthy' && 'Your project is in good standing'}
-                {overallLevel === 'warning' && 'Your email health needs attention'}
-                {overallLevel === 'critical' && 'Action required to maintain project health'}
+                {overallLevel === 'healthy' && t('Your project is in good standing')}
+                {overallLevel === 'warning' && t('Your email health needs attention')}
+                {overallLevel === 'critical' && t('Action required to maintain project health')}
               </CardDescription>
             </div>
           </div>
@@ -61,9 +62,9 @@ export function SecuritySettings({metrics, isLoading}: SecuritySettingsProps) {
           {isDisabled && (
             <Alert variant="destructive" className="mb-4">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Project disabled</AlertTitle>
+              <AlertTitle>{t('Project disabled')}</AlertTitle>
               <AlertDescription>
-                This project has been disabled. Please contact support for more details.
+                {t('This project has been disabled. Please contact support for more details.')}
               </AlertDescription>
             </Alert>
           )}
@@ -71,10 +72,9 @@ export function SecuritySettings({metrics, isLoading}: SecuritySettingsProps) {
           {overallLevel === 'critical' && !isDisabled && (
             <Alert variant="destructive" className="mb-4">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Critical</AlertTitle>
+              <AlertTitle>{t('Critical')}</AlertTitle>
               <AlertDescription>
-                Your account requires immediate attention. Please contact support or review your sending practices to
-                avoid suspension.
+                {t('Your account requires immediate attention. Please contact support or review your sending practices to avoid suspension.')}
               </AlertDescription>
             </Alert>
           )}
@@ -82,10 +82,9 @@ export function SecuritySettings({metrics, isLoading}: SecuritySettingsProps) {
           {overallLevel === 'warning' && (
             <Alert variant="warning" className="mb-4">
               <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Warning</AlertTitle>
+              <AlertTitle>{t('Warning')}</AlertTitle>
               <AlertDescription>
-                Your account health needs attention. Review your contact lists and sending practices to maintain good
-                standing.
+                {t('Your account health needs attention. Review your contact lists and sending practices to maintain good standing.')}
               </AlertDescription>
             </Alert>
           )}
@@ -94,7 +93,7 @@ export function SecuritySettings({metrics, isLoading}: SecuritySettingsProps) {
             <Alert>
               <CheckCircle className="h-4 w-4 text-green-600" />
               <AlertDescription>
-                Bounce and complaint rates are within limits.
+                {t('Bounce and complaint rates are within limits.')}
               </AlertDescription>
             </Alert>
           )}
@@ -104,20 +103,20 @@ export function SecuritySettings({metrics, isLoading}: SecuritySettingsProps) {
       {/* Bounce Metrics */}
       <Card>
         <CardHeader>
-          <CardTitle>Bounce rate</CardTitle>
-          <CardDescription>Hard bounces indicate invalid or non-existent email addresses</CardDescription>
+          <CardTitle>{t('Bounce rate')}</CardTitle>
+          <CardDescription>{t('Hard bounces indicate invalid or non-existent email addresses')}</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <div className="divide-y divide-neutral-100">
             <HealthMetric
-              label="Last 7 days"
+              label={t('Last 7 days')}
               level={levels.bounce7Day}
-              detail={`${status.sevenDay.bounceRate.toFixed(2)}% bounce rate (${status.sevenDay.bounces.toLocaleString()} of ${status.sevenDay.total.toLocaleString()} emails)`}
+              detail={t('{value}% bounce rate ({value2} of {value3} emails)', {value: status.sevenDay.bounceRate.toFixed(2), value2: status.sevenDay.bounces.toLocaleString(), value3: status.sevenDay.total.toLocaleString()})}
             />
             <HealthMetric
-              label="All time"
+              label={t('All time')}
               level={levels.bounceAllTime}
-              detail={`${status.allTime.bounceRate.toFixed(2)}% bounce rate (${status.allTime.bounces.toLocaleString()} of ${status.allTime.total.toLocaleString()} emails)`}
+              detail={t('{value}% bounce rate ({value2} of {value3} emails)', {value: status.allTime.bounceRate.toFixed(2), value2: status.allTime.bounces.toLocaleString(), value3: status.allTime.total.toLocaleString()})}
             />
           </div>
         </CardContent>
@@ -126,20 +125,20 @@ export function SecuritySettings({metrics, isLoading}: SecuritySettingsProps) {
       {/* Complaint Metrics */}
       <Card>
         <CardHeader>
-          <CardTitle>Complaint rate</CardTitle>
-          <CardDescription>Complaints occur when recipients mark emails as spam</CardDescription>
+          <CardTitle>{t('Complaint rate')}</CardTitle>
+          <CardDescription>{t('Complaints occur when recipients mark emails as spam')}</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <div className="divide-y divide-neutral-100">
             <HealthMetric
-              label="Last 7 days"
+              label={t('Last 7 days')}
               level={levels.complaint7Day}
-              detail={`${status.sevenDay.complaintRate.toFixed(3)}% complaint rate (${status.sevenDay.complaints.toLocaleString()} of ${status.sevenDay.total.toLocaleString()} emails)`}
+              detail={t('{value}% complaint rate ({value2} of {value3} emails)', {value: status.sevenDay.complaintRate.toFixed(3), value2: status.sevenDay.complaints.toLocaleString(), value3: status.sevenDay.total.toLocaleString()})}
             />
             <HealthMetric
-              label="All time"
+              label={t('All time')}
               level={levels.complaintAllTime}
-              detail={`${status.allTime.complaintRate.toFixed(3)}% complaint rate (${status.allTime.complaints.toLocaleString()} of ${status.allTime.total.toLocaleString()} emails)`}
+              detail={t('{value}% complaint rate ({value2} of {value3} emails)', {value: status.allTime.complaintRate.toFixed(3), value2: status.allTime.complaints.toLocaleString(), value3: status.allTime.total.toLocaleString()})}
             />
           </div>
         </CardContent>

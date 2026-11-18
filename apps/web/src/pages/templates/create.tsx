@@ -21,6 +21,7 @@ import {useState} from 'react';
 import {toast} from 'sonner';
 import {TemplateSchemas, detectUnsubscribeSignal} from '@plunk/shared';
 import {useActiveProject} from '../../lib/contexts/ActiveProjectProvider';
+import {t} from '../../lib/i18n';
 
 export default function CreateTemplatePage() {
   const router = useRouter();
@@ -58,17 +59,17 @@ export default function CreateTemplatePage() {
         type,
       });
 
-      toast.success('Template created');
+      toast.success(t('Template created'));
       void router.push(`/templates/${template.id}`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t create the template. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t create the template. Try again.'));
       setSaving(false);
     }
   };
 
   return (
     <>
-      <NextSeo title="Create template" />
+      <NextSeo title={t('Create template')} />
       <DashboardLayout>
         <div className="space-y-6">
           {/* Header */}
@@ -77,9 +78,9 @@ export default function CreateTemplatePage() {
               <Link href="/templates"><ArrowLeft className="h-4 w-4" /></Link>
             </Button>
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900">Create template</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900">{t('Create template')}</h1>
               <p className="text-neutral-500 mt-1 text-sm sm:text-base">
-                A reusable email for campaigns and workflows.
+                {t('A reusable email for campaigns and workflows.')}
               </p>
             </div>
           </div>
@@ -89,29 +90,29 @@ export default function CreateTemplatePage() {
             <div className="grid gap-6 md:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>Basic information</CardTitle>
+                  <CardTitle>{t('Basic information')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Template name <span className="text-red-500">*</span></Label>
+                    <Label htmlFor="name">{t('Template name')}{' '}<span className="text-red-500">*</span></Label>
                     <Input
                       id="name"
                       type="text"
                       value={name}
                       onChange={e => setName(e.target.value)}
                       required
-                      placeholder="e.g., Welcome email"
+                      placeholder={t('e.g., Welcome email')}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
+                    <Label htmlFor="description">{t('Description')}</Label>
                     <Input
                       id="description"
                       type="text"
                       value={description}
                       onChange={e => setDescription(e.target.value)}
-                      placeholder="e.g., Sent to new subscribers"
+                      placeholder={t('e.g., Sent to new subscribers')}
                     />
                   </div>
                 </CardContent>
@@ -119,15 +120,15 @@ export default function CreateTemplatePage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Template type</CardTitle>
-                  <CardDescription>Transactional templates skip the subscription check and the footer.</CardDescription>
+                  <CardTitle>{t('Template type')}</CardTitle>
+                  <CardDescription>{t('Transactional templates skip the subscription check and the footer.')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-col gap-2">
                     {([
-                      {value: 'MARKETING', label: 'Marketing', description: 'Subscribed contacts, includes unsubscribe link'},
-                      {value: 'TRANSACTIONAL', label: 'Transactional', description: 'All contacts, no subscription check or footer'},
-                      {value: 'HEADLESS', label: 'Headless', description: 'Subscribed contacts, no Plunk footer'},
+                      {value: 'MARKETING', label: t('Marketing'), description: t('Subscribed contacts, includes unsubscribe link')},
+                      {value: 'TRANSACTIONAL', label: t('Transactional'), description: t('All contacts, no subscription check or footer')},
+                      {value: 'HEADLESS', label: t('Headless'), description: t('Subscribed contacts, no Plunk footer')},
                     ] as const).map(({value, label, description}) => (
                       <button
                         key={value}
@@ -148,11 +149,11 @@ export default function CreateTemplatePage() {
                     <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 overflow-hidden">
                       <div className="flex items-center gap-2 border-b border-amber-200 bg-amber-100/60 px-3 py-2">
                         <TriangleAlert className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-                        <p className="text-xs font-semibold text-amber-900">No unsubscribe link detected</p>
+                        <p className="text-xs font-semibold text-amber-900">{t('No unsubscribe link detected')}</p>
                       </div>
                       <div className="px-3 py-2.5 space-y-2">
                         <p className="text-xs text-amber-800 leading-relaxed">
-                          You are responsible for providing recipients a way to opt out. Use the Plunk variables below to build your own footer.
+                          {t('You are responsible for providing recipients a way to opt out. Use the Plunk variables below to build your own footer.')}
                         </p>
                         <div className="flex flex-wrap gap-1.5">
                           <code className="inline-flex items-center rounded bg-amber-100 border border-amber-200 px-1.5 py-0.5 font-mono text-[11px] text-amber-900">
@@ -172,20 +173,20 @@ export default function CreateTemplatePage() {
             {/* Email Settings */}
             <Card>
               <CardHeader>
-                <CardTitle>Email settings</CardTitle>
+                <CardTitle>{t('Email settings')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="subject">Subject line <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="subject">{t('Subject line')}{' '}<span className="text-red-500">*</span></Label>
                   <Input
                     id="subject"
                     type="text"
                     value={subject}
                     onChange={e => setSubject(e.target.value)}
                     required
-                    placeholder="e.g., Welcome to Acme"
+                    placeholder={t('e.g., Welcome to Acme')}
                   />
-                  <p className="text-xs text-neutral-500">Use {'{{variableName}}'} for dynamic content</p>
+                  <p className="text-xs text-neutral-500">{t('Use')}{' '}{'{{variableName}}'} {t('for dynamic content')}</p>
                 </div>
 
                 <EmailSettings
@@ -195,7 +196,7 @@ export default function CreateTemplatePage() {
                   onFromChange={setFrom}
                   onFromNameChange={setFromName}
                   onReplyToChange={setReplyTo}
-                  fromNamePlaceholder={activeProject?.name || 'Your Company'}
+                  fromNamePlaceholder={activeProject?.name || t('Your Company')}
                 />
               </CardContent>
             </Card>
@@ -203,7 +204,7 @@ export default function CreateTemplatePage() {
             {/* Email Body */}
             <Card className="overflow-visible">
               <CardHeader>
-                <CardTitle>Email body</CardTitle>
+                <CardTitle>{t('Email body')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <EmailEditor value={body} onChange={setBody} />
@@ -213,10 +214,10 @@ export default function CreateTemplatePage() {
             {/* Actions */}
             <div className="flex justify-end gap-3">
               <Button asChild variant="outline">
-                <Link href="/templates">Cancel</Link>
+                <Link href="/templates">{t('Cancel')}</Link>
               </Button>
               <Button type="submit" disabled={saving}>
-                {saving ? 'Creating…' : 'Create Template'}
+                {saving ? t('Creating…') : t('Create Template')}
               </Button>
             </div>
           </form>

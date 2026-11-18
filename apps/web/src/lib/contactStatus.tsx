@@ -3,6 +3,7 @@ import type {ContactSubscriptionStatus} from '@plunk/types';
 import {Badge} from '@plunk/ui';
 import {Clock, MailCheck, MailX} from 'lucide-react';
 import React from 'react';
+import {t} from './i18n';
 
 /**
  * How the dashboard reads a contact's subscription state.
@@ -44,9 +45,9 @@ export function formatSnoozedUntil(value: Date | string | null): string {
 }
 
 const STATUS_LABEL: Record<ContactSubscriptionStatus, string> = {
-  subscribed: 'Subscribed',
-  snoozed: 'Snoozed',
-  unsubscribed: 'Unsubscribed',
+  subscribed: t('Subscribed'),
+  snoozed: t('Snoozed'),
+  unsubscribed: t('Unsubscribed'),
 };
 
 /**
@@ -60,7 +61,7 @@ export function ContactStatusBadge({contact}: {contact: Pick<Contact, 'subscribe
   return (
     <Badge
       variant={status === 'subscribed' ? 'success' : status === 'snoozed' ? 'neutral' : 'destructive'}
-      title={status === 'snoozed' ? `Resumes on ${formatSnoozedUntil(contact.snoozedUntil)}` : undefined}
+      title={status === 'snoozed' ? t('Resumes on {value}', {value: formatSnoozedUntil(contact.snoozedUntil)}) : undefined}
     >
       {STATUS_LABEL[status]}
     </Badge>

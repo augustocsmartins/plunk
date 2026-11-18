@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Plunk Self-Hosting Docker Compose
 # This setup runs all Plunk services in a single container with nginx reverse proxy
 #
@@ -129,6 +127,12 @@ services:
 
       # Nginx configuration
       NGINX_PORT: ${NGINX_PORT:-80}
+      WIKI_PORT: ${WIKI_PORT:-1000}
+      DISABLE_WIKI: ${DISABLE_WIKI:-false}
+      DISABLE_LANDING: ${DISABLE_LANDING:-true}
+      DISABLE_SMTP: ${DISABLE_SMTP:-false}
+      PORT_SECURE: ${SMTP_PORT_SECURE:-465}
+      PORT_SUBMISSION: ${SMTP_PORT_SUBMISSION:-587}
 
       # Domain configuration (subdomain-based routing)
       # Each service gets its own subdomain
@@ -196,7 +200,14 @@ services:
 
       # Self-hosting user management (documented in .env.self-host.example
       # and read by apps/api/src/app/constants.ts at import time)
-      DISABLE_SIGNUPS: ${DISABLE_SIGNUPS:-false}
+      DISABLE_SIGNUPS: ${DISABLE_SIGNUPS:-true}
+      SHOW_SPONSOR: ${SHOW_SPONSOR:-false}
+
+      # WhatsApp (Evolution API) — transactional messages from the API and workflows
+      EVOLUTION_BASE_URL: ${EVOLUTION_BASE_URL:-}
+      EVOLUTION_ADMIN_TOKEN: ${EVOLUTION_ADMIN_TOKEN:-}
+      WHATSAPP_WEBHOOK_BASE_URL: ${WHATSAPP_WEBHOOK_BASE_URL:-}
+      WHATSAPP_RATE_LIMIT_PER_MINUTE: ${WHATSAPP_RATE_LIMIT_PER_MINUTE:-20}
 
       # Explicit SES sending rate (avoid silent fallback to 14/sec when
       # ses:GetSendQuota is denied or transiently fails at worker startup)
@@ -213,9 +224,10 @@ services:
       # - /path/to/certs:/certs:ro
 
     ports:
+      - "${HTTP_BIND_ADDRESS:-127.0.0.1}:${HTTP_PORT:-80}:${NGINX_PORT:-80}"
       # SMTP ports (for email relay)
-      - "${PORT_SECURE:-465}:465"    # SMTPS (implicit TLS)
-      - "${PORT_SUBMISSION:-587}:587"    # SMTP Submission (STARTTLS)
+      - "${PORT_SECURE:-465}:${SMTP_PORT_SECURE:-465}"    # SMTPS (implicit TLS)
+      - "${PORT_SUBMISSION:-587}:${SMTP_PORT_SUBMISSION:-587}"    # SMTP Submission (STARTTLS)
       # Optional: Expose individual service ports for debugging
       # - "8080:8080"  # API
       # - "3000:3000"  # Web

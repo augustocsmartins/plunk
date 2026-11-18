@@ -1,6 +1,7 @@
 import {Button} from '@plunk/ui';
 import {X} from 'lucide-react';
 import type {ReactNode} from 'react';
+import {t} from '../../lib/i18n';
 
 interface BulkActionBarProps {
   /** Number of currently-selected rows. The bar renders only when this is > 0. */
@@ -43,7 +44,7 @@ export function BulkActionBar({selectedCount, itemNoun, onClear, note, children}
   return (
     <div
       role="region"
-      aria-label="Bulk actions"
+      aria-label={t('Bulk actions')}
       className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-md border border-neutral-200 bg-neutral-50 px-4 py-2.5"
     >
       <div className="flex items-center gap-2 min-w-0 flex-wrap">
@@ -52,13 +53,13 @@ export function BulkActionBar({selectedCount, itemNoun, onClear, note, children}
           variant="ghost"
           size="sm"
           onClick={onClear}
-          aria-label="Clear selection"
-          title="Clear selection"
+          aria-label={t('Clear selection')}
+          title={t('Clear selection')}
         >
           <X className="h-4 w-4" />
         </Button>
         <span className="text-sm font-medium text-neutral-900 tabular-nums whitespace-nowrap">
-          {selectedCount.toLocaleString()} {noun} selected
+          {selectedCount.toLocaleString()} {noun} {t('selected')}
         </span>
         {note ? (
           <>

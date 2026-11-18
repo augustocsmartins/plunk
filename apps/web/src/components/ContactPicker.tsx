@@ -6,6 +6,7 @@ import {useEffect, useRef, useState} from 'react';
 import useSWR from 'swr';
 import {ContactSchemas} from '@plunk/shared';
 import {network} from '../lib/network';
+import {t} from '../lib/i18n';
 
 type Mode = 'search' | 'paste';
 
@@ -38,7 +39,7 @@ export function ContactPicker({
   onChange,
   onAdd,
   existing = [],
-  placeholder = 'Search contacts…',
+  placeholder = t('Search contacts…'),
 }: ContactPickerProps) {
   const [mode, setMode] = useState<Mode>('search');
 
@@ -118,7 +119,7 @@ export function ContactPicker({
           }`}
         >
           <Search className="h-3.5 w-3.5" />
-          Search
+          {t('Search')}
         </button>
         <button
           type="button"
@@ -128,7 +129,7 @@ export function ContactPicker({
           }`}
         >
           <ClipboardList className="h-3.5 w-3.5" />
-          Paste
+          {t('Paste')}
         </button>
       </div>
 
@@ -154,7 +155,7 @@ export function ContactPicker({
               <div className="flex items-center border-b border-neutral-200 px-3 py-2">
                 <Search className="mr-2 h-4 w-4 shrink-0 text-neutral-400" />
                 <Input
-                  placeholder="Type an email to search…"
+                  placeholder={t('Type an email to search…')}
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   className="border-0 p-0 h-8 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm"
@@ -163,11 +164,11 @@ export function ContactPicker({
               </div>
               <div className="max-h-[240px] overflow-y-auto p-1">
                 {debouncedSearch.length === 0 ? (
-                  <p className="py-6 text-center text-sm text-neutral-400">Type to search contacts</p>
+                  <p className="py-6 text-center text-sm text-neutral-400">{t('Type to search contacts')}</p>
                 ) : isLoading ? (
-                  <p className="py-6 text-center text-sm text-neutral-400">Searching...</p>
+                  <p className="py-6 text-center text-sm text-neutral-400">{t('Searching...')}</p>
                 ) : contacts.length === 0 ? (
-                  <p className="py-6 text-center text-sm text-neutral-400">No contacts found</p>
+                  <p className="py-6 text-center text-sm text-neutral-400">{t('No contacts found')}</p>
                 ) : (
                   contacts.map(contact => {
                     const isSelected = selected.includes(contact.email);
@@ -186,7 +187,7 @@ export function ContactPicker({
                           <MailX className="h-4 w-4 text-red-500 shrink-0" />
                         )}
                         <span className="flex-1 truncate text-neutral-900">{contact.email}</span>
-                        {isExisting && <span className="text-xs text-neutral-400 shrink-0">already member</span>}
+                        {isExisting && <span className="text-xs text-neutral-400 shrink-0">{t('already member')}</span>}
                         {isSelected && !isExisting && <Check className="h-4 w-4 text-neutral-900 shrink-0" />}
                       </button>
                     );
@@ -210,7 +211,7 @@ export function ContactPicker({
                       type="button"
                       onClick={() => onChange(selected.filter(e => e !== email))}
                       className="rounded-full p-0.5 hover:bg-neutral-300 transition-colors"
-                      aria-label={`Remove ${email}`}
+                      aria-label={t('Remove {email}', {email: email})}
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -218,7 +219,7 @@ export function ContactPicker({
                 ))}
                 {overflowCount > 0 && (
                   <span className="inline-flex items-center rounded-full bg-neutral-100 border border-neutral-200 px-3 py-1 text-sm text-neutral-500">
-                    +{overflowCount} more
+                    +{overflowCount} {t('more')}
                   </span>
                 )}
               </div>
@@ -227,7 +228,7 @@ export function ContactPicker({
                 onClick={() => onChange([])}
                 className="text-xs text-neutral-400 hover:text-neutral-600 transition-colors"
               >
-                Clear all
+                {t('Clear all')}
               </button>
             </div>
           )}
@@ -238,32 +239,32 @@ export function ContactPicker({
           <textarea
             value={pasteText}
             onChange={e => setPasteText(e.target.value)}
-            placeholder={'Paste emails here, one per line or comma-separated...\n\nalice@example.com\nbob@example.com, carol@example.com'}
+            placeholder={t('Paste emails here, one per line or comma-separated...\n\nalice@example.com\nbob@example.com, carol@example.com')}
             rows={6}
             className="w-full rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none font-mono"
           />
 
           {/* Preview panel — toggle lives here, inline with the "new contacts" row */}
           {pasteText.trim() === '' ? (
-            <p className="text-xs text-neutral-400">Accepts newline, comma, or semicolon-separated addresses</p>
+            <p className="text-xs text-neutral-400">{t('Accepts newline, comma, or semicolon-separated addresses')}</p>
           ) : isLooking ? (
-            <p className="flex items-center gap-1.5 text-xs text-neutral-400"><Loader2 className="h-3 w-3 animate-spin" /> Checking...</p>
+            <p className="flex items-center gap-1.5 text-xs text-neutral-400"><Loader2 className="h-3 w-3 animate-spin" /> {t('Checking...')}</p>
           ) : newPastedEmails.length > 0 && preview ? (
             <div className="rounded-md border border-neutral-200 divide-y divide-neutral-100 text-sm overflow-hidden">
               {preview.found.length > 0 && (
                 <div className="flex items-center gap-2 px-3 py-2.5 text-neutral-700">
                   <MailCheck className="h-4 w-4 text-green-600 shrink-0" />
-                  <span><span className="font-medium">{preview.found.length}</span> existing contact{preview.found.length !== 1 ? 's' : ''}</span>
+                  <span><span className="font-medium">{preview.found.length}</span> {t('existing contact')}{preview.found.length !== 1 ? 's' : ''}</span>
                 </div>
               )}
               {preview.notFound.length > 0 && (
                 <div className="flex items-center justify-between px-3 py-2.5">
                   <div className="flex items-center gap-2 text-neutral-700">
                     <Sparkles className="h-4 w-4 text-amber-500 shrink-0" />
-                    <span><span className="font-medium">{preview.notFound.length}</span> new — will be created</span>
+                    <span><span className="font-medium">{preview.notFound.length}</span> {t('new — will be created')}</span>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <Label htmlFor="subscribe-new" className="text-xs text-neutral-500 cursor-pointer">Subscribe</Label>
+                    <Label htmlFor="subscribe-new" className="text-xs text-neutral-500 cursor-pointer">{t('Subscribe')}</Label>
                     <Switch id="subscribe-new" checked={subscribeNew} onCheckedChange={setSubscribeNew} />
                   </div>
                 </div>
@@ -271,7 +272,7 @@ export function ContactPicker({
             </div>
           ) : (
             <p className="text-xs text-neutral-400">
-              {parsedEmails.length > 0 ? 'All detected emails are already in this segment' : 'No valid emails detected'}
+              {parsedEmails.length > 0 ? t('All detected emails are already in this segment') : t('No valid emails detected')}
             </p>
           )}
 
@@ -281,7 +282,7 @@ export function ContactPicker({
             disabled={newPastedEmails.length === 0 || isLooking}
             className="w-full"
           >
-            Add {newPastedEmails.length > 0 ? `${newPastedEmails.length} ` : ''}contact{newPastedEmails.length !== 1 ? 's' : ''}
+            {t('Add')}{' '}{newPastedEmails.length > 0 ? `${newPastedEmails.length} ` : ''}{t('contact')}{newPastedEmails.length !== 1 ? 's' : ''}
           </Button>
         </div>
       )}

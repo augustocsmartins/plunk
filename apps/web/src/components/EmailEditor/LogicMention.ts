@@ -4,6 +4,7 @@ import Suggestion from '@tiptap/suggestion';
 
 import {createSuggestionRenderer, SuggestionMenu, type SuggestionRow} from './suggestionPopup';
 import {getSuggestionFields} from './VariableMention';
+import {t} from '../../lib/i18n';
 
 /**
  * A block of Liquid offered by the `{%` menu.
@@ -56,26 +57,26 @@ function block(label: string, ...lines: string[]): LogicBlock {
 export function blocksForField(field: string, type?: string): LogicBlock[] {
   if (type === 'boolean') {
     return [
-      block(`Show when ${field} is true`, `{% if ${field} %}`, '', '{% endif %}'),
-      block(`Show when ${field} is false`, `{% unless ${field} %}`, '', '{% endunless %}'),
-      block(`Show one thing, or another if not`, `{% if ${field} %}`, '', '{% else %}', '', '{% endif %}'),
+      block(t('Show when {field} is true', {field: field}), `{% if ${field} %}`, '', '{% endif %}'),
+      block(t('Show when {field} is false', {field: field}), `{% unless ${field} %}`, '', '{% endunless %}'),
+      block(t('Show one thing, or another if not'), `{% if ${field} %}`, '', '{% else %}', '', '{% endif %}'),
     ];
   }
 
   if (type === 'number' || type === 'date') {
     return [
-      block(`Show when ${field} is above a value`, `{% if ${field} > 0 %}`, '', '{% endif %}'),
-      block(`Show when ${field} is below a value`, `{% if ${field} < 0 %}`, '', '{% endif %}'),
-      block(`Show when ${field} is set`, `{% if ${field} %}`, '', '{% endif %}'),
-      block(`Show one thing, or another if not`, `{% if ${field} %}`, '', '{% else %}', '', '{% endif %}'),
+      block(t('Show when {field} is above a value', {field: field}), `{% if ${field} > 0 %}`, '', '{% endif %}'),
+      block(t('Show when {field} is below a value', {field: field}), `{% if ${field} < 0 %}`, '', '{% endif %}'),
+      block(t('Show when {field} is set', {field: field}), `{% if ${field} %}`, '', '{% endif %}'),
+      block(t('Show one thing, or another if not'), `{% if ${field} %}`, '', '{% else %}', '', '{% endif %}'),
     ];
   }
 
   return [
-    block(`Show when ${field} is set`, `{% if ${field} %}`, '', '{% endif %}'),
-    block(`Show when ${field} matches a value`, `{% if ${field} == "value" %}`, '', '{% endif %}'),
+    block(t('Show when {field} is set', {field: field}), `{% if ${field} %}`, '', '{% endif %}'),
+    block(t('Show when {field} matches a value', {field: field}), `{% if ${field} == "value" %}`, '', '{% endif %}'),
     block(
-      `Pick a version per ${field} value`,
+      t('Pick a version per {field} value', {field: field}),
       `{% case ${field} %}`,
       `{% when "value" %}`,
       '',
@@ -83,9 +84,9 @@ export function blocksForField(field: string, type?: string): LogicBlock[] {
       '',
       '{% endcase %}',
     ),
-    block(`Show one thing, or another if missing`, `{% if ${field} %}`, '', '{% else %}', '', '{% endif %}'),
-    block(`Show when ${field} contains a value`, `{% if ${field} contains "value" %}`, '', '{% endif %}'),
-    block(`Hide when ${field} is set`, `{% unless ${field} %}`, '', '{% endunless %}'),
+    block(t('Show one thing, or another if missing'), `{% if ${field} %}`, '', '{% else %}', '', '{% endif %}'),
+    block(t('Show when {field} contains a value', {field: field}), `{% if ${field} contains "value" %}`, '', '{% endif %}'),
+    block(t('Hide when {field} is set', {field: field}), `{% unless ${field} %}`, '', '{% endunless %}'),
   ];
 }
 
@@ -97,18 +98,18 @@ export function blocksForField(field: string, type?: string): LogicBlock[] {
 export function defaultBlocks(): LogicBlock[] {
   return [
     ...blocksForField(FIELD_PLACEHOLDER).slice(0, 4),
-    block(`Hide when ${FIELD_PLACEHOLDER} is set`, `{% unless ${FIELD_PLACEHOLDER} %}`, '', '{% endunless %}'),
-    block('Repeat for each item in a list', '{% for item in items %}', '', '{% endfor %}'),
+    block(t('Hide when {FIELD_PLACEHOLDER} is set', {FIELD_PLACEHOLDER: FIELD_PLACEHOLDER}), `{% unless ${FIELD_PLACEHOLDER} %}`, '', '{% endunless %}'),
+    block(t('Repeat for each item in a list'), '{% for item in items %}', '', '{% endfor %}'),
     block(
-      'Repeat for each item, or show a fallback when empty',
+      t('Repeat for each item, or show a fallback when empty'),
       '{% for item in items %}',
       '',
       '{% else %}',
       '',
       '{% endfor %}',
     ),
-    block('Add a note that never sends', '{% comment %}', '', '{% endcomment %}'),
-    block('Show template markup as literal text', '{% raw %}', '', '{% endraw %}'),
+    block(t('Add a note that never sends'), '{% comment %}', '', '{% endcomment %}'),
+    block(t('Show template markup as literal text'), '{% raw %}', '', '{% endraw %}'),
   ];
 }
 
@@ -211,7 +212,7 @@ export const LogicMention = Extension.create({
           editor.commands.setTextSelection(editor.state.selection.from - offset);
         },
 
-        render: createSuggestionRenderer(props => new SuggestionMenu<LogicBlock>(props, 'No matching field or block')),
+        render: createSuggestionRenderer(props => new SuggestionMenu<LogicBlock>(props, t('No matching field or block'))),
       }),
     ];
   },

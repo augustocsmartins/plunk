@@ -6,6 +6,8 @@ import {prisma} from '../database/prisma.js';
 import {HttpException} from '../exceptions/index.js';
 import type {ListSort} from '../utils/listSort.js';
 import {buildEmailFieldsUpdate} from '../utils/modelUpdate.js';
+import {DomainService} from './DomainService.js';
+import {sendRawEmail} from './SESService.js';
 
 export class TemplateService {
   /**
@@ -86,6 +88,7 @@ export class TemplateService {
       fromName?: string | null;
       replyTo?: string | null;
       type?: Template['type'];
+      tracking?: boolean | null;
     },
   ): Promise<Template> {
     return prisma.template.create({
@@ -99,6 +102,7 @@ export class TemplateService {
         fromName: data.fromName,
         replyTo: data.replyTo,
         type: data.type ?? 'MARKETING',
+        tracking: data.tracking,
       },
     });
   }
@@ -118,6 +122,7 @@ export class TemplateService {
       fromName?: string | null;
       replyTo?: string | null;
       type?: Template['type'];
+      tracking?: boolean | null;
     },
   ): Promise<Template> {
     // Verify template exists and belongs to project
@@ -259,6 +264,7 @@ export class TemplateService {
         fromName: template.fromName,
         replyTo: template.replyTo,
         type: template.type,
+        tracking: template.tracking,
       },
     });
   }
@@ -289,5 +295,71 @@ export class TemplateService {
       workflowSteps: workflowStepsCount,
       emailsSent: emailsCount,
     };
+  }
+
+  /**
+   * Send a test email for a template
+   * Only project members can receive test emails
+   */
+  public static async sendTest(
+    projectId: string,
+    templateId: string,
+    testEmail: string,
+    draft?: {subject?: string; body?: string; from?: string; fromName?: string | null; replyTo?: string | null},
+  ): Promise<void> {
+    const template = await this.get(projectId, templateId);
+
+    // Validate that the test email belongs to a project member
+    const membership = await prisma.membership.findFirst({
+      where: {
+        projectId,
+        user: {
+          email: testEmail,
+        },
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    if (!membership) {
+      throw new HttpException(403, 'Test emails can only be sent to project members');
+    }
+
+    // Prefer the draft the editor sent; fall back to the saved version.
+    const subject = draft?.subject || template.subject;
+    const body = draft?.body || template.body;
+    const fromEmail = draft?.from || template.from;
+    const fromName = draft?.fromName !== undefined ? draft.fromName : template.fromName;
+    const replyTo = draft?.replyTo !== undefined ? draft.replyTo : template.replyTo;
+
+    // Verify domain is registered and verified before sending
+    await DomainService.verifyEmailDomain(fromEmail, projectId);
+
+    // Get project for fallback sender name
+    const project = await prisma.project.findUnique({
+      where: {id: projectId},
+    });
+
+    if (!project) {
+      throw new HttpException(404, 'Project not found');
+    }
+
+    await sendRawEmail({
+      from: {
+        name: fromName || project.name || 'Plunk',
+        email: fromEmail,
+      },
+      to: [testEmail],
+      content: {
+        subject: `[TEST] ${subject}`,
+        html: body,
+      },
+      reply: replyTo || undefined,
+      headers: {
+        'X-Plunk-Test': 'true',
+      },
+      tracking: false,
+    });
   }
 }

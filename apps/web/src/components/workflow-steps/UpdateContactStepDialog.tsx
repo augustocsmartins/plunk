@@ -5,13 +5,14 @@ import {toast} from 'sonner';
 import {KeyValueEditor} from '../KeyValueEditor';
 
 import {type EditStepDialogProps, getStepConfig, StepDialogShell, useStepUpdate} from './shared';
+import {t} from '../../lib/i18n';
 
 type SubscriptionAction = 'none' | 'subscribe' | 'unsubscribe';
 
 const SUBSCRIPTION_OPTIONS: Array<{value: SubscriptionAction; label: string; description: string}> = [
-  {value: 'none', label: 'Leave as is', description: "Don't change the contact's subscription state."},
-  {value: 'subscribe', label: 'Subscribe', description: 'Mark the contact as subscribed.'},
-  {value: 'unsubscribe', label: 'Unsubscribe', description: 'Mark the contact as unsubscribed.'},
+  {value: 'none', label: t('Leave as is'), description: t('Don\'t change the contact\'s subscription state.')},
+  {value: 'subscribe', label: t('Subscribe'), description: t('Mark the contact as subscribed.')},
+  {value: 'unsubscribe', label: t('Unsubscribe'), description: t('Mark the contact as unsubscribed.')},
 ];
 
 export function UpdateContactStepDialog({step, workflowId, open, onOpenChange, onSuccess}: EditStepDialogProps) {
@@ -40,7 +41,7 @@ export function UpdateContactStepDialog({step, workflowId, open, onOpenChange, o
     const hasSubscriptionAction = subscriptionAction !== 'none';
 
     if (!hasUpdates && !hasSubscriptionAction) {
-      toast.error('Add at least one field to update or choose a subscription action');
+      toast.error(t('Add at least one field to update or choose a subscription action'));
       return;
     }
 
@@ -69,7 +70,7 @@ export function UpdateContactStepDialog({step, workflowId, open, onOpenChange, o
       isSubmitting={isSubmitting}
     >
       <div className="space-y-2">
-        <Label>Subscription state</Label>
+        <Label>{t('Subscription state')}</Label>
         <RadioGroup
           value={subscriptionAction}
           onValueChange={value => setSubscriptionAction(value as SubscriptionAction)}

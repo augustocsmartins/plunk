@@ -7,6 +7,7 @@ import {OnboardingLayout} from '../../components/onboarding/OnboardingLayout';
 import {useActiveProject} from '../../lib/contexts/ActiveProjectProvider';
 import {useOnboardingGate} from '../../lib/hooks/useOnboardingGate';
 import {type OnboardingPath, useOnboardingPath} from '../../lib/hooks/useOnboardingPath';
+import {t} from '../../lib/i18n';
 
 interface PathOption {
   id: OnboardingPath;
@@ -20,23 +21,23 @@ const paths: PathOption[] = [
   {
     id: 'developer',
     icon: Code2,
-    title: 'Send transactional emails',
-    description: 'Wire Plunk into your app for password resets, receipts, and notifications.',
-    meta: '~1 minute',
+    title: t('Send transactional emails'),
+    description: t('Wire Plunk into your app for password resets, receipts, and notifications.'),
+    meta: t('~1 minute'),
   },
   {
     id: 'marketing',
     icon: Megaphone,
-    title: 'Run email campaigns',
-    description: 'Import contacts, draft campaigns, and broadcast to your audience.',
-    meta: '~5 minutes',
+    title: t('Run email campaigns'),
+    description: t('Import contacts, draft campaigns, and broadcast to your audience.'),
+    meta: t('~5 minutes'),
   },
   {
     id: 'workflows',
     icon: Workflow,
-    title: 'Automate with workflows',
-    description: 'Trigger emails from events in your app — onboarding, retention, receipts.',
-    meta: '~5 minutes',
+    title: t('Automate with workflows'),
+    description: t('Trigger emails from events in your app — onboarding, retention, receipts.'),
+    meta: t('~5 minutes'),
   },
 ];
 
@@ -55,15 +56,15 @@ export default function OnboardingWelcome() {
 
   return (
     <>
-      <NextSeo title="Welcome to Plunk" />
+      <NextSeo title={t('Welcome to Plunk')} />
       <OnboardingLayout step={1} maxWidthClass="max-w-5xl">
         <div className="flex flex-col gap-8">
           <header className="flex flex-col gap-2">
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-neutral-900">
-              Welcome to Plunk.
+              {t('Welcome to Plunk.')}
             </h1>
             <p className="text-base text-neutral-600 max-w-lg leading-relaxed">
-              Two minutes of setup and you&#39;ll be sending. How do you plan to use Plunk?
+              {t('Two minutes of setup and you\'ll be sending. How do you plan to use Plunk?')}
             </p>
           </header>
 
@@ -93,7 +94,7 @@ export default function OnboardingWelcome() {
                     <p className="text-sm text-neutral-600 leading-relaxed">{path.description}</p>
                   </div>
                   <div className="flex items-center gap-1.5 text-sm font-medium text-neutral-900">
-                    <span>Start here</span>
+                    <span>{t('Start here')}</span>
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                   </div>
                 </motion.button>
@@ -102,7 +103,7 @@ export default function OnboardingWelcome() {
           </div>
 
           <p className="text-xs text-neutral-500">
-            Not sure? Pick the closest fit — you can do all three once you&#39;re set up.
+            {t('Not sure? Pick the closest fit — you can do all three once you\'re set up.')}
           </p>
         </div>
       </OnboardingLayout>

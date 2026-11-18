@@ -33,6 +33,7 @@ import {useMemo, useState} from 'react';
 import {toast} from 'sonner';
 import useSWR from 'swr';
 import dayjs from 'dayjs';
+import {t} from '../../lib/i18n';
 
 type TypeFilter = 'ALL' | 'DYNAMIC' | 'STATIC';
 
@@ -49,8 +50,8 @@ const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {
 };
 
 const TYPE_OPTIONS = [
-  {value: 'DYNAMIC', label: 'Dynamic'},
-  {value: 'STATIC', label: 'Static'},
+  {value: 'DYNAMIC', label: t('Dynamic')},
+  {value: 'STATIC', label: t('Static')},
 ];
 
 // The count job rewrites every segment's memberCount on a schedule, which bumps `updatedAt`.
@@ -59,16 +60,16 @@ function RefreshedAt({date, className = ''}: {date: Date | string; className?: s
   return (
     <div className={'group relative inline-flex items-center gap-1.5 cursor-help whitespace-nowrap ' + className}>
       <RefreshCw className="h-3 w-3 shrink-0" />
-      <span>Refreshed {formatRelativeTime(date)}</span>
+      <span>{t('Refreshed')}{' '}{formatRelativeTime(date)}</span>
       <div className="hidden group-hover:block absolute z-10 p-2 bg-neutral-900 text-white text-xs rounded shadow-md bottom-full left-0 mb-1 whitespace-nowrap">
-        Member count recalculated {dayjs(date).format('DD MMMM YYYY, HH:mm')}
+        {t('Member count recalculated')}{' '}{dayjs(date).format('DD MMMM YYYY, HH:mm')}
       </div>
     </div>
   );
 }
 
 function StaticRules() {
-  return <p className="text-xs text-neutral-500">Contacts added by hand</p>;
+  return <p className="text-xs text-neutral-500">{t('Contacts added by hand')}</p>;
 }
 
 export default function SegmentsPage() {
@@ -103,10 +104,10 @@ export default function SegmentsPage() {
 
     try {
       await network.fetch('DELETE', `/segments/${segmentToDelete}`);
-      toast.success('Segment deleted');
+      toast.success(t('Segment deleted'));
       void mutate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t delete the segment. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t delete the segment. Try again.'));
     } finally {
       setSegmentToDelete(null);
     }
@@ -116,8 +117,8 @@ export default function SegmentsPage() {
     <Button
       variant="ghost"
       size="sm"
-      title="Delete segment"
-      aria-label={`Delete ${segment.name}`}
+      title={t('Delete segment')}
+      aria-label={t('Delete {name}', {name: segment.name})}
       onClick={() => setSegmentToDelete(segment.id)}
     >
       <Trash2 className="h-4 w-4" />
@@ -130,8 +131,8 @@ export default function SegmentsPage() {
         id: 'name',
         accessorKey: 'name',
         enableHiding: false,
-        meta: {label: 'Name', cellClassName: 'max-w-[16rem]'} satisfies DataTableColumnMeta,
-        header: ({column}) => <DataTableColumnHeader column={column}>Name</DataTableColumnHeader>,
+        meta: {label: t('Name'), cellClassName: 'max-w-[16rem]'} satisfies DataTableColumnMeta,
+        header: ({column}) => <DataTableColumnHeader column={column}>{t('Name')}</DataTableColumnHeader>,
         cell: ({row}) => (
           <div className="min-w-0">
             <Link
@@ -151,8 +152,8 @@ export default function SegmentsPage() {
       {
         id: 'rules',
         enableSorting: false,
-        meta: {label: 'Rules'} satisfies DataTableColumnMeta,
-        header: ({column}) => <DataTableColumnHeader column={column}>Rules</DataTableColumnHeader>,
+        meta: {label: t('Rules')} satisfies DataTableColumnMeta,
+        header: ({column}) => <DataTableColumnHeader column={column}>{t('Rules')}</DataTableColumnHeader>,
         cell: ({row}) =>
           row.original.type === 'STATIC' ? (
             <StaticRules />
@@ -164,11 +165,11 @@ export default function SegmentsPage() {
         id: 'type',
         accessorKey: 'type',
         enableSorting: false,
-        meta: {label: 'Type'} satisfies DataTableColumnMeta,
-        header: ({column}) => <DataTableColumnHeader column={column}>Type</DataTableColumnHeader>,
+        meta: {label: t('Type')} satisfies DataTableColumnMeta,
+        header: ({column}) => <DataTableColumnHeader column={column}>{t('Type')}</DataTableColumnHeader>,
         cell: ({row}) => (
           <Badge variant={row.original.type === 'STATIC' ? 'neutral' : 'default'} className="shrink-0">
-            {row.original.type === 'STATIC' ? 'Static' : 'Dynamic'}
+            {row.original.type === 'STATIC' ? t('Static') : t('Dynamic')}
           </Badge>
         ),
       },
@@ -176,10 +177,10 @@ export default function SegmentsPage() {
         id: 'memberCount',
         accessorKey: 'memberCount',
         sortDescFirst: true,
-        meta: {label: 'Members', headClassName: 'text-right', cellClassName: 'text-right'} satisfies DataTableColumnMeta,
+        meta: {label: t('Members'), headClassName: 'text-right', cellClassName: 'text-right'} satisfies DataTableColumnMeta,
         header: ({column}) => (
           <DataTableColumnHeader column={column} align="right">
-            Members
+            {t('Members')}
           </DataTableColumnHeader>
         ),
         cell: ({row}) => (
@@ -192,16 +193,16 @@ export default function SegmentsPage() {
         id: 'updatedAt',
         accessorKey: 'updatedAt',
         sortDescFirst: true,
-        meta: {label: 'Refreshed'} satisfies DataTableColumnMeta,
-        header: ({column}) => <DataTableColumnHeader column={column}>Refreshed</DataTableColumnHeader>,
+        meta: {label: t('Refreshed')} satisfies DataTableColumnMeta,
+        header: ({column}) => <DataTableColumnHeader column={column}>{t('Refreshed')}</DataTableColumnHeader>,
         cell: ({row}) => <RefreshedAt date={row.original.updatedAt} className="text-sm text-neutral-500" />,
       },
       {
         id: 'actions',
         enableSorting: false,
         enableHiding: false,
-        meta: {label: 'Actions', headClassName: 'text-right', cellClassName: 'text-right'} satisfies DataTableColumnMeta,
-        header: () => <span className="flex justify-end">Actions</span>,
+        meta: {label: t('Actions'), headClassName: 'text-right', cellClassName: 'text-right'} satisfies DataTableColumnMeta,
+        header: () => <span className="flex justify-end">{t('Actions')}</span>,
         cell: ({row}) => <div className="flex justify-end">{deleteButton(row.original)}</div>,
       },
     ],
@@ -231,22 +232,22 @@ export default function SegmentsPage() {
 
   return (
     <>
-      <NextSeo title="Segments" />
+      <NextSeo title={t('Segments')} />
       <DashboardLayout>
         <div className="space-y-6">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900">Segments</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900">{t('Segments')}</h1>
               <p className="text-neutral-500 mt-2 text-sm sm:text-base">
-                Groups of contacts, defined by filters or picked by hand. {hasSegments ? `${segments.length} total` : ''}
+                {t('Groups of contacts, defined by filters or picked by hand.')}{' '}{hasSegments ? t('{length} total', {length: segments.length}) : ''}
               </p>
             </div>
             <Button asChild className="w-full sm:w-auto">
               <Link href="/segments/new">
                 <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">Create segment</span>
-                <span className="sm:hidden">Create</span>
+                <span className="hidden sm:inline">{t('Create segment')}</span>
+                <span className="sm:hidden">{t('Create')}</span>
               </Link>
             </Button>
           </div>
@@ -257,12 +258,12 @@ export default function SegmentsPage() {
               value={searchInput}
               onChange={setSearchInput}
               onClear={() => setSearchInput('')}
-              placeholder="Search by name or rule…"
+              placeholder={t('Search by name or rule…')}
               className="flex-1"
             />
             <div className="flex items-center gap-2 shrink-0">
               <FilterPill
-                title="Type"
+                title={t('Type')}
                 multiple={false}
                 options={TYPE_OPTIONS}
                 selected={typeFilter === 'ALL' ? [] : [typeFilter]}
@@ -291,13 +292,13 @@ export default function SegmentsPage() {
                 ) : (
                   <EmptyState
                     icon={Filter}
-                    title="No segments yet"
-                    description="Group contacts by attributes to target specific audiences."
+                    title={t('No segments yet')}
+                    description={t('Group contacts by attributes to target specific audiences.')}
                     action={
                       <Button asChild>
                         <Link href="/segments/new">
                           <Plus className="h-4 w-4" />
-                          Create segment
+                          {t('Create segment')}
                         </Link>
                       </Button>
                     }
@@ -316,7 +317,7 @@ export default function SegmentsPage() {
                     href={`/segments/${segment.id}`}
                     data-card-link=""
                     className="flex-1 block p-6 pb-4 hover:bg-neutral-50/50 transition-colors rounded-t-xl focus-visible:outline-none"
-                    aria-label={`Open ${segment.name}`}
+                    aria-label={t('Open {name}', {name: segment.name})}
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
@@ -324,7 +325,7 @@ export default function SegmentsPage() {
                           <h3 className="font-semibold text-neutral-900 leading-snug truncate">{segment.name}</h3>
                           {segment.type === 'STATIC' && (
                             <Badge variant="neutral" className="shrink-0">
-                              Static
+                              {t('Static')}
                             </Badge>
                           )}
                         </div>
@@ -336,7 +337,7 @@ export default function SegmentsPage() {
                         <p className="text-lg font-semibold leading-tight tabular-nums text-neutral-900">
                           {segment.memberCount.toLocaleString()}
                         </p>
-                        <p className="text-xs text-neutral-400">members</p>
+                        <p className="text-xs text-neutral-400">{t('members')}</p>
                       </div>
                     </div>
                     <div className="mt-4">
@@ -367,9 +368,9 @@ export default function SegmentsPage() {
           open={segmentToDelete !== null}
           onOpenChange={open => !open && setSegmentToDelete(null)}
           onConfirm={handleDelete}
-          title="Delete this segment?"
-          description="The contacts in it are kept. Only the segment is deleted."
-          confirmText="Delete segment"
+          title={t('Delete this segment?')}
+          description={t('The contacts in it are kept. Only the segment is deleted.')}
+          confirmText={t('Delete segment')}
           variant="destructive"
         />
       </DashboardLayout>

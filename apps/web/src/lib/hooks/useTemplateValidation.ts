@@ -3,6 +3,7 @@ import {useEffect, useState} from 'react';
 
 import {lintTemplateFields, type TemplateFieldWarning} from '../templateLint';
 import type {ContactField} from './useContacts';
+import {t} from '../i18n';
 
 export interface TemplateSyntaxIssue {
   /** Human-readable description of the problem, without Liquid's trailing position. */
@@ -123,7 +124,7 @@ export function useTemplateValidation(source: string): TemplateSyntaxIssue | nul
           : undefined;
 
       setIssue({
-        message: result.error ? sentenceCase(result.error) : 'This template could not be parsed',
+        message: result.error ? sentenceCase(result.error) : t('This template could not be parsed'),
         line: result.line,
         column: result.column,
         excerpt: offset === undefined ? undefined : extractExcerpt(source, offset),

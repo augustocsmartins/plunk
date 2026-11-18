@@ -1,6 +1,7 @@
 import {useBeforeUnload} from '@plunk/ui';
 import {useRouter} from 'next/router';
 import {useEffect} from 'react';
+import {t} from '../i18n';
 
 /**
  * Custom hook to handle unsaved changes warning
@@ -19,7 +20,7 @@ export function useChangeTracking(hasChanges: boolean, enabled: boolean = true) 
     const handleRouteChange = (url: string) => {
       // Only show confirmation if navigating to a different page
       if (router.asPath !== url) {
-        const confirmed = window.confirm('You have unsaved changes. Are you sure you want to leave?');
+        const confirmed = window.confirm(t('You have unsaved changes. Are you sure you want to leave?'));
         if (!confirmed) {
           router.events.emit('routeChangeError');
           throw 'Route change aborted by user';

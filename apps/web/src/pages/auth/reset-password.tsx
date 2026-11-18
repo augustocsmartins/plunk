@@ -23,6 +23,7 @@ import {useForm} from 'react-hook-form';
 import type {z} from 'zod';
 
 import {network} from '../../lib/network';
+import {t} from '../../lib/i18n';
 
 const dotGrid = {
   backgroundColor: '#fafafa',
@@ -36,7 +37,7 @@ const Wordmark = () => (
     <div className="h-8 w-8 rounded-lg bg-white shadow-sm border border-neutral-200 flex items-center justify-center p-1">
       <Image src="/assets/logo.svg" alt="" aria-hidden width={24} height={24} />
     </div>
-    <span className="text-lg font-bold tracking-tight text-neutral-900">Plunk</span>
+    <span className="text-lg font-bold tracking-tight text-neutral-900">{t('Plunk')}</span>
   </div>
 );
 
@@ -87,7 +88,7 @@ export default function ResetPassword() {
   if (!token) {
     return (
       <>
-        <NextSeo title="Reset password" />
+        <NextSeo title={t('Reset password')} />
         <div className="min-h-screen flex items-center justify-center py-12" style={dotGrid}>
           <div className="flex flex-col gap-6 max-w-md w-full px-4">
             <Wordmark />
@@ -100,13 +101,13 @@ export default function ResetPassword() {
                     </svg>
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <h1 className="text-xl font-bold tracking-tight">Invalid reset link</h1>
+                    <h1 className="text-xl font-bold tracking-tight">{t('Invalid reset link')}</h1>
                     <p className="text-sm text-neutral-500">
-                      This link is invalid or has expired. Request a new one from the login page.
+                      {t('This link is invalid or has expired. Request a new one from the login page.')}
                     </p>
                   </div>
                   <Button asChild className="mt-2">
-                    <Link href="/auth/login">Back to login</Link>
+                    <Link href="/auth/login">{t('Back to login')}</Link>
                   </Button>
                 </div>
               </CardContent>
@@ -119,7 +120,7 @@ export default function ResetPassword() {
 
   return (
     <>
-      <NextSeo title="Reset password" />
+      <NextSeo title={t('Reset password')} />
       <div className="min-h-screen flex items-center justify-center py-12" style={dotGrid}>
         <div className="flex flex-col gap-6 max-w-md w-full px-4">
           <Wordmark />
@@ -142,8 +143,8 @@ export default function ResetPassword() {
                         </svg>
                       </div>
                       <div className="flex flex-col gap-1.5">
-                        <h1 className="text-xl font-bold tracking-tight">Password updated</h1>
-                        <p className="text-sm text-neutral-500">Redirecting you to login...</p>
+                        <h1 className="text-xl font-bold tracking-tight">{t('Password updated')}</h1>
+                        <p className="text-sm text-neutral-500">{t('Redirecting you to login...')}</p>
                       </div>
                     </div>
                   </motion.div>
@@ -158,8 +159,8 @@ export default function ResetPassword() {
                       >
                         <div className="flex flex-col gap-6">
                           <div className="flex flex-col gap-1.5">
-                            <h1 className="text-2xl font-bold tracking-tight">Reset your password</h1>
-                            <p className="text-sm text-neutral-500">Enter your new password below</p>
+                            <h1 className="text-2xl font-bold tracking-tight">{t('Reset your password')}</h1>
+                            <p className="text-sm text-neutral-500">{t('Enter your new password below')}</p>
                           </div>
 
                           <FormField
@@ -167,9 +168,9 @@ export default function ResetPassword() {
                             name="newPassword"
                             render={({field}) => (
                               <FormItem>
-                                <FormLabel>New password</FormLabel>
+                                <FormLabel>{t('New password')}</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="At least 6 characters" type="password" autoFocus {...field} />
+                                  <Input placeholder={t('At least 6 characters')} type="password" autoFocus {...field} />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -185,7 +186,7 @@ export default function ResetPassword() {
                                 transition={{duration: 0.15}}
                                 className="text-sm text-red-500"
                               >
-                                {errorMessage}
+                                {t(errorMessage)}
                               </motion.p>
                             )}
                           </AnimatePresence>
@@ -194,20 +195,20 @@ export default function ResetPassword() {
                             {form.formState.isSubmitting ? (
                               <>
                                 <IconSpinner size="sm" />
-                                Resetting...
+                                {t('Resetting...')}
                               </>
                             ) : (
-                              'Reset password'
+                              t('Reset password')
                             )}
                           </Button>
 
                           <p className="text-center text-sm text-neutral-500">
-                            Remember your password?{' '}
+                            {t('Remember your password?')}{' '}
                             <Link
                               href="/auth/login"
                               className="text-neutral-900 underline underline-offset-4 hover:text-neutral-600 transition-colors"
                             >
-                              Back to login
+                              {t('Back to login')}
                             </Link>
                           </p>
                         </div>

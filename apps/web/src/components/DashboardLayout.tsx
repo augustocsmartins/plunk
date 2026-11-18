@@ -11,6 +11,7 @@ import {
   BookOpen,
   ChevronDown,
   FileText,
+  Globe,
   Heart,
   Layers,
   LayoutDashboard,
@@ -35,6 +36,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@plunk/ui';
+import {t} from '../lib/i18n';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -54,24 +56,26 @@ interface NavSection {
 const navigation: NavSection[] = [
   {
     items: [
-      {name: 'Dashboard', href: '/', icon: LayoutDashboard},
-      {name: 'Contacts', href: '/contacts', icon: Users},
-      {name: 'Segments', href: '/segments', icon: Layers},
-      {name: 'Activity', href: '/activity', icon: Activity},
-      {name: 'Analytics', href: '/analytics', icon: BarChart3},
+      {name: t('Dashboard'), href: '/', icon: LayoutDashboard},
+      {name: t('Contacts'), href: '/contacts', icon: Users},
+      {name: t('Segments'), href: '/segments', icon: Layers},
+      {name: t('Activity'), href: '/activity', icon: Activity},
+      {name: t('Analytics'), href: '/analytics', icon: BarChart3},
     ],
   },
   {
-    title: 'Automations',
+    title: t('Automations'),
     items: [
-      {name: 'Templates', href: '/templates', icon: FileText},
-      {name: 'Workflows', href: '/workflows', icon: Workflow},
+      {name: t('Templates'), href: '/templates', icon: FileText},
+      {name: t('Workflows'), href: '/workflows', icon: Workflow},
     ],
   },
   {
-    items: [{name: 'Campaigns', href: '/campaigns', icon: Megaphone}],
+    items: [{name: t('Campaigns'), href: '/campaigns', icon: Megaphone}],
   },
 ];
+
+const GLOBAL_VIEW_HREF = '/analytics/global';
 
 export function DashboardLayout({children}: DashboardLayoutProps) {
   const router = useRouter();
@@ -80,6 +84,9 @@ export function DashboardLayout({children}: DashboardLayoutProps) {
   const {data: config} = useConfig();
   const {activeProject, availableProjects, setActiveProject} = useActiveProject();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  // The cross-project analytics: only worth offering once there is more than one project
+  const showGlobalView = availableProjects.length > 1;
+  const inGlobalView = router.pathname === GLOBAL_VIEW_HREF;
 
   // Sort projects alphabetically by name
   const sortedProjects = useMemo(() => {
@@ -92,8 +99,8 @@ export function DashboardLayout({children}: DashboardLayoutProps) {
       {/* Logo */}
       <div className="h-16 flex items-center justify-between px-6 border-b border-neutral-200">
         <div className="flex items-center gap-2">
-          <Image src="/assets/logo.png" alt="Plunk" width={28} height={28} className="rounded" />
-          <h1 className="text-xl font-bold text-neutral-900">Plunk</h1>
+          <Image src="/assets/logo.png" alt={t('Plunk')} width={28} height={28} className="rounded" />
+          <h1 className="text-xl font-bold text-neutral-900">{t('Plunk')}</h1>
         </div>
         <button
           onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', {key: 'k', metaKey: true, bubbles: true}))}
@@ -110,9 +117,11 @@ export function DashboardLayout({children}: DashboardLayoutProps) {
           <DropdownMenuTrigger className="group w-full flex items-center justify-between px-3 py-2 text-sm rounded-lg hover:bg-neutral-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <div className="h-8 w-8 rounded-lg bg-neutral-100 text-neutral-700 flex items-center justify-center text-xs font-medium flex-shrink-0">
-                {activeProject?.name.charAt(0).toUpperCase() || 'P'}
+                {inGlobalView ? <Globe className="h-4 w-4" /> : activeProject?.name.charAt(0).toUpperCase() || 'P'}
               </div>
-              <span className="font-medium text-neutral-900 truncate">{activeProject?.name || 'Select project'}</span>
+              <span className="font-medium text-neutral-900 truncate">
+                {inGlobalView ? t('Global view') : activeProject?.name || t('Select project')}
+              </span>
             </div>
             <ChevronDown className="h-4 w-4 text-neutral-500 flex-shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
           </DropdownMenuTrigger>
@@ -120,6 +129,23 @@ export function DashboardLayout({children}: DashboardLayoutProps) {
             align="start"
             className="min-w-[var(--radix-dropdown-menu-trigger-width)] max-h-[400px] overflow-y-auto"
           >
+            {showGlobalView && (
+              <>
+                <DropdownMenuItem asChild className="gap-2 px-3 py-2 cursor-pointer">
+                  <Link href={GLOBAL_VIEW_HREF} onClick={() => setShowMobileMenu(false)}>
+                    <div className="h-6 w-6 rounded-md bg-neutral-100 text-neutral-700 flex items-center justify-center flex-shrink-0">
+                      <Globe className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="flex-1 min-w-0 text-left">
+                      <span className="block text-neutral-900 truncate">{t('Global view')}</span>
+                      <span className="block text-xs text-neutral-500 truncate">{t('Analytics across all projects')}</span>
+                    </span>
+                    {inGlobalView && <div className="ml-auto h-1.5 w-1.5 rounded-full bg-neutral-900 flex-shrink-0" />}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            )}
             {sortedProjects.map(project => (
               <DropdownMenuItem
                 key={project.id}
@@ -130,7 +156,7 @@ export function DashboardLayout({children}: DashboardLayoutProps) {
                   {project.name.charAt(0).toUpperCase()}
                 </div>
                 <span className="text-neutral-900 text-left flex-1 truncate">{project.name}</span>
-                {activeProject?.id === project.id && (
+                {!inGlobalView && activeProject?.id === project.id && (
                   <div className="ml-auto h-1.5 w-1.5 rounded-full bg-neutral-900 flex-shrink-0" />
                 )}
               </DropdownMenuItem>
@@ -139,7 +165,7 @@ export function DashboardLayout({children}: DashboardLayoutProps) {
             <DropdownMenuItem asChild className="gap-2 px-3 py-2 cursor-pointer text-neutral-700">
               <Link href="/projects/create" onClick={() => setShowMobileMenu(false)}>
                 <Plus className="h-4 w-4" />
-                <span>Create project</span>
+                <span>{t('Create project')}</span>
               </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -190,7 +216,7 @@ export function DashboardLayout({children}: DashboardLayoutProps) {
           className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <BookOpen className="h-5 w-5" />
-          Documentation
+          {t('Documentation')}
         </a>
 
         {config?.features.sponsor.enabled && (
@@ -201,7 +227,7 @@ export function DashboardLayout({children}: DashboardLayoutProps) {
             className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             <Heart className="h-5 w-5" />
-            Sponsor
+            {t('Sponsor')}
           </a>
         )}
 
@@ -215,7 +241,7 @@ export function DashboardLayout({children}: DashboardLayoutProps) {
           }`}
         >
           <Settings className="h-5 w-5" />
-          Settings
+          {t('Settings')}
         </Link>
 
         <DropdownMenu>
@@ -226,7 +252,7 @@ export function DashboardLayout({children}: DashboardLayoutProps) {
             >
               {user?.email?.charAt(0).toUpperCase() ?? '?'}
             </div>
-            <span className="flex-1 text-left truncate">Account</span>
+            <span className="flex-1 text-left truncate">{t('Account')}</span>
             <ChevronDown className="h-4 w-4 text-neutral-500 transition-transform duration-200 group-data-[state=open]:rotate-180" />
           </DropdownMenuTrigger>
           <DropdownMenuContent side="top" align="start" className="w-[var(--radix-dropdown-menu-trigger-width)]">
@@ -237,7 +263,7 @@ export function DashboardLayout({children}: DashboardLayoutProps) {
             <DropdownMenuItem asChild className="gap-2 px-3 py-2 cursor-pointer text-neutral-700">
               <Link href="/account" onClick={() => setShowMobileMenu(false)}>
                 <UserCog className="h-4 w-4" />
-                <span>Account settings</span>
+                <span>{t('Account settings')}</span>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -246,7 +272,7 @@ export function DashboardLayout({children}: DashboardLayoutProps) {
               className="gap-2 px-3 py-2 cursor-pointer text-red-600 focus:text-red-600"
             >
               <LogOut className="h-4 w-4" />
-              <span>Log out</span>
+              <span>{t('Log out')}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -284,13 +310,13 @@ export function DashboardLayout({children}: DashboardLayoutProps) {
           <button
             onClick={() => setShowMobileMenu(true)}
             className="p-2 rounded-lg hover:bg-neutral-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            aria-label="Open menu"
+            aria-label={t('Open menu')}
           >
             <Menu className="h-6 w-6 text-neutral-900" />
           </button>
           <div className="flex items-center gap-2 ml-4">
-            <Image src="/assets/logo.png" alt="Plunk" width={24} height={24} className="rounded" />
-            <h1 className="text-lg font-bold text-neutral-900">Plunk</h1>
+            <Image src="/assets/logo.png" alt={t('Plunk')} width={24} height={24} className="rounded" />
+            <h1 className="text-lg font-bold text-neutral-900">{t('Plunk')}</h1>
           </div>
         </div>
 
