@@ -1,3 +1,4 @@
+import {t} from './i18n';
 /**
  * Shared validation utilities for email-related forms
  */
@@ -16,23 +17,23 @@ export class EmailFormValidator {
    */
   static validate(fields: EmailFormValidation, options: {requireSegment?: boolean} = {}): string | null {
     if (fields.name !== undefined && !fields.name.trim()) {
-      return 'Name is required';
+      return t('Name is required');
     }
 
     if (fields.subject !== undefined && !fields.subject.trim()) {
-      return 'Email subject is required';
+      return t('Email subject is required');
     }
 
     if (fields.body !== undefined && !fields.body.trim()) {
-      return 'Email body is required';
+      return t('Email body is required');
     }
 
     if (fields.from !== undefined && !fields.from.trim()) {
-      return 'From address is required';
+      return t('From address is required');
     }
 
     if (options.requireSegment && fields.segmentId !== undefined && !fields.segmentId) {
-      return 'Please select a segment';
+      return t('Please select a segment');
     }
 
     return null;
@@ -46,7 +47,7 @@ export class EmailFormValidator {
     if (baseError) return baseError;
 
     if (audienceType === 'SEGMENT' && !fields.segmentId) {
-      return 'Please select a segment';
+      return t('Please select a segment');
     }
 
     return null;

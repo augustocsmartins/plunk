@@ -3,7 +3,7 @@ import * as React from 'react';
 import {Save, X} from 'lucide-react';
 
 import {Button} from '../atoms/Button';
-import {cn} from '../../lib';
+import {cn, uiT} from '../../lib';
 
 export interface StickySaveBarProps {
   status: 'idle' | 'dirty' | 'saving';
@@ -33,13 +33,13 @@ export function StickySaveBar({status, onSave, className}: StickySaveBarProps) {
           <div className="flex items-center justify-between gap-3 px-4 py-3">
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-amber-500" />
-              <span className="text-sm font-medium text-neutral-900">Unsaved changes</span>
+              <span className="text-sm font-medium text-neutral-900">{uiT('Unsaved changes')}</span>
             </div>
             <button
               type="button"
               onClick={() => setDismissedForStatus(status)}
               className="text-neutral-400 hover:text-neutral-600 transition-colors -mr-1"
-              aria-label="Dismiss"
+              aria-label={uiT('Dismiss')}
             >
               <X className="h-4 w-4" />
             </button>
@@ -60,12 +60,12 @@ export function StickySaveBar({status, onSave, className}: StickySaveBarProps) {
                   >
                     <Save className="h-3 w-3" />
                   </motion.div>
-                  Saving...
+                  {uiT('Saving...')}
                 </>
               ) : (
                 <>
                   <Save className="h-3 w-3" />
-                  Save Changes
+                  {uiT('Save Changes')}
                 </>
               )}
             </Button>

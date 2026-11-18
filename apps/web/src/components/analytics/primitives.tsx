@@ -2,6 +2,7 @@ import {Skeleton, cn} from '@plunk/ui';
 import type {ReactNode} from 'react';
 
 import {DELTA_TONE, type Delta} from './metrics';
+import {t} from '../../lib/i18n';
 
 /**
  * A bordered section with a compact title row. Lighter than Card's p-6 header so the page
@@ -38,7 +39,7 @@ export function DeltaLabel({
   delta,
   className,
   neutral = false,
-  fallback = 'No earlier data',
+  fallback = t('No earlier data'),
 }: {
   delta: Delta | null;
   className?: string;
@@ -95,13 +96,13 @@ export function PanelError({onRetry}: {onRetry: () => void}) {
   return (
     <PanelEmpty>
       <span>
-        These numbers didn&apos;t load.{' '}
+        {t('These numbers didn\'t load.')}{' '}
         <button
           type="button"
           onClick={onRetry}
           className="font-medium text-neutral-900 underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-900"
         >
-          Try again
+          {t('Try again')}
         </button>
       </span>
     </PanelEmpty>
@@ -170,11 +171,11 @@ export function PeriodLegend() {
     <div className="flex items-center gap-4 text-xs text-neutral-500" aria-hidden>
       <span className="inline-flex items-center gap-1.5">
         <span className="h-0.5 w-3.5 rounded-full bg-neutral-900" />
-        This period
+        {t('This period')}
       </span>
       <span className="inline-flex items-center gap-1.5">
         <span className="w-3.5 border-t border-dashed border-neutral-400" />
-        Previous period
+        {t('Previous period')}
       </span>
     </div>
   );

@@ -208,3 +208,13 @@ export const PHISHING_DETECTION_ENABLED = OPENROUTER_API_KEY !== '';
 export const PHISHING_CONFIDENCE_THRESHOLD = Number(validateEnv('PHISHING_CONFIDENCE_THRESHOLD', '95')); // Confidence % required to auto-disable project from a single detection
 export const PHISHING_CUMULATIVE_THRESHOLD = Number(validateEnv('PHISHING_CUMULATIVE_THRESHOLD', '3')); // Number of phishing detections before auto-disable (default 3)
 export const PHISHING_CUMULATIVE_WINDOW_MS = Number(validateEnv('PHISHING_CUMULATIVE_WINDOW_MS', '3600000')); // Time window for cumulative tracking in ms (default 1 hour)
+
+// WhatsApp (optional) — Evolution API, transactional messages only (API + workflows)
+// One Evolution instance is provisioned per project using the admin token below.
+export const EVOLUTION_BASE_URL = validateEnv('EVOLUTION_BASE_URL', '').replace(/\/+$/, '');
+export const EVOLUTION_ADMIN_TOKEN = validateEnv('EVOLUTION_ADMIN_TOKEN', '');
+export const WHATSAPP_ENABLED = EVOLUTION_BASE_URL !== '' && EVOLUTION_ADMIN_TOKEN !== '';
+// Public base URL Evolution calls back for message status (defaults to API_URI)
+export const WHATSAPP_WEBHOOK_BASE_URL = validateEnv('WHATSAPP_WEBHOOK_BASE_URL', API_URI).replace(/\/+$/, '');
+// Messages sent per minute across all projects; keeps numbers below WhatsApp's spam heuristics
+export const WHATSAPP_RATE_LIMIT_PER_MINUTE = Number(validateEnv('WHATSAPP_RATE_LIMIT_PER_MINUTE', '20'));

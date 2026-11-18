@@ -39,6 +39,7 @@ import {
   Globe,
   KeyRound,
   Mail,
+  MessageCircle,
   RotateCcw,
   Settings as SettingsIcon,
   Shield,
@@ -57,6 +58,7 @@ import {SmtpSettings} from '../../components/SmtpSettings';
 import {DataManagementSettings} from '../../components/DataManagementSettings';
 import {TeamSettings} from '../../components/TeamSettings';
 import {SecuritySettings} from '../../components/SecuritySettings';
+import {WhatsAppSettings} from '../../components/WhatsAppSettings';
 import {useActiveProject} from '../../lib/contexts/ActiveProjectProvider';
 import {network} from '../../lib/network';
 import {useProjects} from '../../lib/hooks/useProject';
@@ -64,8 +66,9 @@ import {useConfig} from '../../lib/hooks/useConfig';
 import {useUser} from '../../lib/hooks/useUser';
 import {useProjectSecurity} from '../../lib/hooks/useProjectSecurity';
 import useSWR from 'swr';
+import {t} from '../../lib/i18n';
 
-type TabId = 'general' | 'billing' | 'domains' | 'smtp' | 'data' | 'team' | 'security';
+type TabId = 'general' | 'billing' | 'domains' | 'smtp' | 'whatsapp' | 'data' | 'team' | 'security';
 
 interface Tab {
   id: TabId;
@@ -77,23 +80,24 @@ interface Tab {
 /** Why sending is paused, for the pauses the customer clears by updating their card. */
 const BILLING_PAUSE_COPY: Record<string, string> = {
   PAYMENT_FAILED:
-    'Your last payment didn’t go through. Add a working card and we’ll retry the payment straight away. Sending resumes once it’s paid.',
+    t('Your last payment didn’t go through. Add a working card and we’ll retry the payment straight away. Sending resumes once it’s paid.'),
   CARD_VERIFICATION_FAILED:
-    'Your card declined the charge we use to confirm it supports monthly billing. Add a standard credit or debit card (prepaid cards aren’t supported) and we’ll verify it straight away.',
+    t('Your card declined the charge we use to confirm it supports monthly billing. Add a standard credit or debit card (prepaid cards aren’t supported) and we’ll verify it straight away.'),
   CARD_VERIFICATION_REQUIRED:
-    'Your bank didn’t approve the charge we use to confirm your card supports monthly billing. Add your card again, or a different one, and we’ll verify it straight away.',
+    t('Your bank didn’t approve the charge we use to confirm your card supports monthly billing. Add your card again, or a different one, and we’ll verify it straight away.'),
 };
 
-const buildTabs = (options: {billingEnabled: boolean; smtpEnabled: boolean}): Tab[] => {
-  const {billingEnabled, smtpEnabled} = options;
+const buildTabs = (options: {billingEnabled: boolean; smtpEnabled: boolean; whatsappEnabled: boolean}): Tab[] => {
+  const {billingEnabled, smtpEnabled, whatsappEnabled} = options;
   const allTabs: Tab[] = [
-    {id: 'general', label: 'General', icon: SettingsIcon},
-    {id: 'team', label: 'Team', icon: Users},
-    {id: 'security', label: 'Security', icon: Shield},
-    {id: 'billing', label: 'Billing', icon: CreditCard, condition: billingEnabled},
-    {id: 'domains', label: 'Domains', icon: Globe},
+    {id: 'general', label: t('General'), icon: SettingsIcon},
+    {id: 'team', label: t('Team'), icon: Users},
+    {id: 'security', label: t('Security'), icon: Shield},
+    {id: 'billing', label: t('Billing'), icon: CreditCard, condition: billingEnabled},
+    {id: 'domains', label: t('Domains'), icon: Globe},
     {id: 'smtp', label: 'SMTP', icon: Mail, condition: smtpEnabled},
-    {id: 'data', label: 'Data', icon: Database},
+    {id: 'whatsapp', label: t('WhatsApp'), icon: MessageCircle, condition: whatsappEnabled},
+    {id: 'data', label: t('Data'), icon: Database},
   ];
   return allTabs.filter(tab => tab.condition !== false);
 };
@@ -127,6 +131,7 @@ export default function Settings() {
   const billingEnabled = config?.features.billing.enabled ?? false;
   const billingPause = activeProject?.disabled ? BILLING_PAUSE_COPY[activeProject.disabledReason ?? ''] : undefined;
   const smtpEnabled = config?.features.smtp.enabled ?? false;
+  const whatsappEnabled = config?.features.whatsapp?.enabled ?? false;
   const trackingToggleEnabled = config?.features.email.trackingToggleEnabled ?? false;
   const smtpConfig = smtpEnabled
     ? {
@@ -159,7 +164,7 @@ export default function Settings() {
     if (router.query.success === 'true') {
       // Use setTimeout to defer state update, avoiding synchronous setState in effect
       const timer = setTimeout(() => {
-        setSuccessMessage('Subscription active. Billing details may take a minute to appear.');
+        setSuccessMessage(t('Subscription active. Billing details may take a minute to appear.'));
         // Clear message and URL after 5 seconds
         setTimeout(() => {
           setSuccessMessage(null);
@@ -170,7 +175,7 @@ export default function Settings() {
     } else if (router.query.canceled === 'true') {
       // Use setTimeout to defer state update, avoiding synchronous setState in effect
       const timer = setTimeout(() => {
-        setErrorMessage('Checkout was canceled. You can try again anytime.');
+        setErrorMessage(t('Checkout was canceled. You can try again anytime.'));
         // Clear message and URL after 5 seconds
         setTimeout(() => {
           setErrorMessage(null);
@@ -220,12 +225,12 @@ export default function Settings() {
       // Refresh projects list
       await projectsMutate();
 
-      setSuccessMessage('Project settings updated');
+      setSuccessMessage(t('Project settings updated'));
 
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Couldn’t save your project settings. Try again.');
+      setErrorMessage(error instanceof Error ? error.message : t('Couldn’t save your project settings. Try again.'));
     }
   };
 
@@ -253,7 +258,7 @@ export default function Settings() {
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Couldn’t regenerate your API keys. Try again.');
+      setErrorMessage(error instanceof Error ? error.message : t('Couldn’t regenerate your API keys. Try again.'));
       setDialog({type: 'none'});
     }
   };
@@ -265,7 +270,7 @@ export default function Settings() {
   const handleStartSubscription = async (currency: string = 'auto') => {
     if (!activeProject) return;
     if (!billingEnabled) {
-      setErrorMessage('Billing is disabled on this instance.');
+      setErrorMessage(t('Billing is disabled on this instance.'));
       return;
     }
 
@@ -286,7 +291,7 @@ export default function Settings() {
         window.location.href = response.url;
       }
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Couldn’t open checkout. Try again in a moment.');
+      setErrorMessage(error instanceof Error ? error.message : t('Couldn’t open checkout. Try again in a moment.'));
       setIsLoadingBilling(false);
     }
   };
@@ -294,7 +299,7 @@ export default function Settings() {
   const handleManageBilling = async () => {
     if (!activeProject) return;
     if (!billingEnabled) {
-      setErrorMessage('Billing is disabled on this instance.');
+      setErrorMessage(t('Billing is disabled on this instance.'));
       return;
     }
 
@@ -312,7 +317,7 @@ export default function Settings() {
         window.location.href = response.url;
       }
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Couldn’t open the billing portal. Try again in a moment.');
+      setErrorMessage(error instanceof Error ? error.message : t('Couldn’t open the billing portal. Try again in a moment.'));
       setIsLoadingBilling(false);
     }
   };
@@ -326,7 +331,7 @@ export default function Settings() {
 
       await network.fetch('POST', `/users/@me/projects/${activeProject.id}/reset`);
 
-      setSuccessMessage('Project reset. All campaigns, contacts, workflows, templates, and events are gone.');
+      setSuccessMessage(t('Project reset. All campaigns, contacts, workflows, templates, and events are gone.'));
       setDialog({type: 'none'});
 
       // Refresh the page to reload data
@@ -334,7 +339,7 @@ export default function Settings() {
         window.location.reload();
       }, 1500);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Couldn’t reset the project. Try again.');
+      setErrorMessage(error instanceof Error ? error.message : t('Couldn’t reset the project. Try again.'));
       setDialog({type: 'none'});
     }
   };
@@ -348,7 +353,7 @@ export default function Settings() {
 
       await network.fetch('DELETE', `/users/@me/projects/${activeProject.id}`);
 
-      setSuccessMessage('Project deleted. Redirecting…');
+      setSuccessMessage(t('Project deleted. Redirecting…'));
       setDialog({type: 'none'});
 
       // Refresh projects list and redirect to dashboard
@@ -359,7 +364,7 @@ export default function Settings() {
         window.location.href = '/';
       }, 1500);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Couldn’t delete the project. Try again.');
+      setErrorMessage(error instanceof Error ? error.message : t('Couldn’t delete the project. Try again.'));
       setDialog({type: 'none'});
     }
   };
@@ -367,10 +372,10 @@ export default function Settings() {
   if (!activeProject) {
     return (
       <>
-        <NextSeo title="Settings" />
+        <NextSeo title={t('Settings')} />
         <DashboardLayout>
           <div className="flex items-center justify-center h-96">
-            <p className="text-neutral-500">No project selected</p>
+            <p className="text-neutral-500">{t('No project selected')}</p>
           </div>
         </DashboardLayout>
       </>
@@ -379,19 +384,19 @@ export default function Settings() {
 
   return (
     <>
-      <NextSeo title="Settings" />
+      <NextSeo title={t('Settings')} />
       <DashboardLayout>
         <div className="space-y-8">
           {/* Header */}
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900">Settings</h1>
-            <p className="text-neutral-500 mt-2">Settings for this project.</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900">{t('Settings')}</h1>
+            <p className="text-neutral-500 mt-2">{t('Settings for this project.')}</p>
           </div>
 
           {/* Tabs */}
           <Tabs value={currentTab} onValueChange={handleTabChange} className="max-w-4xl">
             <TabsList>
-              {buildTabs({billingEnabled, smtpEnabled}).map(tab => {
+              {buildTabs({billingEnabled, smtpEnabled, whatsappEnabled}).map(tab => {
                 const Icon = tab.icon;
                 return (
                   <TabsTrigger key={tab.id} value={tab.id} className="flex items-center gap-2" title={tab.label}>
@@ -407,7 +412,7 @@ export default function Settings() {
               <div className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Project settings</CardTitle>
+                  <CardTitle>{t('Project settings')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Form {...form}>
@@ -417,9 +422,9 @@ export default function Settings() {
                         name="name"
                         render={({field}) => (
                           <FormItem>
-                            <FormLabel>Project name</FormLabel>
+                            <FormLabel>{t('Project name')}</FormLabel>
                             <FormControl>
-                              <Input placeholder="e.g., Acme" {...field} />
+                              <Input placeholder={t('e.g., Acme')} {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -433,33 +438,33 @@ export default function Settings() {
                           name="tracking"
                           render={({field}) => (
                             <FormItem>
-                              <FormLabel>Email tracking</FormLabel>
+                              <FormLabel>{t('Email tracking')}</FormLabel>
                               <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl>
                                   <SelectTrigger>
-                                    <SelectValue placeholder="Select tracking mode" />
+                                    <SelectValue placeholder={t('Select tracking mode')} />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
                                   <SelectItemWithDescription
                                     value={TrackingMode.ENABLED}
-                                    title="Enabled"
-                                    description="Track opens and clicks for all emails"
+                                    title={t('Enabled')}
+                                    description={t('Track opens and clicks for all emails')}
                                   />
                                   <SelectItemWithDescription
                                     value={TrackingMode.DISABLED}
-                                    title="Disabled"
-                                    description="No tracking for any emails"
+                                    title={t('Disabled')}
+                                    description={t('No tracking for any emails')}
                                   />
                                   <SelectItemWithDescription
                                     value={TrackingMode.MARKETING_ONLY}
-                                    title="Marketing only"
-                                    description="Track only campaigns and workflow emails, not transactional"
+                                    title={t('Marketing only')}
+                                    description={t('Track only campaigns and workflow emails, not transactional')}
                                   />
                                 </SelectContent>
                               </Select>
                               <FormDescription>
-                                Control how email opens and clicks are tracked for this project. Templates and campaigns can override it.
+                                {t('Control how email opens and clicks are tracked for this project. Templates and campaigns can override it.')}
                               </FormDescription>
                               <FormMessage />
                             </FormItem>
@@ -473,11 +478,11 @@ export default function Settings() {
                         name="language"
                         render={({field}) => (
                           <FormItem>
-                            <FormLabel>Customer language</FormLabel>
+                            <FormLabel>{t('Customer language')}</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value || 'en'}>
                               <FormControl>
                                 <SelectTrigger>
-                                  <SelectValue placeholder="Select language" />
+                                  <SelectValue placeholder={t('Select language')} />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
@@ -493,7 +498,7 @@ export default function Settings() {
                               </SelectContent>
                             </Select>
                             <FormDescription>
-                              Language for customer-facing pages (unsubscribe, preferences) and email footers.
+                              {t('Language for customer-facing pages (unsubscribe, preferences) and email footers.')}
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
@@ -526,7 +531,7 @@ export default function Settings() {
 
                       <div className="flex justify-end">
                         <Button type="submit" disabled={form.formState.isSubmitting}>
-                          {form.formState.isSubmitting ? 'Saving…' : 'Save Changes'}
+                          {form.formState.isSubmitting ? t('Saving…') : t('Save Changes')}
                         </Button>
                       </div>
                     </form>
@@ -539,24 +544,24 @@ export default function Settings() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle>API keys</CardTitle>
-                      <CardDescription>Use these keys to integrate with the Plunk API</CardDescription>
+                      <CardTitle>{t('API keys')}</CardTitle>
+                      <CardDescription>{t('Use these keys to integrate with the Plunk API')}</CardDescription>
                     </div>
                     <Button type="button" variant="outline" size="sm" onClick={promptRegenerateKeys}>
-                      Regenerate keys
+                      {t('Regenerate keys')}
                     </Button>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <ApiKeyDisplay
-                    label="Public key"
+                    label={t('Public key')}
                     value={activeProject.public}
-                    description="Use this key for client-side integrations"
+                    description={t('Use this key for client-side integrations')}
                   />
                   <ApiKeyDisplay
-                    label="Secret key"
+                    label={t('Secret key')}
                     value={activeProject.secret}
-                    description="Keep this key secure and never expose it publicly"
+                    description={t('Keep this key secure and never expose it publicly')}
                     isSecret
                   />
                 </CardContent>
@@ -570,9 +575,9 @@ export default function Settings() {
                       <AlertTriangle className="h-5 w-5 text-red-600" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg text-red-900">Danger zone</CardTitle>
+                      <CardTitle className="text-lg text-red-900">{t('Danger zone')}</CardTitle>
                       <CardDescription className="text-red-700">
-                        Irreversible actions that affect your project data
+                        {t('Irreversible actions that affect your project data')}
                       </CardDescription>
                     </div>
                   </div>
@@ -584,18 +589,18 @@ export default function Settings() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1.5">
                           <Database className="h-4 w-4 text-amber-700" />
-                          <h4 className="font-semibold text-neutral-900">Reset project data</h4>
+                          <h4 className="font-semibold text-neutral-900">{t('Reset project data')}</h4>
                         </div>
                         <p className="text-sm text-neutral-600 mb-3">
-                          Clear all campaigns, contacts, workflows, templates, and events.
+                          {t('Clear all campaigns, contacts, workflows, templates, and events.')}
                         </p>
                         <div className="flex items-start gap-2 text-xs text-neutral-500">
-                          <span className="font-medium">Preserved:</span>
-                          <span>API keys, domains, billing information</span>
+                          <span className="font-medium">{t('Preserved:')}</span>
+                          <span>{t('API keys, domains, billing information')}</span>
                         </div>
                       </div>
                       <Button type="button" variant="outline" onClick={() => setDialog({type: 'reset'})} className="shrink-0">
-                        Reset data
+                        {t('Reset data')}
                       </Button>
                     </div>
 
@@ -604,18 +609,18 @@ export default function Settings() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1.5">
                           <AlertTriangle className="h-4 w-4 text-red-600" />
-                          <h4 className="font-semibold text-red-900">Delete project</h4>
+                          <h4 className="font-semibold text-red-900">{t('Delete project')}</h4>
                         </div>
                         <p className="text-sm text-red-800 mb-3">
-                          Permanently delete this project and all associated data. This action{' '}
-                          <strong>cannot be undone</strong>.
-                          {activeProject?.subscription && ' Your subscription will be canceled.'}
+                          {t('Permanently delete this project and all associated data. This action')}{' '}
+                          <strong>{t('cannot be undone')}</strong>.
+                          {activeProject?.subscription && t(' Your subscription will be canceled.')}
                         </p>
                         <div className="flex items-center gap-2 text-xs">
                           <span className="px-2 py-1 bg-red-100 text-red-700 rounded font-medium">
-                            Permanent deletion
+                            {t('Permanent deletion')}
                           </span>
-                          <span className="text-red-600">All data will be lost</span>
+                          <span className="text-red-600">{t('All data will be lost')}</span>
                         </div>
                       </div>
                       <Button
@@ -624,7 +629,7 @@ export default function Settings() {
                         onClick={() => setDialog({type: 'delete'})}
                         className="shrink-0"
                       >
-                        Delete project
+                        {t('Delete project')}
                       </Button>
                     </div>
                   </div>
@@ -641,7 +646,7 @@ export default function Settings() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Billing</CardTitle>
+                    <CardTitle>{t('Billing')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-6">
@@ -676,7 +681,7 @@ export default function Settings() {
                             <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
                               <div className="flex items-center gap-2 text-amber-900 mb-2">
                                 <CreditCard className="h-5 w-5" />
-                                <span className="font-medium">Sending paused: update your card</span>
+                                <span className="font-medium">{t('Sending paused: update your card')}</span>
                               </div>
                               <p className="text-sm text-amber-800">{billingPause}</p>
                             </div>
@@ -684,18 +689,17 @@ export default function Settings() {
                             <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
                               <div className="flex items-center gap-2 text-green-800 mb-2">
                                 <CreditCard className="h-5 w-5" />
-                                <span className="font-medium">Active subscription</span>
+                                <span className="font-medium">{t('Active subscription')}</span>
                               </div>
                               <p className="text-sm text-green-700">
-                                Your subscription is active. Manage your billing details, update payment methods, or
-                                cancel your subscription through the billing portal.
+                                {t('Your subscription is active. Manage your billing details, update payment methods, or cancel your subscription through the billing portal.')}
                               </p>
                             </div>
                           )}
 
                           <div className="flex justify-start">
                             <Button onClick={handleManageBilling} disabled={isLoadingBilling}>
-                              {isLoadingBilling ? 'Loading…' : billingPause ? 'Update card' : 'Manage Billing'}
+                              {isLoadingBilling ? t('Loading…') : billingPause ? t('Update card') : t('Manage Billing')}
                             </Button>
                           </div>
                         </div>
@@ -705,19 +709,17 @@ export default function Settings() {
                           <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-lg">
                             <div className="flex items-center gap-2 text-neutral-800 mb-2">
                               <CreditCard className="h-5 w-5" />
-                              <span className="font-medium">No active subscription</span>
+                              <span className="font-medium">{t('No active subscription')}</span>
                             </div>
                             <p className="text-sm text-neutral-600">
-                              Activation places one charge of 2.00 on your card, credited back in full to your usage.
+                              {t('Activation places one charge of 2.00 on your card, credited back in full to your usage.')}
                             </p>
                             <details className="group mt-2">
                               <summary className="cursor-pointer text-xs text-neutral-500 hover:text-neutral-700 transition-colors list-none">
-                                Why the charge?
+                                {t('Why the charge?')}
                               </summary>
                               <p className="mt-2 text-xs text-neutral-500">
-                                It runs right after checkout to confirm your card accepts automatic monthly billing.
-                                Prepaid, virtual, and single-use cards often accept a payment you approve yourself but
-                                refuse recurring charges later, so we check now rather than a month in.
+                                {t('It runs right after checkout to confirm your card accepts automatic monthly billing. Prepaid, virtual, and single-use cards often accept a payment you approve yourself but refuse recurring charges later, so we check now rather than a month in.')}
                               </p>
                             </details>
                           </div>
@@ -728,7 +730,7 @@ export default function Settings() {
                                 onClick={() => handleStartSubscription(selectedCurrency)}
                                 disabled={isLoadingBilling}
                               >
-                                {isLoadingBilling ? 'Loading…' : 'Start Subscription'}
+                                {isLoadingBilling ? t('Loading…') : t('Start Subscription')}
                               </Button>
                             </div>
 
@@ -738,7 +740,7 @@ export default function Settings() {
                                 onClick={() => setShowCurrencySelector(!showCurrencySelector)}
                                 className="text-xs text-neutral-500 hover:text-neutral-700 transition-colors w-fit"
                               >
-                                {showCurrencySelector ? 'Hide currency options' : 'Select a different currency'}
+                                {showCurrencySelector ? t('Hide currency options') : t('Select a different currency')}
                               </button>
 
                               <AnimatePresence>
@@ -751,16 +753,16 @@ export default function Settings() {
                                     className="overflow-hidden"
                                   >
                                     <div className="flex items-center gap-3 pt-1">
-                                      <label className="text-sm font-medium text-neutral-600">Currency:</label>
+                                      <label className="text-sm font-medium text-neutral-600">{t('Currency:')}</label>
                                       <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
                                         <SelectTrigger className="w-[200px]">
                                           <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                          <SelectItem value="auto">Auto-detect</SelectItem>
-                                          <SelectItem value="usd">USD ($) - US Dollar</SelectItem>
-                                          <SelectItem value="eur">EUR (€) - Euro</SelectItem>
-                                          <SelectItem value="gbp">GBP (£) - British Pound</SelectItem>
+                                          <SelectItem value="auto">{t('Auto-detect')}</SelectItem>
+                                          <SelectItem value="usd">{t('USD ($) - US Dollar')}</SelectItem>
+                                          <SelectItem value="eur">{t('EUR (€) - Euro')}</SelectItem>
+                                          <SelectItem value="gbp">{t('GBP (£) - British Pound')}</SelectItem>
                                         </SelectContent>
                                       </Select>
                                     </div>
@@ -810,11 +812,11 @@ export default function Settings() {
               ) : (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Security overview</CardTitle>
+                    <CardTitle>{t('Security overview')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-neutral-500">
-                      {isLoadingSecurityMetrics ? 'Loading…' : 'Unable to load security metrics'}
+                      {isLoadingSecurityMetrics ? t('Loading…') : t('Unable to load security metrics')}
                     </p>
                   </CardContent>
                 </Card>
@@ -831,6 +833,11 @@ export default function Settings() {
               <SmtpSettings smtpConfig={smtpConfig} />
             </TabsContent>
 
+            {/* WhatsApp Tab */}
+            <TabsContent value="whatsapp">
+              <WhatsAppSettings canManage={currentUserRole === 'OWNER' || currentUserRole === 'ADMIN'} />
+            </TabsContent>
+
             {/* Data Management Tab */}
             <TabsContent value="data">
               <DataManagementSettings />
@@ -842,11 +849,11 @@ export default function Settings() {
           open={dialog.type === 'regenerate'}
           onOpenChange={open => !open && setDialog({type: 'none'})}
           onConfirm={handleRegenerateKeys}
-          title="Regenerate API keys?"
-          description="Your current keys stop working immediately. Every integration using them fails until you swap in the new ones."
+          title={t('Regenerate API keys?')}
+          description={t('Your current keys stop working immediately. Every integration using them fails until you swap in the new ones.')}
           icon={KeyRound}
-          confirmText="Regenerate keys"
-          loadingText="Regenerating…"
+          confirmText={t('Regenerate keys')}
+          loadingText={t('Regenerating…')}
           variant="destructive"
         />
 
@@ -854,12 +861,12 @@ export default function Settings() {
           open={dialog.type === 'reset'}
           onOpenChange={open => !open && setDialog({type: 'none'})}
           onConfirm={handleResetProject}
-          title="Reset project data?"
-          description="Every campaign, contact, workflow, template and event in this project is deleted. Your API keys, domains and billing stay as they are."
+          title={t('Reset project data?')}
+          description={t('Every campaign, contact, workflow, template and event in this project is deleted. Your API keys, domains and billing stay as they are.')}
           icon={RotateCcw}
           confirmPhrase="RESET"
-          confirmText="Reset data"
-          loadingText="Resetting…"
+          confirmText={t('Reset data')}
+          loadingText={t('Resetting…')}
           variant="destructive"
         />
 
@@ -867,15 +874,15 @@ export default function Settings() {
           open={dialog.type === 'delete'}
           onOpenChange={open => !open && setDialog({type: 'none'})}
           onConfirm={handleDeleteProject}
-          title={`Delete ${activeProject.name}?`}
+          title={t('Delete {name}?', {name: activeProject.name})}
           description={
             activeProject.subscription
-              ? 'This permanently deletes the project and everything in it, and cancels its subscription. It cannot be undone.'
-              : 'This permanently deletes the project and everything in it. It cannot be undone.'
+              ? t('This permanently deletes the project and everything in it, and cancels its subscription. It cannot be undone.')
+              : t('This permanently deletes the project and everything in it. It cannot be undone.')
           }
           confirmPhrase="DELETE"
-          confirmText="Delete project"
-          loadingText="Deleting…"
+          confirmText={t('Delete project')}
+          loadingText={t('Deleting…')}
           variant="destructive"
         />
 

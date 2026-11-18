@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import {Button, Input} from '@plunk/ui';
 import {useCallback, useEffect, useState} from 'react';
+import {t} from '../../lib/i18n';
 
 interface ToolbarProps {
   editor: Editor | null;
@@ -177,35 +178,35 @@ export function Toolbar({editor, onInsertVariable, onInsertImage, canUploadImage
   // Tailwind color palette organized by hue
   const colorGroups = [
     {
-      name: 'Neutrals',
+      name: t('Neutrals'),
       colors: ['#000000', '#374151', '#6B7280', '#9CA3AF', '#D1D5DB', '#F3F4F6', '#FFFFFF'],
     },
     {
-      name: 'Reds',
+      name: t('Reds'),
       colors: ['#7F1D1D', '#991B1B', '#DC2626', '#EF4444', '#F87171', '#FCA5A5', '#FEE2E2'],
     },
     {
-      name: 'Oranges',
+      name: t('Oranges'),
       colors: ['#7C2D12', '#C2410C', '#EA580C', '#F97316', '#FB923C', '#FDBA74', '#FED7AA'],
     },
     {
-      name: 'Yellows',
+      name: t('Yellows'),
       colors: ['#713F12', '#A16207', '#CA8A04', '#EAB308', '#FACC15', '#FDE047', '#FEF08A'],
     },
     {
-      name: 'Greens',
+      name: t('Greens'),
       colors: ['#14532D', '#15803D', '#16A34A', '#22C55E', '#4ADE80', '#86EFAC', '#BBF7D0'],
     },
     {
-      name: 'Blues',
+      name: t('Blues'),
       colors: ['#1E3A8A', '#1D4ED8', '#2563EB', '#3B82F6', '#60A5FA', '#93C5FD', '#DBEAFE'],
     },
     {
-      name: 'Purples',
+      name: t('Purples'),
       colors: ['#581C87', '#6B21A8', '#7C3AED', '#8B5CF6', '#A78BFA', '#C4B5FD', '#E9D5FF'],
     },
     {
-      name: 'Pinks',
+      name: t('Pinks'),
       colors: ['#831843', '#9F1239', '#DB2777', '#EC4899', '#F472B6', '#F9A8D4', '#FBCFE8'],
     },
   ];
@@ -433,7 +434,7 @@ export function Toolbar({editor, onInsertVariable, onInsertImage, canUploadImage
           >
             {/* Custom color input */}
             <div className="mb-3 pb-3 border-b border-neutral-200">
-              <label className="text-xs font-medium text-neutral-600 mb-1 block">Custom color</label>
+              <label className="text-xs font-medium text-neutral-600 mb-1 block">{t('Custom color')}</label>
               <div className="flex gap-2">
                 <Input
                   type="text"
@@ -456,7 +457,7 @@ export function Toolbar({editor, onInsertVariable, onInsertImage, canUploadImage
                   disabled={!customColor || !/^#[0-9A-F]{6}$/i.test(customColor)}
                   className="h-8"
                 >
-                  Apply
+                  {t('Apply')}
                 </Button>
               </div>
             </div>
@@ -531,7 +532,7 @@ export function Toolbar({editor, onInsertVariable, onInsertImage, canUploadImage
                 autoFocus
               />
               <Button type="button" size="sm" onMouseDown={e => e.preventDefault()} onClick={addLink}>
-                {editor.isActive('link') ? 'Update' : 'Add'}
+                {editor.isActive('link') ? t('Update') : t('Add')}
               </Button>
             </div>
             {editor.isActive('link') && (
@@ -543,7 +544,7 @@ export function Toolbar({editor, onInsertVariable, onInsertImage, canUploadImage
                   onMouseDown={e => e.preventDefault()}
                   onClick={removeLink}
                 >
-                  Remove link
+                  {t('Remove link')}
                 </Button>
               </div>
             )}
@@ -561,7 +562,7 @@ export function Toolbar({editor, onInsertVariable, onInsertImage, canUploadImage
           onClick={onInsertImage}
           disabled={!canUploadImages}
           className="h-8 w-8"
-          title={canUploadImages ? 'Insert image' : 'Storage not configured'}
+          title={canUploadImages ? t('Insert image') : t('Storage not configured')}
         >
           {/* eslint-disable-next-line jsx-a11y/alt-text */}
           <Image className="h-4 w-4" />
@@ -577,7 +578,7 @@ export function Toolbar({editor, onInsertVariable, onInsertImage, canUploadImage
           onMouseDown={e => e.preventDefault()}
           onClick={onInsertVariable}
           className="h-8 w-8"
-          title="Insert variable"
+          title={t('Insert variable')}
         >
           <Variable className="h-4 w-4" />
         </Button>

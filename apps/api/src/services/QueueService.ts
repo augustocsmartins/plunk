@@ -21,6 +21,7 @@ import type {
   ScheduledEmailSweepJobData,
   SegmentCountJobData,
   SendEmailJobData,
+  SendWhatsAppJobData,
   SnoozeSweepJobData,
   WorkflowStepJobData,
 } from '@plunk/types';
@@ -56,6 +57,23 @@ export const emailQueue = new Queue<SendEmailJobData>('email', {
     },
     removeOnComplete: 1000, // Keep last 1000 completed jobs
     removeOnFail: 5000, // Keep last 5000 failed jobs
+  },
+});
+
+/**
+ * WhatsApp messages (Evolution API). Delivery retries on network/API errors; the worker's
+ * limiter (WHATSAPP_RATE_LIMIT_PER_MINUTE) paces sends across all projects.
+ */
+export const whatsappQueue = new Queue<SendWhatsAppJobData>('whatsapp', {
+  connection: redisConnection,
+  defaultJobOptions: {
+    attempts: 4,
+    backoff: {
+      type: 'exponential',
+      delay: 5000,
+    },
+    removeOnComplete: 1000,
+    removeOnFail: 5000,
   },
 });
 
@@ -355,6 +373,13 @@ export class QueueService {
         priority: emailPriorityFor(sourceType),
       },
     );
+  }
+
+  /**
+   * Queue delivery of a WhatsApp message row (see WhatsAppService.deliver)
+   */
+  public static async queueWhatsAppMessage(messageId: string): Promise<Job<SendWhatsAppJobData>> {
+    return whatsappQueue.add('send-whatsapp', {messageId}, {jobId: `whatsapp-${messageId}`});
   }
 
   /**
@@ -683,6 +708,7 @@ export class QueueService {
       idempotencyKeyCleanupCounts,
       bulkContactCounts,
       meterCounts,
+      whatsappCounts,
     ] = await Promise.all([
       emailQueue.getJobCounts('waiting', 'active', 'completed', 'failed', 'delayed'),
       campaignQueue.getJobCounts('waiting', 'active', 'completed', 'failed', 'delayed'),
@@ -695,6 +721,7 @@ export class QueueService {
       idempotencyKeyCleanupQueue.getJobCounts('waiting', 'active', 'completed', 'failed', 'delayed'),
       bulkContactQueue.getJobCounts('waiting', 'active', 'completed', 'failed', 'delayed'),
       meterQueue.getJobCounts('waiting', 'active', 'completed', 'failed', 'delayed'),
+      whatsappQueue.getJobCounts('waiting', 'active', 'completed', 'failed', 'delayed'),
     ]);
 
     return {
@@ -709,6 +736,7 @@ export class QueueService {
       idempotencyKeyCleanup: idempotencyKeyCleanupCounts,
       bulkContact: bulkContactCounts,
       meter: meterCounts,
+      whatsapp: whatsappCounts,
     };
   }
 
@@ -727,6 +755,7 @@ export class QueueService {
       apiRequestCleanupQueue.pause(),
       bulkContactQueue.pause(),
       meterQueue.pause(),
+      whatsappQueue.pause(),
     ]);
   }
 
@@ -745,6 +774,7 @@ export class QueueService {
       apiRequestCleanupQueue.resume(),
       bulkContactQueue.resume(),
       meterQueue.resume(),
+      whatsappQueue.resume(),
     ]);
   }
 
@@ -773,6 +803,8 @@ export class QueueService {
       bulkContactQueue.clean(gracePeriod * 7, 100, 'failed'),
       meterQueue.clean(gracePeriod * 30, 5000, 'completed'), // Keep 30 days for billing audit
       meterQueue.clean(gracePeriod * 30, 10000, 'failed'),
+      whatsappQueue.clean(gracePeriod, 1000, 'completed'),
+      whatsappQueue.clean(gracePeriod * 7, 1000, 'failed'),
     ]);
   }
 
@@ -920,6 +952,7 @@ export class QueueService {
       apiRequestCleanupQueue.close(),
       bulkContactQueue.close(),
       meterQueue.close(),
+      whatsappQueue.close(),
     ]);
   }
 }

@@ -4,27 +4,28 @@ import {AlertOctagon, AlertTriangle, ChevronRight, Info} from 'lucide-react';
 
 import {formatCount, formatRate} from '../metrics';
 import {Panel, PanelEmpty, PanelError, RowsSkeleton} from '../primitives';
+import {t} from '../../../lib/i18n';
 
 const SEVERITY: Record<GlobalAnalyticsAlertSeverity, {icon: typeof Info; tone: string; label: string}> = {
-  critical: {icon: AlertOctagon, tone: 'text-red-600', label: 'Critical'},
-  warning: {icon: AlertTriangle, tone: 'text-amber-600', label: 'Warning'},
-  info: {icon: Info, tone: 'text-neutral-400', label: 'Note'},
+  critical: {icon: AlertOctagon, tone: 'text-red-600', label: t('Critical')},
+  warning: {icon: AlertTriangle, tone: 'text-amber-600', label: t('Warning')},
+  info: {icon: Info, tone: 'text-neutral-400', label: t('Note')},
 };
 
 function describe(alert: GlobalAnalyticsAlert): string {
   switch (alert.kind) {
     case 'project_disabled':
-      return 'Project is disabled and cannot send';
+      return t('Project is disabled and cannot send');
     case 'high_bounce_rate':
-      return `Bounce rate of ${formatRate(alert.value)}`;
+      return t('Bounce rate of {value}', {value: formatRate(alert.value)});
     case 'high_complaint_rate':
-      return `Complaint rate of ${formatRate(alert.value)}`;
+      return t('Complaint rate of {value}', {value: formatRate(alert.value)});
     case 'failed_emails':
-      return `${formatCount(alert.value)} ${alert.value === 1 ? 'email' : 'emails'} failed to send`;
+      return t('{value} {value2} failed to send', {value: formatCount(alert.value), value2: alert.value === 1 ? t('email') : t('emails')});
     case 'volume_spike':
-      return `Sent ${alert.value}× more than the previous period`;
+      return t('Sent {value}× more than the previous period', {value: alert.value});
     case 'no_activity':
-      return `No emails sent, after ${formatCount(alert.value)} in the previous period`;
+      return t('No emails sent, after {value} in the previous period', {value: formatCount(alert.value)});
   }
 }
 
@@ -44,11 +45,11 @@ export function GlobalAlerts({
 
   return (
     <Panel
-      title="Alerts"
+      title={t('Alerts')}
       description={
         alerts && alerts.length > 0
           ? `${alerts.length} ${alerts.length === 1 ? 'issue' : 'issues'}${critical > 0 ? `, ${critical} critical` : ''}`
-          : 'Delivery problems, disabled projects and unusual volume'
+          : t('Delivery problems, disabled projects and unusual volume')
       }
     >
       {error && !alerts ? (
@@ -56,7 +57,7 @@ export function GlobalAlerts({
       ) : !alerts ? (
         <RowsSkeleton rows={3} />
       ) : alerts.length === 0 ? (
-        <PanelEmpty>Every project looks healthy for this period.</PanelEmpty>
+        <PanelEmpty>{t('Every project looks healthy for this period.')}</PanelEmpty>
       ) : (
         <ul className="max-h-[22rem] divide-y divide-neutral-100 overflow-y-auto border-t border-neutral-100">
           {alerts.map(alert => {

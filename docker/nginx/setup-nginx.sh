@@ -46,6 +46,30 @@ export DASHBOARD_URI="${DASHBOARD_URI:-${PROTOCOL}://${DASHBOARD_DOMAIN}}"
 export LANDING_URI="${LANDING_URI:-${PROTOCOL}://${LANDING_DOMAIN}}"
 export WIKI_URI="${WIKI_URI:-${PROTOCOL}://${WIKI_DOMAIN}}"
 
+# Landing page: proxy to the landing app, or send visitors straight to the dashboard (login)
+if [ "$DISABLE_LANDING" = "true" ]; then
+    echo "🚫 Landing page disabled - ${LANDING_DOMAIN} redirects to ${DASHBOARD_URI}"
+    cat > "${NGINX_CONFIG_DIR}/plunk-landing.inc" << EOF
+location / {
+    return 302 ${DASHBOARD_URI}/;
+}
+EOF
+else
+    cat > "${NGINX_CONFIG_DIR}/plunk-landing.inc" << 'EOF'
+location / {
+    proxy_pass http://plunk_landing;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection 'upgrade';
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_cache_bypass $http_upgrade;
+}
+EOF
+fi
+
 # Generate nginx configuration from template
 echo "📝 Generating nginx configuration..."
 

@@ -2,7 +2,7 @@ import type {ProjectWithRole} from '@plunk/types';
 import dayjs from 'dayjs';
 import {getDomain} from 'tldts';
 
-import {API_URI, DASHBOARD_URI, NODE_ENV} from '../app/constants.js';
+import {API_URI, DASHBOARD_URI, DISABLE_SIGNUPS, NODE_ENV} from '../app/constants.js';
 import {prisma} from '../database/prisma.js';
 import {wrapRedis} from '../database/redis.js';
 
@@ -65,6 +65,20 @@ function isDashboardSameSite(): boolean {
 
 export class UserService {
   public static readonly COOKIE_NAME = 'next_token';
+
+  /**
+   * Whether new accounts may be created right now.
+   * With DISABLE_SIGNUPS=true, signups stay open only until the first user exists,
+   * so a private instance can still bootstrap its initial admin account.
+   */
+  public static async signupsAllowed(): Promise<boolean> {
+    if (!DISABLE_SIGNUPS) {
+      return true;
+    }
+
+    const existing = await prisma.user.findFirst({select: {id: true}});
+    return !existing;
+  }
 
   public static async id(id: string) {
     return wrapRedis(Keys.User.id(id), async () => {

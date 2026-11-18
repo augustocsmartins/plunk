@@ -10,6 +10,7 @@ import {DashboardLayout} from '../../components/DashboardLayout';
 import {FilterPill} from '../../components/data-table';
 import {useProjects} from '../../lib/hooks/useProject';
 import {useGlobalAnalyticsData, useGlobalAnalyticsFilters} from '../../lib/hooks/useGlobalAnalytics';
+import {t} from '../../lib/i18n';
 
 /**
  * Analytics across every project the user is a member of: the totals, the projects that
@@ -25,27 +26,25 @@ export default function GlobalAnalyticsPage() {
   const sameYear = bounds.first.year() === bounds.last.year();
   const period =
     bounds.days === 1
-      ? `${bounds.last.format('MMMM D, YYYY')}, compared with the day before.`
-      : `${bounds.first.format(sameYear ? 'MMMM D' : 'MMMM D, YYYY')} to ${bounds.last.format('MMMM D, YYYY')}, compared with the ${
-          bounds.days
-        } days before.`;
+      ? t('{value}, compared with the day before.', {value: bounds.last.format('MMMM D, YYYY')})
+      : t('{value} to {value2}, compared with the {days} days before.', {value: bounds.first.format(sameYear ? 'MMMM D' : 'MMMM D, YYYY'), value2: bounds.last.format('MMMM D, YYYY'), days: bounds.days});
 
   const retry = () => void overview.mutate();
 
   return (
     <>
-      <NextSeo title="Global analytics" />
+      <NextSeo title={t('Global analytics')} />
       <DashboardLayout>
         <div className="space-y-6">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900">Global analytics</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900">{t('Global analytics')}</h1>
             <p className="mt-2 text-sm text-neutral-500">
               {/* Counted from the response: ids in a shared link may name projects you have since left */}
               {filters.projects.length === 0
-                ? 'All your projects'
+                ? t('All your projects')
                 : overview.data
-                  ? `${overview.data.projects.length} selected ${overview.data.projects.length === 1 ? 'project' : 'projects'}`
-                  : 'Selected projects'}
+                  ? t('{length} selected {value}', {length: overview.data.projects.length, value: overview.data.projects.length === 1 ? 'project' : 'projects'})
+                  : t('Selected projects')}
               {' · '}
               {period}
             </p>
@@ -53,7 +52,7 @@ export default function GlobalAnalyticsPage() {
 
           <div className="flex flex-wrap items-center gap-2">
             <FilterPill
-              title="Projects"
+              title={t('Projects')}
               options={(projects ?? []).map(project => ({value: project.id, label: project.name}))}
               selected={filters.projects.filter(id => projects?.some(p => p.id === id) ?? true)}
               onChange={next => void filters.setScope({projects: next})}

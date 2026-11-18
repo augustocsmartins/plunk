@@ -23,6 +23,7 @@ import {toast} from 'sonner';
 import useSWR from 'swr';
 import {useActiveProject} from '../lib/contexts/ActiveProjectProvider';
 import {network} from '../lib/network';
+import {t} from '../lib/i18n';
 
 interface FieldUsage {
   usedInSegments: Array<{id: string; name: string}>;
@@ -85,12 +86,12 @@ export function DataManagementSettings() {
         `/contacts/fields/${encodeURIComponent(selectedField)}`,
       );
 
-      toast.success(`Field deleted from ${result.deletedFrom} contact(s)`);
+      toast.success(t('Field deleted from {deletedFrom} contact(s)', {deletedFrom: result.deletedFrom}));
       setDeleteDialogOpen(false);
       setSelectedField(null);
       mutateFields();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t delete the field. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t delete the field. Try again.'));
     } finally {
       setIsDeleting(false);
     }
@@ -106,12 +107,12 @@ export function DataManagementSettings() {
         `/events/${encodeURIComponent(selectedEvent)}`,
       );
 
-      toast.success(`Deleted ${result.deletedCount} event(s)`);
+      toast.success(t('Deleted {deletedCount} event(s)', {deletedCount: result.deletedCount}));
       setDeleteDialogOpen(false);
       setSelectedEvent(null);
       mutateEvents();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t delete the event. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t delete the event. Try again.'));
     } finally {
       setIsDeleting(false);
     }
@@ -134,26 +135,26 @@ export function DataManagementSettings() {
       {/* Custom Contact Fields */}
       <Card>
         <CardHeader>
-          <CardTitle>Custom contact fields</CardTitle>
+          <CardTitle>{t('Custom contact fields')}</CardTitle>
           <CardDescription>
-            Fields set on contacts through the API. A field used by a segment or campaign can’t be deleted.
+            {t('Fields set on contacts through the API. A field used by a segment or campaign can’t be deleted.')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {customFields.length === 0 ? (
             <EmptyState
               icon={Database}
-              title="No custom fields"
-              description="Custom fields appear here once contacts have data properties set via the API."
+              title={t('No custom fields')}
+              description={t('Custom fields appear here once contacts have data properties set via the API.')}
             />
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Field name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Coverage</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('Field name')}</TableHead>
+                  <TableHead>{t('Type')}</TableHead>
+                  <TableHead>{t('Coverage')}</TableHead>
+                  <TableHead className="text-right">{t('Actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -182,25 +183,24 @@ export function DataManagementSettings() {
       {/* Custom Events */}
       <Card>
         <CardHeader>
-          <CardTitle>Custom events</CardTitle>
+          <CardTitle>{t('Custom events')}</CardTitle>
           <CardDescription>
-            Events your contacts have triggered. An event used by a segment or workflow can’t be deleted, and
-            neither can system events (email.*, segment.*).
+            {t('Events your contacts have triggered. An event used by a segment or workflow can’t be deleted, and neither can system events (email.*, segment.*).')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {customEvents.length === 0 ? (
             <EmptyState
               icon={Zap}
-              title="No custom events"
-              description="Custom events appear here once your contacts trigger events via the API."
+              title={t('No custom events')}
+              description={t('Custom events appear here once your contacts trigger events via the API.')}
             />
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Event name</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('Event name')}</TableHead>
+                  <TableHead className="text-right">{t('Actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -224,11 +224,11 @@ export function DataManagementSettings() {
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         onConfirm={selectedField ? handleDeleteField : handleDeleteEvent}
-        title={selectedField ? `Delete ${selectedField.replace('data.', '')}?` : `Delete ${selectedEvent}?`}
+        title={selectedField ? t('Delete {selectedField}?', {selectedField: selectedField.replace('data.', '')}) : t('Delete {selectedEvent}?', {selectedEvent: selectedEvent})}
         description={
           selectedField
-            ? 'The field is removed from every contact that has it. This can’t be undone.'
-            : 'Every recorded instance of this event is deleted. This can’t be undone.'
+            ? t('The field is removed from every contact that has it. This can’t be undone.')
+            : t('Every recorded instance of this event is deleted. This can’t be undone.')
         }
         details={
           selectedField ? (
@@ -236,9 +236,9 @@ export function DataManagementSettings() {
               loading={!fieldUsage}
               rows={
                 fieldUsage && [
-                  ['Contacts with this field', fieldUsage.contactCount],
-                  ['Used in segments', fieldUsage.usedInSegments.length],
-                  ['Used in campaigns', fieldUsage.usedInCampaigns.length],
+                  [t('Contacts with this field'), fieldUsage.contactCount],
+                  [t('Used in segments'), fieldUsage.usedInSegments.length],
+                  [t('Used in campaigns'), fieldUsage.usedInCampaigns.length],
                 ]
               }
               blockers={
@@ -256,10 +256,10 @@ export function DataManagementSettings() {
               loading={!eventUsage}
               rows={
                 eventUsage && [
-                  ['Recorded events', eventUsage.totalCount],
-                  ['Unique contacts', eventUsage.uniqueContacts],
-                  ['Used in segments', eventUsage.usedInSegments.length],
-                  ['Used in workflows', eventUsage.usedInWorkflows.length],
+                  [t('Recorded events'), eventUsage.totalCount],
+                  [t('Unique contacts'), eventUsage.uniqueContacts],
+                  [t('Used in segments'), eventUsage.usedInSegments.length],
+                  [t('Used in workflows'), eventUsage.usedInWorkflows.length],
                 ]
               }
               blockers={
@@ -275,8 +275,8 @@ export function DataManagementSettings() {
           )
         }
         confirmDisabled={selectedField ? !fieldUsage?.canDelete : !eventUsage?.canDelete}
-        confirmText={selectedField ? 'Delete field' : 'Delete event'}
-        loadingText="Deleting…"
+        confirmText={selectedField ? t('Delete field') : t('Delete event')}
+        loadingText={t('Deleting…')}
         variant="destructive"
         status={isDeleting ? 'loading' : 'idle'}
       />
@@ -297,7 +297,7 @@ function UsageDetails({loading, rows, blockers, subject}: UsageDetailsProps) {
     return (
       <div className="flex items-center gap-2 rounded-lg border border-neutral-200 px-3 py-2.5 text-sm text-neutral-500">
         <IconSpinner size="sm" />
-        Checking where this {subject} is used…
+        {t('Checking where this')}{' '}{subject} {t('is used…')}
       </div>
     );
   }
@@ -315,7 +315,7 @@ function UsageDetails({loading, rows, blockers, subject}: UsageDetailsProps) {
 
       {blockers && (
         <div className="rounded-lg bg-red-50 px-3 py-2.5 text-sm">
-          <p className="font-medium text-red-700">Remove it from these first</p>
+          <p className="font-medium text-red-700">{t('Remove it from these first')}</p>
           <ul className="mt-1.5 space-y-0.5 text-red-700/80">
             {blockers.map(blocker => (
               <li key={`${blocker.kind}-${blocker.id}`} className="truncate">

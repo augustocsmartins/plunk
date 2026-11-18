@@ -6,25 +6,26 @@ import {useState} from 'react';
 import useSWR from 'swr';
 
 import {formatFullDateTime, formatRelativeTime} from '../lib/dateUtils';
+import {t} from '../lib/i18n';
 
 const COPY: Record<CampaignRecipientType, {title: string; empty: string; describe: (total: number) => string}> = {
   bounced: {
-    title: 'Bounced',
-    empty: 'No address bounced on this campaign.',
+    title: t('Bounced'),
+    empty: t('No address bounced on this campaign.'),
     describe: total =>
-      `${total.toLocaleString()} ${total === 1 ? 'address' : 'addresses'} could not be delivered to. Each one is now unsubscribed.`,
+      t('{value} {value2} could not be delivered to. Each one is now unsubscribed.', {value: total.toLocaleString(), value2: total === 1 ? 'address' : 'addresses'}),
   },
   complained: {
-    title: 'Spam reports',
-    empty: 'Nobody reported this campaign as spam.',
+    title: t('Spam reports'),
+    empty: t('Nobody reported this campaign as spam.'),
     describe: total =>
-      `${total.toLocaleString()} ${total === 1 ? 'recipient' : 'recipients'} moved this to spam. Each one is now unsubscribed.`,
+      t('{value} {value2} moved this to spam. Each one is now unsubscribed.', {value: total.toLocaleString(), value2: total === 1 ? t('recipient') : t('recipients')}),
   },
   unsubscribed: {
-    title: 'Unsubscribed',
-    empty: 'Nobody unsubscribed from this campaign.',
+    title: t('Unsubscribed'),
+    empty: t('Nobody unsubscribed from this campaign.'),
     describe: total =>
-      `${total.toLocaleString()} ${total === 1 ? 'recipient' : 'recipients'} opted out from this campaign, including any who snoozed.`,
+      t('{value} {value2} opted out from this campaign, including any who snoozed.', {value: total.toLocaleString(), value2: total === 1 ? t('recipient') : t('recipients')}),
   },
 };
 
@@ -88,7 +89,7 @@ function RecipientList({campaignId, type}: {campaignId: string; type: CampaignRe
         <SheetDescription>
           {/* The count belongs in the header only when there is one worth stating; at zero
               the body carries the message, and repeating it here says it twice. */}
-          {!newest ? 'Loading recipients' : (newest.total ?? 0) > 0 ? copy.describe(newest.total ?? 0) : 'Nothing to list.'}
+          {!newest ? t('Loading recipients') : (newest.total ?? 0) > 0 ? copy.describe(newest.total ?? 0) : t('Nothing to list.')}
         </SheetDescription>
       </SheetHeader>
 
@@ -96,7 +97,7 @@ function RecipientList({campaignId, type}: {campaignId: string; type: CampaignRe
         {error && (
           <div className="flex items-start gap-3 p-6 text-sm text-red-700">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            Couldn{"'"}t load this list. Close the panel and open it again.
+            {t("Couldn't load this list. Close the panel and open it again.")}
           </div>
         )}
 
@@ -124,8 +125,7 @@ function RecipientList({campaignId, type}: {campaignId: string; type: CampaignRe
         */}
         {!error && !isFirstLoad && isMissingRows && (
           <p className="p-6 text-sm text-neutral-500">
-            These contacts have since been deleted from the project, so there is nobody left
-            to list. The figure still counts them.
+            {t('These contacts have since been deleted from the project, so there is nobody left to list. The figure still counts them.')}
           </p>
         )}
 
@@ -141,7 +141,7 @@ function RecipientList({campaignId, type}: {campaignId: string; type: CampaignRe
       {newest?.hasMore && newest.cursor && (
         <div className="border-t border-neutral-100 p-4">
           <Button variant="outline" className="w-full" onClick={() => setCursors(previous => [...previous, newest.cursor as string])}>
-            Load more
+            {t('Load more')}
           </Button>
         </div>
       )}

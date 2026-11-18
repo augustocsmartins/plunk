@@ -15,9 +15,24 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type {WorkflowStep} from '@plunk/db';
-import {AlertTriangle, Clock, GitBranch, Hourglass, Link, LogOut, Mail, Maximize2, Minimize2, Timer, UserCog, Webhook} from 'lucide-react';
+import {
+  AlertTriangle,
+  Clock,
+  GitBranch,
+  Hourglass,
+  Link,
+  LogOut,
+  Mail,
+  Maximize2,
+  MessageCircle,
+  Minimize2,
+  Timer,
+  UserCog,
+  Webhook,
+} from 'lucide-react';
 import {useEffect, useMemo, useState} from 'react';
 import dagre from 'dagre';
+import {t as tx} from '../lib/i18n';
 
 interface WorkflowVisualizerProps {
   steps: (WorkflowStep & {
@@ -38,19 +53,21 @@ interface WorkflowVisualizerProps {
 }
 
 const STEP_TYPE_LABELS: Record<string, string> = {
-  TRIGGER: 'Trigger',
-  SEND_EMAIL: 'Send Email',
-  DELAY: 'Delay',
-  WAIT_FOR_EVENT: 'Wait for Event',
-  CONDITION: 'Condition',
-  EXIT: 'Exit',
-  WEBHOOK: 'Webhook',
-  UPDATE_CONTACT: 'Update Contact',
+  TRIGGER: tx('Trigger'),
+  SEND_EMAIL: tx('Send Email'),
+  SEND_WHATSAPP: tx('Send WhatsApp'),
+  DELAY: tx('Delay'),
+  WAIT_FOR_EVENT: tx('Wait for Event'),
+  CONDITION: tx('Condition'),
+  EXIT: tx('Exit'),
+  WEBHOOK: tx('Webhook'),
+  UPDATE_CONTACT: tx('Update Contact'),
 };
 
 const STEP_TYPE_ICONS = {
   TRIGGER: GitBranch,
   SEND_EMAIL: Mail,
+  SEND_WHATSAPP: MessageCircle,
   DELAY: Clock,
   WAIT_FOR_EVENT: Clock,
   CONDITION: GitBranch,
@@ -62,6 +79,7 @@ const STEP_TYPE_ICONS = {
 const STEP_TYPE_COLORS = {
   TRIGGER: '#9333ea', // purple-600
   SEND_EMAIL: '#2563eb', // blue-600
+  SEND_WHATSAPP: '#059669', // emerald-600
   DELAY: '#ea580c', // orange-600
   WAIT_FOR_EVENT: '#ca8a04', // yellow-600
   CONDITION: '#9333ea', // purple-600
@@ -73,6 +91,7 @@ const STEP_TYPE_COLORS = {
 const STEP_TYPE_BG = {
   TRIGGER: '#f3e8ff', // purple-50
   SEND_EMAIL: '#dbeafe', // blue-50
+  SEND_WHATSAPP: '#d1fae5', // emerald-100
   DELAY: '#ffedd5', // orange-50
   WAIT_FOR_EVENT: '#fef3c7', // yellow-50
   CONDITION: '#f3e8ff', // purple-50
@@ -186,12 +205,14 @@ function CustomNode({
             </div>
           </div>
         )}
-        {data.type === 'DELAY' && data.config?.amount && (
+        {data.type === 'DELAY' && (data.config?.mode === 'until' || data.config?.amount) && (
           <div className="mt-3 pt-3 border-t border-neutral-100">
             <div className="flex items-center gap-2 text-xs text-neutral-600">
-              <Timer className="h-3 w-3" />
-              <span>
-                Wait {data.config.amount} {data.config.unit}
+              <Timer className="h-3 w-3 shrink-0" aria-hidden="true" />
+              <span className="min-w-0 truncate" title={data.config.mode === 'until' ? data.config.until : undefined}>
+                {data.config.mode === 'until'
+                  ? tx('Until {date}', {date: data.config.until})
+                  : `${tx('Wait')} ${data.config.amount} ${data.config.unit}`}
               </span>
             </div>
           </div>
@@ -200,7 +221,7 @@ function CustomNode({
           <div className="mt-3 pt-3 border-t border-neutral-100">
             <div className="flex items-center gap-1 text-xs text-neutral-600">
               <GitBranch className="h-3 w-3" />
-              <span>If/else branch</span>
+              <span>{tx('If/else branch')}</span>
             </div>
           </div>
         )}
@@ -209,6 +230,14 @@ function CustomNode({
             <div className="flex items-center gap-2 text-xs text-neutral-600">
               <Hourglass className="h-3 w-3" />
               <span className="truncate">{data.config.eventName}</span>
+            </div>
+          </div>
+        )}
+        {data.type === 'SEND_WHATSAPP' && data.config?.message && (
+          <div className="mt-3 pt-3 border-t border-neutral-100">
+            <div className="flex items-center gap-2 text-xs text-neutral-600">
+              <MessageCircle className="h-3 w-3 shrink-0" />
+              <span className="truncate">{String(data.config.message)}</span>
             </div>
           </div>
         )}
@@ -278,7 +307,7 @@ export function WorkflowVisualizer({steps}: WorkflowVisualizerProps) {
             type: 'custom',
             position: {x: 0, y: 0},
             data: {
-              label: 'End workflow',
+              label: tx('End workflow'),
               type: 'END',
               icon: LogOut,
               color: '#9ca3af',
@@ -295,7 +324,7 @@ export function WorkflowVisualizer({steps}: WorkflowVisualizerProps) {
             type: 'custom',
             position: {x: 0, y: 0},
             data: {
-              label: 'End workflow',
+              label: tx('End workflow'),
               type: 'END',
               icon: LogOut,
               color: '#9ca3af',
@@ -332,7 +361,7 @@ export function WorkflowVisualizer({steps}: WorkflowVisualizerProps) {
             target: transition.toStepId,
             type: 'smoothstep',
             animated: false,
-            label: isConditional ? (branch === 'yes' ? 'Yes' : 'No') : undefined,
+            label: isConditional ? (branch === 'yes' ? tx('Yes') : tx('No')) : undefined,
             labelStyle: {
               fill: branch === 'yes' ? '#16a34a' : branch === 'no' ? '#dc2626' : '#64748b',
               fontWeight: 600,
@@ -375,7 +404,7 @@ export function WorkflowVisualizer({steps}: WorkflowVisualizerProps) {
             target: `${step.id}-yes-end`,
             type: 'smoothstep',
             animated: false,
-            label: 'Yes',
+            label: tx('Yes'),
             labelStyle: {
               fill: '#16a34a',
               fontWeight: 600,
@@ -408,7 +437,7 @@ export function WorkflowVisualizer({steps}: WorkflowVisualizerProps) {
             target: `${step.id}-no-end`,
             type: 'smoothstep',
             animated: false,
-            label: 'No',
+            label: tx('No'),
             labelStyle: {
               fill: '#dc2626',
               fontWeight: 600,
@@ -471,8 +500,8 @@ export function WorkflowVisualizer({steps}: WorkflowVisualizerProps) {
     return (
       <div className="bg-neutral-50 border-2 border-dashed border-neutral-300 rounded-lg p-12 text-center">
         <GitBranch className="h-16 w-16 text-neutral-400 mx-auto mb-4" />
-        <p className="text-neutral-600 font-medium">No workflow steps yet</p>
-        <p className="text-sm text-neutral-500 mt-2">Add steps to your workflow to see the visualization</p>
+        <p className="text-neutral-600 font-medium">{tx('No workflow steps yet')}</p>
+        <p className="text-sm text-neutral-500 mt-2">{tx('Add steps to your workflow to see the visualization')}</p>
       </div>
     );
   }
@@ -535,10 +564,10 @@ export function WorkflowVisualizer({steps}: WorkflowVisualizerProps) {
               <GitBranch className="h-4 w-4 text-neutral-700" />
               <div className="text-sm">
                 <span className="font-semibold text-neutral-900">{steps.length}</span>
-                <span className="text-neutral-600"> step{steps.length !== 1 ? 's' : ''}</span>
+                <span className="text-neutral-600"> {tx('step')}{steps.length !== 1 ? 's' : ''}</span>
                 <span className="text-neutral-400 mx-2">·</span>
                 <span className="font-semibold text-neutral-900">{rawEdges.length}</span>
-                <span className="text-neutral-600"> transition{rawEdges.length !== 1 ? 's' : ''}</span>
+                <span className="text-neutral-600"> {tx('transition')}{rawEdges.length !== 1 ? 's' : ''}</span>
               </div>
             </div>
           </Panel>
@@ -546,7 +575,7 @@ export function WorkflowVisualizer({steps}: WorkflowVisualizerProps) {
             <button
               onClick={() => setIsExpanded(e => !e)}
               className="bg-white border border-neutral-200 rounded-lg shadow-md p-2 hover:bg-neutral-50 transition-colors"
-              title={isExpanded ? 'Exit fullscreen' : 'Expand to fullscreen'}
+              title={isExpanded ? tx('Exit fullscreen') : tx('Expand to fullscreen')}
             >
               {isExpanded ? (
                 <Minimize2 className="h-4 w-4 text-neutral-600" />
@@ -562,7 +591,7 @@ export function WorkflowVisualizer({steps}: WorkflowVisualizerProps) {
             >
               <div className="flex items-center gap-2 text-sm text-neutral-600">
                 <AlertTriangle className="h-4 w-4" />
-                <span>No transitions found. Connect your steps to see the flow.</span>
+                <span>{tx('No transitions found. Connect your steps to see the flow.')}</span>
               </div>
             </Panel>
           )}

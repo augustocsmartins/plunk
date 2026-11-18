@@ -1,6 +1,7 @@
 import {Alert, Badge, Button, Card, CardContent, CardHeader, CardTitle, IconSpinner} from '@plunk/ui';
 import {AlertCircle, Download, ExternalLink, FileText} from 'lucide-react';
 import {useBillingInvoices} from '../lib/hooks/useBillingInvoices';
+import {getIntlLocale, t} from '../lib/i18n';
 
 interface BillingInvoicesProps {
   projectId: string;
@@ -13,7 +14,7 @@ function InvoicesCard({children}: {children: React.ReactNode}) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Invoices</CardTitle>
+        <CardTitle>{t('Invoices')}</CardTitle>
       </CardHeader>
       <CardContent>{children}</CardContent>
     </Card>
@@ -29,7 +30,7 @@ export function BillingInvoices({projectId, hasSubscription, onManageBilling}: B
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <div className="ml-2">
-            <p className="text-sm">Invoices appear here once you start a subscription.</p>
+            <p className="text-sm">{t('Invoices appear here once you start a subscription.')}</p>
           </div>
         </Alert>
       </InvoicesCard>
@@ -52,7 +53,7 @@ export function BillingInvoices({projectId, hasSubscription, onManageBilling}: B
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <div className="ml-2">
-            <p className="text-sm">Couldn’t load your invoices. Try again in a moment.</p>
+            <p className="text-sm">{t('Couldn’t load your invoices. Try again in a moment.')}</p>
           </div>
         </Alert>
       </InvoicesCard>
@@ -64,14 +65,14 @@ export function BillingInvoices({projectId, hasSubscription, onManageBilling}: B
   }
 
   const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(getIntlLocale(), {
       style: 'currency',
       currency: currency.toUpperCase(),
     }).format(amount / 100);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString(getIntlLocale(), {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
@@ -81,18 +82,18 @@ export function BillingInvoices({projectId, hasSubscription, onManageBilling}: B
   const getStatusBadge = (status: string, paid: boolean) => {
     // Stripe invoices have status 'paid' when paid, or paid boolean is true
     if (paid || status === 'paid') {
-      return <Badge variant="success">Paid</Badge>;
+      return <Badge variant="success">{t('Paid')}</Badge>;
     }
 
     switch (status) {
       case 'open':
-        return <Badge variant="warning">Unpaid</Badge>;
+        return <Badge variant="warning">{t('Unpaid')}</Badge>;
       case 'draft':
-        return <Badge variant="neutral">Draft</Badge>;
+        return <Badge variant="neutral">{t('Draft')}</Badge>;
       case 'uncollectible':
-        return <Badge variant="destructive">Uncollectible</Badge>;
+        return <Badge variant="destructive">{t('Uncollectible')}</Badge>;
       case 'void':
-        return <Badge variant="neutral">Void</Badge>;
+        return <Badge variant="neutral">{t('Void')}</Badge>;
       default:
         return <Badge variant="neutral">{status}</Badge>;
     }
@@ -116,7 +117,7 @@ export function BillingInvoices({projectId, hasSubscription, onManageBilling}: B
           <Alert>
             <FileText className="h-4 w-4" />
             <div className="ml-2">
-              <p className="text-sm">Your first invoice appears here at the end of this billing period.</p>
+              <p className="text-sm">{t('Your first invoice appears here at the end of this billing period.')}</p>
             </div>
           </Alert>
         ) : (
@@ -131,33 +132,33 @@ export function BillingInvoices({projectId, hasSubscription, onManageBilling}: B
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="font-medium text-neutral-900">
-                          {invoice.number || `Invoice ${invoice.id.slice(-8)}`}
+                          {invoice.number || t('Invoice {value}', {value: invoice.id.slice(-8)})}
                         </h3>
                         {getStatusBadge(invoice.status, invoice.paid)}
                       </div>
                       <div className="space-y-1 text-sm text-neutral-600">
                         <p>
-                          <span className="font-medium">Date:</span> {formatDate(invoice.created)}
+                          <span className="font-medium">{t('Date:')}</span> {formatDate(invoice.created)}
                         </p>
                         {invoice.periodStart && invoice.periodEnd && (
                           <p>
-                            <span className="font-medium">Period:</span> {formatDate(invoice.periodStart)} -{' '}
+                            <span className="font-medium">{t('Period:')}</span> {formatDate(invoice.periodStart)} -{' '}
                             {formatDate(invoice.periodEnd)}
                           </p>
                         )}
                         {isPaid(invoice) ? (
                           <p>
-                            <span className="font-medium">Amount paid:</span>{' '}
+                            <span className="font-medium">{t('Amount paid:')}</span>{' '}
                             {formatCurrency(invoice.amountPaid, invoice.currency)}
                           </p>
                         ) : (
                           <>
                             <p>
-                              <span className="font-medium">Total:</span>{' '}
+                              <span className="font-medium">{t('Total:')}</span>{' '}
                               {formatCurrency(invoice.total, invoice.currency)}
                             </p>
                             <p className="text-amber-700 font-medium">
-                              <span className="font-medium">Amount due:</span>{' '}
+                              <span className="font-medium">{t('Amount due:')}</span>{' '}
                               {formatCurrency(invoice.amountDue, invoice.currency)}
                             </p>
                           </>
@@ -175,7 +176,7 @@ export function BillingInvoices({projectId, hasSubscription, onManageBilling}: B
                           className="flex items-center gap-2"
                         >
                           <ExternalLink className="h-3 w-3" />
-                          View
+                          {t('View')}
                         </Button>
                       )}
                       {invoice.invoicePdf && (
@@ -201,7 +202,7 @@ export function BillingInvoices({projectId, hasSubscription, onManageBilling}: B
                 <FileText className="h-4 w-4" />
                 <div className="ml-2">
                   <p className="text-sm">
-                    Showing your 5 most recent invoices.{' '}
+                    {t('Showing your 5 most recent invoices.')}{' '}
                     {onManageBilling ? (
                       <>
                         <button
@@ -209,12 +210,12 @@ export function BillingInvoices({projectId, hasSubscription, onManageBilling}: B
                           onClick={onManageBilling}
                           className="underline font-medium cursor-pointer hover:text-neutral-900"
                         >
-                          Open the customer portal
+                          {t('Open the customer portal')}
                         </button>{' '}
-                        for your full history.
+                        {t('for your full history.')}
                       </>
                     ) : (
-                      'Use Manage billing above for your full history.'
+                      t('Use Manage billing above for your full history.')
                     )}
                   </p>
                 </div>

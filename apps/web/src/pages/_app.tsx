@@ -8,6 +8,7 @@ import {DefaultSeo} from 'next-seo';
 import {NuqsAdapter} from 'nuqs/adapters/next/pages';
 import {Loader} from '@plunk/ui';
 import {ActiveProjectProvider} from '../lib/contexts/ActiveProjectProvider';
+import {I18nProvider, t} from '../lib/i18n';
 import {CommandPalette} from '../components/CommandPalette';
 import {useProjects} from '../lib/hooks/useProject';
 import {useUser} from '../lib/hooks/useUser';
@@ -16,7 +17,6 @@ import {addRecentPage, getFallbackLabel} from '../lib/recentPages';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import advancedFormat from 'dayjs/plugin/advancedFormat';
-import Script from 'next/script';
 
 // Configure dayjs plugins globally
 dayjs.extend(relativeTime);
@@ -66,7 +66,7 @@ function AuthGuard({children}: {children: React.ReactNode}) {
 
   // Show loading state while checking authentication (only for protected routes)
   if (isLoading && !isPublicRoute) {
-    return <Loader message="Authenticating…" />;
+    return <Loader message={t('Authenticating…')} />;
   }
 
   // Don't render protected content if redirecting
@@ -91,7 +91,7 @@ function ProjectGuard({children}: {children: React.ReactNode}) {
 
   // Show loading state while checking projects (only for routes that need a project)
   if (isLoading && !isNoProjectRoute) {
-    return <Loader message="Loading project…" />;
+    return <Loader message={t('Loading project…')} />;
   }
 
   // Don't render protected content if redirecting
@@ -108,27 +108,22 @@ function ProjectGuard({children}: {children: React.ReactNode}) {
  */
 export default function WithProviders(props: AppProps) {
   return (
-    <NuqsAdapter>
-      <SWRConfig
-        value={{
-          fetcher: (url: string) => network.fetch('GET', url),
-          shouldRetryOnError: false,
-        }}
-      >
-        <DefaultSeo titleTemplate="%s | Plunk" defaultTitle="Plunk | Email Platform Dashboard" />
+    <I18nProvider>
+      <NuqsAdapter>
+        <SWRConfig
+          value={{
+            fetcher: (url: string) => network.fetch('GET', url),
+            shouldRetryOnError: false,
+          }}
+        >
+          <DefaultSeo titleTemplate="%s | Plunk" defaultTitle={t('Plunk | Email Platform Dashboard')} />
 
-        <Script
-          defer
-          src="https://analytics.driaug.com/script.js"
-          data-website-id="5880df93-9025-41ae-8e33-7c3da865f764"
-          data-domains="next-app.useplunk.com"
-        />
-
-        <ActiveProjectProvider>
-          <Root {...props} />
-        </ActiveProjectProvider>
-      </SWRConfig>
-    </NuqsAdapter>
+          <ActiveProjectProvider>
+            <Root {...props} />
+          </ActiveProjectProvider>
+        </SWRConfig>
+      </NuqsAdapter>
+    </I18nProvider>
   );
 }
 

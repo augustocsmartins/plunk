@@ -2,6 +2,7 @@ import {ConditionStepDialog} from './ConditionStepDialog';
 import {DelayStepDialog} from './DelayStepDialog';
 import {ExitStepDialog} from './ExitStepDialog';
 import {SendEmailStepDialog} from './SendEmailStepDialog';
+import {SendWhatsAppStepDialog} from './SendWhatsAppStepDialog';
 import {UpdateContactStepDialog} from './UpdateContactStepDialog';
 import {WaitForEventStepDialog} from './WaitForEventStepDialog';
 import {WebhookStepDialog} from './WebhookStepDialog';
@@ -11,6 +12,8 @@ export function EditStepDialog(props: EditStepDialogProps) {
   switch (props.step.type) {
     case 'SEND_EMAIL':
       return <SendEmailStepDialog {...props} />;
+    case 'SEND_WHATSAPP':
+      return <SendWhatsAppStepDialog {...props} />;
     case 'DELAY':
       return <DelayStepDialog {...props} />;
     case 'CONDITION':

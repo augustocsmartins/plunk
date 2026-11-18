@@ -14,6 +14,7 @@ import {AlertCircle} from 'lucide-react';
 import Link from 'next/link';
 import {useDomains} from '../lib/hooks/useDomains';
 import {useActiveProject} from '../lib/contexts/ActiveProjectProvider';
+import {t} from '../lib/i18n';
 
 interface EmailDomainInputProps {
   value: string;
@@ -74,7 +75,7 @@ export function EmailDomainInput({value, onChange, id, placeholder, required, la
           </Label>
         )}
         <div className="flex items-center gap-2">
-          <Input id={id} type="text" placeholder="Loading…" disabled className="flex-1" />
+          <Input id={id} type="text" placeholder={t('Loading…')} disabled className="flex-1" />
         </div>
       </div>
     );
@@ -92,13 +93,13 @@ export function EmailDomainInput({value, onChange, id, placeholder, required, la
         <Alert variant="destructive" className="mt-2">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            <p className="font-medium text-sm">No verified domains</p>
+            <p className="font-medium text-sm">{t('No verified domains')}</p>
             <p className="text-xs mt-1">
-              Please add and verify a domain in{' '}
+              {t('Please add and verify a domain in')}{' '}
               <Link href="/settings?tab=domains" className="underline hover:text-red-800">
-                Settings → Domains
+                {t('Settings → Domains')}
               </Link>{' '}
-              before creating templates.
+              {t('before creating templates.')}
             </p>
           </AlertDescription>
         </Alert>
@@ -130,7 +131,7 @@ export function EmailDomainInput({value, onChange, id, placeholder, required, la
           type="text"
           value={displayLocalPart}
           onChange={handleLocalPartChange}
-          placeholder={placeholder || 'hello'}
+          placeholder={placeholder || t('hello')}
           required={required}
           className="flex-1"
         />

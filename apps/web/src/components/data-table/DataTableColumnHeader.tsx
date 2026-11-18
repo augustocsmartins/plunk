@@ -1,6 +1,7 @@
 import type {Column} from '@tanstack/react-table';
 import {ChevronDown, ChevronUp, ChevronsUpDown} from 'lucide-react';
 import type {ReactNode} from 'react';
+import {t} from '../../lib/i18n';
 
 interface DataTableColumnHeaderProps<TData, TValue> {
   column: Column<TData, TValue>;
@@ -54,7 +55,7 @@ export function DataTableColumnHeader<TData, TValue>({
         );
       })()}
       <span className="sr-only">
-        , {sorted === 'asc' ? 'sorted ascending' : sorted === 'desc' ? 'sorted descending' : 'not sorted'}
+        , {sorted === 'asc' ? t('sorted ascending') : sorted === 'desc' ? t('sorted descending') : t('not sorted')}
       </span>
     </button>
   ) : (

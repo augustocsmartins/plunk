@@ -3,6 +3,7 @@ import {PlusCircle, X} from 'lucide-react';
 import type {ReactNode} from 'react';
 
 import {FacetedFilterMenu, type FacetedFilterOption} from './FacetedFilterMenu';
+import {t} from '../../lib/i18n';
 
 /** How many chosen values the pill names before summarising the rest as "+2" */
 const VISIBLE_VALUES = 2;
@@ -59,7 +60,7 @@ export function FilterPillFrame({
         <button
           type="button"
           onClick={onClear}
-          aria-label={`Remove ${title} filter`}
+          aria-label={t('Remove {title} filter', {title: title})}
           className="mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
         >
           <X className="h-3.5 w-3.5" aria-hidden />

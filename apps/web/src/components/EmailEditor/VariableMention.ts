@@ -3,6 +3,7 @@ import type {Editor, Range} from '@tiptap/core';
 
 import type {ContactField} from '../../lib/hooks/useContacts';
 import {createSuggestionRenderer, SuggestionMenu, type SuggestionRow} from './suggestionPopup';
+import {t} from '../../lib/i18n';
 
 interface VariableRow extends SuggestionRow {
   /** Named `id` to satisfy Mention's node-attribute shape for the command callback. */
@@ -23,10 +24,10 @@ const RUNTIME_FIELDS: ContactField[] = [
 ];
 
 const TYPE_LABELS: Record<ContactField['type'], string> = {
-  string: 'text',
-  number: 'number',
-  boolean: 'true/false',
-  date: 'date',
+  string: t('text'),
+  number: t('number'),
+  boolean: t('true/false'),
+  date: t('date'),
 };
 
 // Set from the component once the project's fields have loaded.
@@ -89,6 +90,6 @@ export const VariableMention = Mention.configure({
       editor.chain().focus().deleteRange(range).insertContent(`{{${props.id}}}`).run();
     },
 
-    render: createSuggestionRenderer(props => new SuggestionMenu<VariableRow>(props, 'No matching field')),
+    render: createSuggestionRenderer(props => new SuggestionMenu<VariableRow>(props, t('No matching field'))),
   },
 });

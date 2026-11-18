@@ -6,15 +6,16 @@ import useSWR from 'swr';
 
 import {useActiveProject} from '../contexts/ActiveProjectProvider';
 import {network} from '../network';
+import {t} from '../i18n';
 
 export const ANALYTICS_TABS = ['overview', 'deliverability', 'engagement', 'audience'] as const;
 export type AnalyticsTab = (typeof ANALYTICS_TABS)[number];
 
 export const RANGE_PRESETS = [
-  {value: 'today', label: 'Today', days: 1},
-  {value: '7d', label: '7 days', days: 7},
-  {value: '30d', label: '30 days', days: 30},
-  {value: '90d', label: '90 days', days: 90},
+  {value: 'today', label: t('Today'), days: 1},
+  {value: '7d', label: t('7 days'), days: 7},
+  {value: '30d', label: t('30 days'), days: 30},
+  {value: '90d', label: t('90 days'), days: 90},
 ] as const;
 export type RangePreset = (typeof RANGE_PRESETS)[number]['value'];
 const RANGES = [...RANGE_PRESETS.map(p => p.value), 'custom'] as const;
@@ -23,10 +24,10 @@ const RANGES = [...RANGE_PRESETS.map(p => p.value), 'custom'] as const;
 export const MAX_CUSTOM_DAYS = 90;
 
 export const STREAM_OPTIONS = [
-  {value: 'all', label: 'All emails', api: 'ALL'},
-  {value: 'transactional', label: 'Transactional', api: 'TRANSACTIONAL'},
-  {value: 'campaigns', label: 'Campaigns', api: 'CAMPAIGN'},
-  {value: 'workflows', label: 'Workflows', api: 'WORKFLOW'},
+  {value: 'all', label: t('All emails'), api: 'ALL'},
+  {value: 'transactional', label: t('Transactional'), api: 'TRANSACTIONAL'},
+  {value: 'campaigns', label: t('Campaigns'), api: 'CAMPAIGN'},
+  {value: 'workflows', label: t('Workflows'), api: 'WORKFLOW'},
 ] as const satisfies readonly {value: string; label: string; api: AnalyticsStream}[];
 export type StreamOption = (typeof STREAM_OPTIONS)[number]['value'];
 

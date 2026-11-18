@@ -6,7 +6,7 @@ import {DASHBOARD_URI, LANDING_URI, NODE_ENV, WIKI_URI} from './constants.js';
  */
 export const ALLOWED_ORIGINS: (string | RegExp)[] =
   NODE_ENV === 'development'
-    ? [/.*\.localhost:1000/, 'http://localhost:3000', 'http://localhost:4000']
+    ? [...new Set([/.*\.localhost:1000/, 'http://localhost:3000', 'http://localhost:4000', DASHBOARD_URI])]
     : [DASHBOARD_URI, LANDING_URI, WIKI_URI];
 
 /**

@@ -28,6 +28,7 @@ import {SegmentSchemas} from '@plunk/shared';
 import {SegmentFilterBuilder} from '../../components/SegmentFilterBuilder';
 import {ContactPicker} from '../../components/ContactPicker';
 import dayjs from 'dayjs';
+import {t} from '../../lib/i18n';
 
 type SegmentType = 'DYNAMIC' | 'STATIC';
 type SegmentWithType = Segment & {type: SegmentType};
@@ -97,10 +98,10 @@ export default function SegmentDetailPage() {
         ...(segment?.type !== 'STATIC' && {condition}),
         trackMembership,
       });
-      toast.success('Segment updated');
+      toast.success(t('Segment updated'));
       void mutate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t save the segment. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t save the segment. Try again.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -108,7 +109,7 @@ export default function SegmentDetailPage() {
 
   const handleComputeMembership = async () => {
     if (!trackMembership) {
-      toast.error('Membership tracking must be enabled to compute membership');
+      toast.error(t('Membership tracking must be enabled to compute membership'));
       return;
     }
 
@@ -118,10 +119,10 @@ export default function SegmentDetailPage() {
         'POST',
         `/segments/${id}/compute`,
       );
-      toast.success(`Membership updated: ${result.added} added, ${result.removed} removed, ${result.total} total`);
+      toast.success(t('Membership updated: {added} added, {removed} removed, {total} total', {added: result.added, removed: result.removed, total: result.total}));
       void mutate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t recompute membership. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t recompute membership. Try again.'));
     } finally {
       setIsComputing(false);
     }
@@ -138,13 +139,13 @@ export default function SegmentDetailPage() {
 
       const msg = result.created > 0
         ? `Added ${result.added} contact${result.added !== 1 ? 's' : ''} (${result.created} new)`
-        : `Added ${result.added} contact${result.added !== 1 ? 's' : ''} to segment`;
+        : t('Added {added} contact{value} to segment', {added: result.added, value: result.added !== 1 ? 's' : ''});
       toast.success(msg);
       setPickedEmails([]);
       void mutate();
       void mutateContacts();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t add those contacts. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t add those contacts. Try again.'));
     } finally {
       setIsAddingMembers(false);
     }
@@ -156,11 +157,11 @@ export default function SegmentDetailPage() {
       await network.fetch<{removed: number}, typeof SegmentSchemas.members>('DELETE', `/segments/${id}/members`, {
         emails: [email],
       });
-      toast.success(`Removed ${email} from segment`);
+      toast.success(t('Removed {email} from segment', {email: email}));
       void mutate();
       void mutateContacts();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t remove the contact. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t remove the contact. Try again.'));
     } finally {
       setRemovingEmail(null);
     }
@@ -169,10 +170,10 @@ export default function SegmentDetailPage() {
   const handleDelete = async () => {
     try {
       await network.fetch('DELETE', `/segments/${id}`);
-      toast.success('Segment deleted');
+      toast.success(t('Segment deleted'));
       void router.push('/segments');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t delete the segment. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t delete the segment. Try again.'));
     }
   };
 
@@ -190,14 +191,14 @@ export default function SegmentDetailPage() {
     return (
       <DashboardLayout>
         <div className="text-center py-12">
-          <h3 className="text-lg font-medium text-neutral-900 mb-2">Segment not found</h3>
+          <h3 className="text-lg font-medium text-neutral-900 mb-2">{t('Segment not found')}</h3>
           <p className="text-neutral-500 mb-6">
-            The segment you&apos;re looking for doesn&apos;t exist or has been deleted.
+            {t('The segment you\'re looking for doesn\'t exist or has been deleted.')}
           </p>
           <Button asChild>
             <Link href="/segments">
               <ArrowLeft className="h-4 w-4" />
-              Back to segments
+              {t('Back to segments')}
             </Link>
           </Button>
         </div>
@@ -221,7 +222,7 @@ export default function SegmentDetailPage() {
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900">{segment.name}</h1>
                 <Badge variant={isStatic ? 'neutral' : 'default'}>
-                  {isStatic ? 'Static' : 'Dynamic'}
+                  {isStatic ? t('Static') : t('Dynamic')}
                 </Badge>
               </div>
               {segment.description && <p className="text-neutral-500 mt-1">{segment.description}</p>}
@@ -229,7 +230,7 @@ export default function SegmentDetailPage() {
           </div>
           <Button variant="destructive" onClick={() => setShowDeleteDialog(true)}>
             <Trash2 className="h-4 w-4" />
-            Delete segment
+            {t('Delete segment')}
           </Button>
         </div>
 
@@ -240,12 +241,12 @@ export default function SegmentDetailPage() {
               {/* Basic Info */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Segment details</CardTitle>
-                  <CardDescription>Update segment name and description</CardDescription>
+                  <CardTitle>{t('Segment details')}</CardTitle>
+                  <CardDescription>{t('Update segment name and description')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="name">Segment name
+                    <Label htmlFor="name">{t('Segment name')}
             <span className="text-red-500"> *</span>
           </Label>
                     <Input
@@ -254,19 +255,19 @@ export default function SegmentDetailPage() {
                       value={name}
                       onChange={e => setName(e.target.value)}
                       required
-                      placeholder="e.g., Active Pro Users"
+                      placeholder={t('e.g., Active Pro Users')}
                       maxLength={100}
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="description">Description</Label>
+                    <Label htmlFor="description">{t('Description')}</Label>
                     <Input
                       id="description"
                       type="text"
                       value={description}
                       onChange={e => setDescription(e.target.value)}
-                      placeholder="e.g., Users on pro plan who have been active in the last 30 days"
+                      placeholder={t('e.g., Users on pro plan who have been active in the last 30 days')}
                       maxLength={500}
                     />
                   </div>
@@ -281,10 +282,10 @@ export default function SegmentDetailPage() {
                     />
                     <div className="flex-1">
                       <Label htmlFor="trackMembership" className="font-medium cursor-pointer">
-                        Track membership changes
+                        {t('Track membership changes')}
                       </Label>
                       <p className="text-xs text-neutral-500 mt-1">
-                        When enabled, segment entry and exit events will be tracked for use in workflows and analytics
+                        {t('When enabled, segment entry and exit events will be tracked for use in workflows and analytics')}
                       </p>
                     </div>
                   </div>
@@ -295,8 +296,8 @@ export default function SegmentDetailPage() {
               {!isStatic && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Filter conditions</CardTitle>
-                    <CardDescription>Build complex audience filters with AND/OR logic</CardDescription>
+                    <CardTitle>{t('Filter conditions')}</CardTitle>
+                    <CardDescription>{t('Build complex audience filters with AND/OR logic')}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <SegmentFilterBuilder condition={condition} onChange={setCondition} currentSegmentId={id as string} />
@@ -308,7 +309,7 @@ export default function SegmentDetailPage() {
               <div className="flex items-center justify-end">
                 <Button type="submit" disabled={isSubmitting}>
                   <Save className="h-4 w-4 mr-2" />
-                  {isSubmitting ? 'Saving…' : 'Save Changes'}
+                  {isSubmitting ? t('Saving…') : t('Save Changes')}
                 </Button>
               </div>
             </form>
@@ -317,8 +318,8 @@ export default function SegmentDetailPage() {
             {isStatic && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Add members</CardTitle>
-                  <CardDescription>Search and select contacts, or paste a list of emails</CardDescription>
+                  <CardTitle>{t('Add members')}</CardTitle>
+                  <CardDescription>{t('Search and select contacts, or paste a list of emails')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <ContactPicker
@@ -326,7 +327,7 @@ export default function SegmentDetailPage() {
                     onChange={setPickedEmails}
                     onAdd={handleAddMembers}
                     existing={contactsData?.data.map(c => c.email) ?? []}
-                    placeholder="Search contacts to add…"
+                    placeholder={t('Search contacts to add…')}
                   />
                   {pickedEmails.length > 0 && (
                     <Button
@@ -335,7 +336,7 @@ export default function SegmentDetailPage() {
                       disabled={isAddingMembers}
                       className="w-full"
                     >
-                      {isAddingMembers ? 'Adding…' : `Add ${pickedEmails.length} Contact${pickedEmails.length !== 1 ? 's' : ''}`}
+                      {isAddingMembers ? t('Adding…') : t('Add {length} Contact{value}', {length: pickedEmails.length, value: pickedEmails.length !== 1 ? 's' : ''})}
                     </Button>
                   )}
                 </CardContent>
@@ -347,15 +348,15 @@ export default function SegmentDetailPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>{isStatic ? 'Members' : 'Matching Contacts'}</CardTitle>
+                    <CardTitle>{isStatic ? t('Members') : t('Matching Contacts')}</CardTitle>
                     <CardDescription>
-                      {isStatic ? 'Contacts in this static segment' : "Contacts that match this segment's filters"}
+                      {isStatic ? t('Contacts in this static segment') : t('Contacts that match this segment\'s filters')}
                     </CardDescription>
                   </div>
                   {!isStatic && trackMembership && (
                     <Button variant="outline" size="sm" onClick={handleComputeMembership} disabled={isComputing}>
                       <RefreshCw className={`h-4 w-4 ${isComputing ? 'animate-spin' : ''}`} />
-                      {isComputing ? 'Computing…' : 'Recompute'}
+                      {isComputing ? t('Computing…') : t('Recompute')}
                     </Button>
                   )}
                 </div>
@@ -363,13 +364,13 @@ export default function SegmentDetailPage() {
               <CardContent>
                 {isLoadingContacts ? (
                   <div className="text-center py-8">
-                    <p className="text-sm text-neutral-500">Loading contacts...</p>
+                    <p className="text-sm text-neutral-500">{t('Loading contacts...')}</p>
                   </div>
                 ) : contactsData?.data.length === 0 ? (
                   <EmptyState
                     icon={Users}
-                    title={isStatic ? 'No members yet' : 'No contacts match'}
-                    description={isStatic ? 'Add contacts to this segment to get started.' : 'No contacts currently match these filter conditions.'}
+                    title={isStatic ? t('No members yet') : t('No contacts match')}
+                    description={isStatic ? t('Add contacts to this segment to get started.') : t('No contacts currently match these filter conditions.')}
                   />
                 ) : (
                   <>
@@ -386,7 +387,7 @@ export default function SegmentDetailPage() {
                           </div>
                           <div className="flex items-center gap-2">
                             <Button asChild variant="ghost" size="sm">
-                              <Link href={`/contacts/${contact.id}`}>View</Link>
+                              <Link href={`/contacts/${contact.id}`}>{t('View')}</Link>
                             </Button>
                             {isStatic && (
                               <Button
@@ -407,7 +408,7 @@ export default function SegmentDetailPage() {
                     {contactsData && contactsData.totalPages > 1 && (
                       <div className="flex items-center justify-between mt-4 pt-4 border-t">
                         <p className="text-sm text-neutral-500">
-                          Page {contactsPage} of {contactsData.totalPages} ({contactsData.total} total)
+                          {t('Page')}{' '}{contactsPage} {t('of')} {contactsData.totalPages} ({contactsData.total} {t('total)')}
                         </p>
                         <div className="flex items-center gap-2">
                           <Button
@@ -416,7 +417,7 @@ export default function SegmentDetailPage() {
                             onClick={() => setContactsPage(p => p - 1)}
                             disabled={contactsPage === 1}
                           >
-                            Previous
+                            {t('Previous')}
                           </Button>
                           <Button
                             variant="outline"
@@ -424,7 +425,7 @@ export default function SegmentDetailPage() {
                             onClick={() => setContactsPage(p => p + 1)}
                             disabled={contactsPage === contactsData.totalPages}
                           >
-                            Next
+                            {t('Next')}
                           </Button>
                         </div>
                       </div>
@@ -439,13 +440,13 @@ export default function SegmentDetailPage() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Statistics</CardTitle>
+                <CardTitle>{t('Statistics')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-neutral-500" />
-                    <span className="text-sm text-neutral-600">Members</span>
+                    <span className="text-sm text-neutral-600">{t('Members')}</span>
                   </div>
                   <span className="text-2xl font-bold text-neutral-900">{segment.memberCount}</span>
                 </div>
@@ -455,7 +456,7 @@ export default function SegmentDetailPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Filter className="h-4 w-4 text-neutral-500" />
-                        <span className="text-sm text-neutral-600">Filters</span>
+                        <span className="text-sm text-neutral-600">{t('Filters')}</span>
                       </div>
                       <span className="text-lg font-semibold text-neutral-900">
                         {countFilters(segment.condition as unknown as FilterCondition)}
@@ -464,7 +465,7 @@ export default function SegmentDetailPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Layers className="h-4 w-4 text-neutral-500" />
-                        <span className="text-sm text-neutral-600">Groups</span>
+                        <span className="text-sm text-neutral-600">{t('Groups')}</span>
                       </div>
                       <span className="text-lg font-semibold text-neutral-900">
                         {(segment.condition as unknown as FilterCondition)?.groups?.length || 0}
@@ -477,19 +478,19 @@ export default function SegmentDetailPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Metadata</CardTitle>
+                <CardTitle>{t('Metadata')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-start gap-3">
                   <Database className="h-5 w-5 text-neutral-500 mt-0.5" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-neutral-900">Segment ID</p>
+                    <p className="text-sm font-medium text-neutral-900">{t('Segment ID')}</p>
                     <p className="text-xs text-neutral-500 font-mono break-all">{segment.id}</p>
                   </div>
                 </div>
 
                 <div>
-                  <p className="text-sm font-medium text-neutral-900">Created</p>
+                  <p className="text-sm font-medium text-neutral-900">{t('Created')}</p>
                   <div className="group relative inline-block cursor-help">
                     <p className="text-sm text-neutral-500">{dayjs(segment.createdAt).fromNow()}</p>
                     <div className="hidden group-hover:block absolute z-10 w-48 p-2 bg-neutral-900 text-white text-xs rounded shadow-md bottom-full left-0 mb-1 whitespace-nowrap">
@@ -499,7 +500,7 @@ export default function SegmentDetailPage() {
                 </div>
 
                 <div>
-                  <p className="text-sm font-medium text-neutral-900">Last updated</p>
+                  <p className="text-sm font-medium text-neutral-900">{t('Last updated')}</p>
                   <div className="group relative inline-block cursor-help">
                     <p className="text-sm text-neutral-500">{dayjs(segment.updatedAt).fromNow()}</p>
                     <div className="hidden group-hover:block absolute z-10 w-48 p-2 bg-neutral-900 text-white text-xs rounded shadow-md bottom-full left-0 mb-1 whitespace-nowrap">
@@ -517,9 +518,9 @@ export default function SegmentDetailPage() {
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
         onConfirm={handleDelete}
-        title={`Delete ${segment.name}?`}
-        description="The contacts in it are kept. Only the segment is deleted."
-        confirmText="Delete segment"
+        title={t('Delete {name}?', {name: segment.name})}
+        description={t('The contacts in it are kept. Only the segment is deleted.')}
+        confirmText={t('Delete segment')}
         variant="destructive"
       />
     </DashboardLayout>

@@ -2,16 +2,17 @@ import {TrackingMode} from '@plunk/db';
 import {Label, Select, SelectContent, SelectItemWithDescription, SelectTrigger, SelectValue} from '@plunk/ui';
 import {useActiveProject} from '../lib/contexts/ActiveProjectProvider';
 import {useConfig} from '../lib/hooks/useConfig';
+import {t} from '../lib/i18n';
 
 const TRACKING_MODE_LABELS: Record<TrackingMode, string> = {
-  [TrackingMode.ENABLED]: 'Enabled',
-  [TrackingMode.DISABLED]: 'Disabled',
-  [TrackingMode.MARKETING_ONLY]: 'Marketing only',
+  [TrackingMode.ENABLED]: t('Enabled'),
+  [TrackingMode.DISABLED]: t('Disabled'),
+  [TrackingMode.MARKETING_ONLY]: t('Marketing only'),
 };
 
 const HELP_TEXT = {
-  template: 'Applies wherever this template is sent: API calls and workflow steps.',
-  campaign: "With tracking off, this campaign's results won't show opens or clicks.",
+  template: t('Applies wherever this template is sent: API calls and workflow steps.'),
+  campaign: t('With tracking off, this campaign\'s results won\'t show opens or clicks.'),
 } as const;
 
 interface TrackingOverrideSelectProps {
@@ -38,7 +39,7 @@ export function TrackingOverrideSelect({value, onChange, appliesTo}: TrackingOve
 
   return (
     <div className="space-y-2">
-      <Label htmlFor="tracking">Open and click tracking</Label>
+      <Label htmlFor="tracking">{t('Open and click tracking')}</Label>
       <Select value={selected} onValueChange={v => onChange(v === 'project' ? null : v === 'on')}>
         <SelectTrigger id="tracking">
           <SelectValue />
@@ -46,14 +47,14 @@ export function TrackingOverrideSelect({value, onChange, appliesTo}: TrackingOve
         <SelectContent>
           <SelectItemWithDescription
             value="project"
-            title="Project setting"
-            description={`Follow the project's tracking mode (${TRACKING_MODE_LABELS[projectMode]})`}
+            title={t('Project setting')}
+            description={t('Follow the project\'s tracking mode ({value})', {value: TRACKING_MODE_LABELS[projectMode]})}
           />
-          <SelectItemWithDescription value="on" title="Track" description="Track opens and clicks" />
+          <SelectItemWithDescription value="on" title={t('Track')} description={t('Track opens and clicks')} />
           <SelectItemWithDescription
             value="off"
-            title="Don't track"
-            description="No tracking pixel or link rewriting"
+            title={t('Don\'t track')}
+            description={t('No tracking pixel or link rewriting')}
           />
         </SelectContent>
       </Select>

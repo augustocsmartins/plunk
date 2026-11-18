@@ -1,5 +1,6 @@
 import type {AnalyticsGranularity, AnalyticsTimeseriesPoint} from '@plunk/types';
 import dayjs from 'dayjs';
+import {getIntlLocale, t} from '../../lib/i18n';
 
 export type MetricKey =
   | 'sent'
@@ -26,20 +27,20 @@ export interface MetricDefinition {
 const ratio = (part: number, whole: number) => (whole > 0 ? (part / whole) * 100 : null);
 
 export const METRICS: MetricDefinition[] = [
-  {key: 'sent', label: 'Sent', kind: 'count', better: 'up', fromPoint: p => p.sent},
-  {key: 'deliveryRate', label: 'Delivery rate', kind: 'rate', better: 'up', fromPoint: p => ratio(p.delivered, p.sent)},
-  {key: 'openRate', label: 'Open rate', kind: 'rate', better: 'up', fromPoint: p => ratio(p.opened, p.sent)},
-  {key: 'clickRate', label: 'Click rate', kind: 'rate', better: 'up', fromPoint: p => ratio(p.clicked, p.sent)},
+  {key: 'sent', label: t('Sent'), kind: 'count', better: 'up', fromPoint: p => p.sent},
+  {key: 'deliveryRate', label: t('Delivery rate'), kind: 'rate', better: 'up', fromPoint: p => ratio(p.delivered, p.sent)},
+  {key: 'openRate', label: t('Open rate'), kind: 'rate', better: 'up', fromPoint: p => ratio(p.opened, p.sent)},
+  {key: 'clickRate', label: t('Click rate'), kind: 'rate', better: 'up', fromPoint: p => ratio(p.clicked, p.sent)},
   {
     key: 'clickToOpenRate',
-    label: 'Click-to-open',
+    label: t('Click-to-open'),
     kind: 'rate',
     better: 'up',
     fromPoint: p => ratio(p.clicked, p.opened),
   },
   {
     key: 'bounceRate',
-    label: 'Bounce rate',
+    label: t('Bounce rate'),
     kind: 'rate',
     better: 'down',
     thresholds: {warning: 5, critical: 10},
@@ -47,7 +48,7 @@ export const METRICS: MetricDefinition[] = [
   },
   {
     key: 'complaintRate',
-    label: 'Complaint rate',
+    label: t('Complaint rate'),
     kind: 'rate',
     better: 'down',
     thresholds: {warning: 0.075, critical: 0.15},
@@ -55,7 +56,7 @@ export const METRICS: MetricDefinition[] = [
   },
   {
     key: 'unsubscribeRate',
-    label: 'Unsubscribe rate',
+    label: t('Unsubscribe rate'),
     kind: 'rate',
     better: 'down',
     fromPoint: p => ratio(p.unsubscribed, p.sent),
@@ -69,12 +70,12 @@ export const metric = (key: MetricKey) => METRICS.find(m => m.key === key)!;
 // =============================================================================
 
 export function formatCount(n: number): string {
-  return n.toLocaleString('en-US');
+  return n.toLocaleString(getIntlLocale());
 }
 
 /** Compact for axes: 12.4k */
 export function formatCompact(n: number): string {
-  return new Intl.NumberFormat('en-US', {notation: 'compact', maximumFractionDigits: 1}).format(n);
+  return new Intl.NumberFormat(getIntlLocale(), {notation: 'compact', maximumFractionDigits: 1}).format(n);
 }
 
 /**
@@ -139,9 +140,9 @@ export function computeDelta(
   const improved = def.better === 'up' ? change > 0 : change < 0;
   const tone = flat ? 'flat' : improved ? 'better' : 'worse';
   return {
-    label: flat ? 'No change' : label,
+    label: flat ? t('No change') : label,
     tone,
-    description: flat ? 'unchanged from the previous period' : `${label} compared with the previous period`,
+    description: flat ? t('unchanged from the previous period') : t('{label} compared with the previous period', {label: label}),
   };
 }
 

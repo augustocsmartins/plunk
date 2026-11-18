@@ -7,7 +7,6 @@ import * as React from 'react';
 
 import {
   DASHBOARD_URI,
-  DISABLE_SIGNUPS,
   EMAIL_VERIFICATION_RATE_LIMIT,
   EMAIL_VERIFICATION_RATE_WINDOW,
   GITHUB_OAUTH_ENABLED,
@@ -131,8 +130,8 @@ export class Auth {
   @Post('signup')
   @CatchAsync
   public async signup(req: Request, res: Response, _next: NextFunction) {
-    // Check if signups are disabled
-    if (DISABLE_SIGNUPS) {
+    // Check if signups are disabled (the very first user is always allowed)
+    if (!(await UserService.signupsAllowed())) {
       return res.json({
         success: false,
         data: 'New user signups are currently disabled',

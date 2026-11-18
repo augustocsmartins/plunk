@@ -8,12 +8,13 @@ import {EngagementTab} from '../../components/analytics/EngagementTab';
 import {OverviewTab} from '../../components/analytics/OverviewTab';
 import {DashboardLayout} from '../../components/DashboardLayout';
 import {type AnalyticsTab, useAnalyticsFilters} from '../../lib/hooks/useAnalytics';
+import {t} from '../../lib/i18n';
 
 const TABS: {value: AnalyticsTab; label: string}[] = [
-  {value: 'overview', label: 'Overview'},
-  {value: 'deliverability', label: 'Deliverability'},
-  {value: 'engagement', label: 'Engagement'},
-  {value: 'audience', label: 'Audience'},
+  {value: 'overview', label: t('Overview')},
+  {value: 'deliverability', label: t('Deliverability')},
+  {value: 'engagement', label: t('Engagement')},
+  {value: 'audience', label: t('Audience')},
 ];
 
 export default function AnalyticsPage() {
@@ -23,18 +24,16 @@ export default function AnalyticsPage() {
   const sameYear = bounds.first.year() === bounds.last.year();
   const period =
     bounds.days === 1
-      ? `${bounds.last.format('MMMM D, YYYY')}, compared with the day before.`
-      : `${bounds.first.format(sameYear ? 'MMMM D' : 'MMMM D, YYYY')} to ${bounds.last.format('MMMM D, YYYY')}, compared with the ${
-          bounds.days
-        } days before.`;
+      ? t('{value}, compared with the day before.', {value: bounds.last.format('MMMM D, YYYY')})
+      : t('{value} to {value2}, compared with the {days} days before.', {value: bounds.first.format(sameYear ? 'MMMM D' : 'MMMM D, YYYY'), value2: bounds.last.format('MMMM D, YYYY'), days: bounds.days});
 
   return (
     <>
-      <NextSeo title="Analytics" />
+      <NextSeo title={t('Analytics')} />
       <DashboardLayout>
         <div className="space-y-6">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900">Analytics</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900">{t('Analytics')}</h1>
             <p className="mt-2 text-sm text-neutral-500">{period}</p>
           </div>
 

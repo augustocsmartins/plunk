@@ -318,6 +318,20 @@ export const WorkflowSchemas = {
   }),
 };
 
+export const WORKFLOW_DELAY_UNIT_MS = {minutes: 60_000, hours: 3_600_000, days: 86_400_000} as const;
+export const WORKFLOW_MAX_DELAY_MS = 365 * WORKFLOW_DELAY_UNIT_MS.days;
+export const WORKFLOW_DELAY_LIMIT_MESSAGE = 'Delay cannot exceed 365 days';
+const WORKFLOW_DELAY_DATE_MESSAGE = 'Enter an ISO 8601 date with a timezone';
+const delayDateSchema = z.string().datetime({offset: true});
+
+export function parseWorkflowDelayDate(value: string): number {
+  const text = value.trim();
+  if (!/(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/.test(text) || !delayDateSchema.safeParse(text).success) {
+    return NaN;
+  }
+  return Date.parse(text);
+}
+
 export const WorkflowStepConfigSchemas = {
   sendEmail: z.object({
     templateId: uuid,
@@ -341,26 +355,28 @@ export const WorkflowStepConfigSchemas = {
       .optional(),
   }),
   delay: z
-    .object({
-      amount: z.number().positive(),
-      unit: z.enum(['minutes', 'hours', 'days']),
-    })
-    .refine(
-      data => {
-        // Max 365 days
-        const maxMinutes = 365 * 24 * 60;
-        const maxHours = 365 * 24;
-        const maxDays = 365;
+    .union([
+      z.object({mode: z.literal('until'), until: z.string().trim()}),
+      z.object({
+        mode: z.literal('duration').optional(),
+        amount: z.number().positive(),
+        unit: z.enum(['minutes', 'hours', 'days']),
+      }),
+    ])
+    .superRefine((config, ctx) => {
+      if (config.mode === 'until') {
+        if (config.until.includes('{{')) return;
 
-        if (data.unit === 'minutes') return data.amount <= maxMinutes;
-        if (data.unit === 'hours') return data.amount <= maxHours;
-        if (data.unit === 'days') return data.amount <= maxDays;
-        return true;
-      },
-      {
-        message: 'Delay cannot exceed 365 days',
-      },
-    ),
+        const timestamp = parseWorkflowDelayDate(config.until);
+        if (!Number.isFinite(timestamp)) {
+          ctx.addIssue({code: z.ZodIssueCode.custom, path: ['until'], message: WORKFLOW_DELAY_DATE_MESSAGE});
+        } else if (timestamp - Date.now() > WORKFLOW_MAX_DELAY_MS) {
+          ctx.addIssue({code: z.ZodIssueCode.custom, path: ['until'], message: WORKFLOW_DELAY_LIMIT_MESSAGE});
+        }
+      } else if (config.amount > WORKFLOW_MAX_DELAY_MS / WORKFLOW_DELAY_UNIT_MS[config.unit]) {
+        ctx.addIssue({code: z.ZodIssueCode.custom, message: WORKFLOW_DELAY_LIMIT_MESSAGE});
+      }
+    }),
   waitForEvent: z.object({
     // "execution": count only emails this execution sent, for the events canScopeWaitToExecution accepts
     scope: z.enum(['contact', 'execution']).optional(),
@@ -430,6 +446,22 @@ export const WorkflowStepConfigSchemas = {
         value => !['id', 'email', 'data', 'event', 'unsubscribeUrl', 'subscribeUrl', 'manageUrl'].includes(value),
         'This name is reserved',
       )
+      .optional(),
+  }),
+  sendWhatsApp: z.object({
+    /** Message text; supports the same {{variables}} as email templates */
+    message: z.string().trim().min(1).max(4096),
+    recipient: z
+      .object({
+        type: z.enum(['CONTACT', 'CUSTOM']),
+        /** Contact data field holding the phone number (CONTACT), defaults to "phone" */
+        phoneField: z.string().trim().min(1).max(100).optional(),
+        /** Fixed number or {{variable}} (CUSTOM) */
+        customPhone: z.string().trim().min(1).max(100).optional(),
+      })
+      .refine(data => data.type !== 'CUSTOM' || !!data.customPhone, {
+        message: 'Custom phone is required when recipient type is CUSTOM',
+      })
       .optional(),
   }),
   updateContact: z
@@ -779,5 +811,31 @@ export const MembershipSchemas = {
   }),
   updateRole: z.object({
     role: z.enum(['ADMIN', 'MEMBER']),
+  }),
+} as const;
+
+const whatsappPhone = z
+  .string()
+  .trim()
+  .min(8)
+  .max(32)
+  .regex(/^\+?[\d\s().-]+$/, 'Invalid phone number');
+
+export const WhatsAppSchemas = {
+  /** POST /v1/whatsapp/send — transactional message */
+  send: z.object({
+    to: whatsappPhone,
+    body: z.string().trim().min(1).max(4096),
+    /** Optional: link the message to an existing contact by email (shown in its activity) */
+    email: email.optional(),
+  }),
+  /** POST /whatsapp/test — test message from the dashboard */
+  test: z.object({
+    to: whatsappPhone,
+    body: z.string().trim().min(1).max(4096),
+  }),
+  messages: z.object({
+    cursor: uuid.optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
   }),
 } as const;

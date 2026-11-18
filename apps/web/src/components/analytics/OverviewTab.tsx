@@ -16,11 +16,12 @@ import {
 } from './metrics';
 import {ChartSkeleton, DeltaLabel, Panel, PanelEmpty, PanelError, PeriodLegend, RowsSkeleton} from './primitives';
 import {type Column, RateTable} from './RateTable';
+import {t} from '../../lib/i18n';
 
 const STREAM_LABEL: Record<AnalyticsStreamRow['stream'], string> = {
-  TRANSACTIONAL: 'Transactional',
-  CAMPAIGN: 'Campaigns',
-  WORKFLOW: 'Workflows',
+  TRANSACTIONAL: t('Transactional'),
+  CAMPAIGN: t('Campaigns'),
+  WORKFLOW: t('Workflows'),
 };
 
 export function OverviewTab({filters}: {filters: AnalyticsFilters}) {
@@ -36,11 +37,11 @@ export function OverviewTab({filters}: {filters: AnalyticsFilters}) {
   // Context that changes how the numbers should be read, shown only when it applies
   const notes: string[] = [];
   if (filters.range === 'today') {
-    notes.push('Emails sent today are still being opened and clicked, so the rates above rise through the day.');
+    notes.push(t('Emails sent today are still being opened and clicked, so the rates above rise through the day.'));
   }
   if (selected === 'openRate' || selected === 'clickToOpenRate') {
     notes.push(
-      'Apple Mail and some corporate filters open every message on delivery, so open rates read high. Clicks are the more dependable signal of attention.',
+      t('Apple Mail and some corporate filters open every message on delivery, so open rates read high. Clicks are the more dependable signal of attention.'),
     );
   }
 
@@ -50,7 +51,7 @@ export function OverviewTab({filters}: {filters: AnalyticsFilters}) {
         {/* Every figure is also the switch for the chart below it */}
         <div
           role="radiogroup"
-          aria-label="Metric shown in the chart"
+          aria-label={t('Metric shown in the chart')}
           className="grid grid-cols-2 gap-px border-b border-neutral-200 bg-neutral-200 sm:grid-cols-4 xl:grid-cols-8"
         >
           {METRICS.map(m => {
@@ -114,7 +115,7 @@ export function OverviewTab({filters}: {filters: AnalyticsFilters}) {
 
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-5 pt-4 pb-2">
           <h2 className="text-sm font-medium text-neutral-900">
-            {def.label} {series.data?.granularity === 'hour' ? 'by hour' : 'by day'}
+            {def.label} {series.data?.granularity === 'hour' ? t('by hour') : t('by day')}
           </h2>
           <PeriodLegend />
         </div>
@@ -124,7 +125,7 @@ export function OverviewTab({filters}: {filters: AnalyticsFilters}) {
         ) : !series.data ? (
           <ChartSkeleton />
         ) : empty ? (
-          <PanelEmpty height={260}>No emails were sent in this period.</PanelEmpty>
+          <PanelEmpty height={260}>{t('No emails were sent in this period.')}</PanelEmpty>
         ) : (
           <div className="px-2 pb-3 sm:px-3">
             <MetricChart
@@ -171,25 +172,25 @@ function StreamTable({
   const columns: Column<AnalyticsStreamRow>[] = [
     {
       key: 'stream',
-      label: 'Stream',
+      label: t('Stream'),
       align: 'left',
       render: row => <span className="font-medium text-neutral-900">{STREAM_LABEL[row.stream]}</span>,
     },
-    {key: 'sent', label: 'Sent', render: row => formatCount(row.sent)},
-    rate('deliveryRate', 'Delivered'),
-    rate('openRate', 'Opened'),
-    rate('clickRate', 'Clicked'),
-    rate('bounceRate', 'Bounced'),
-    rate('complaintRate', 'Complaints'),
-    rate('unsubscribeRate', 'Unsubscribed'),
+    {key: 'sent', label: t('Sent'), render: row => formatCount(row.sent)},
+    rate('deliveryRate', t('Delivered')),
+    rate('openRate', t('Opened')),
+    rate('clickRate', t('Clicked')),
+    rate('bounceRate', t('Bounced')),
+    rate('complaintRate', t('Complaints')),
+    rate('unsubscribeRate', t('Unsubscribed')),
   ];
 
   const activeApi = filters.stream.api;
 
   return (
     <Panel
-      title="By stream"
-      description="Transactional mail should sit well above marketing on every line. Select a stream to filter the page to it."
+      title={t('By stream')}
+      description={t('Transactional mail should sit well above marketing on every line. Select a stream to filter the page to it.')}
     >
       {error && !overview ? (
         <PanelError onRetry={retry} />

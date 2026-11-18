@@ -10,10 +10,11 @@ import {
   formatValue,
   type MetricDefinition,
 } from './metrics';
+import {t} from '../../lib/i18n';
 
 const config = {
-  current: {label: 'This period', color: '#171717'},
-  previous: {label: 'Previous period', color: '#a3a3a3'},
+  current: {label: t('This period'), color: '#171717'},
+  previous: {label: t('Previous period'), color: '#a3a3a3'},
 } satisfies ChartConfig;
 
 interface Row {

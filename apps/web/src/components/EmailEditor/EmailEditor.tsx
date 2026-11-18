@@ -37,6 +37,7 @@ import {AlertTriangle, Code2, Eye, Monitor, Smartphone, Tablet, Upload, X} from 
 import {network} from '../../lib/network';
 import {detectCustomHtmlPatterns, wrapEmailWithStyles} from '../../lib/emailStyles';
 import 'tippy.js/dist/tippy.css';
+import {t} from '../../lib/i18n';
 
 interface EmailEditorProps {
   value: string;
@@ -52,11 +53,11 @@ interface EmailEditorProps {
 }
 
 const commonVariables = [
-  {name: 'id', description: 'Contact ID'},
-  {name: 'email', description: 'Recipient email address'},
-  {name: 'unsubscribeUrl', description: 'Unsubscribe link'},
-  {name: 'subscribeUrl', description: 'Subscribe link'},
-  {name: 'manageUrl', description: 'Manage link'},
+  {name: 'id', description: t('Contact ID')},
+  {name: 'email', description: t('Recipient email address')},
+  {name: 'unsubscribeUrl', description: t('Unsubscribe link')},
+  {name: 'subscribeUrl', description: t('Subscribe link')},
+  {name: 'manageUrl', description: t('Manage link')},
 ];
 
 export function EmailEditor({value, onChange, placeholder, subject, from, replyTo, segmentId}: EmailEditorProps) {
@@ -141,7 +142,7 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
       VariableMention,
       LogicMention,
       Placeholder.configure({
-        placeholder: placeholder || 'Your next email starts here',
+        placeholder: placeholder || t('Your next email starts here'),
       }),
     ],
     // Only initialize with content if starting in visual mode
@@ -251,7 +252,7 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
         setShowImageDialog(false);
       } catch (error) {
         console.error('Failed to upload image:', error);
-        alert('Couldn’t upload the image. Try again.');
+        alert(t('Couldn’t upload the image. Try again.'));
       }
     }
   };
@@ -269,7 +270,7 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
 
     const contactData = {
       email: contact.email,
-      unsubscribed: (contact as {subscribed?: boolean}).subscribed ? 'No' : 'Yes',
+      unsubscribed: (contact as {subscribed?: boolean}).subscribed ? t('No') : t('Yes'),
       unsubscribeUrl: `${window.location.origin}/unsubscribe/${contact.id}`,
       subscribeUrl: `${window.location.origin}/subscribe/${contact.id}`,
       manageUrl: `${window.location.origin}/manage/${contact.id}`,
@@ -288,7 +289,7 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
 
     const contactData = {
       email: contact.email,
-      unsubscribed: (contact as {subscribed?: boolean}).subscribed ? 'No' : 'Yes',
+      unsubscribed: (contact as {subscribed?: boolean}).subscribed ? t('No') : t('Yes'),
       unsubscribeUrl: `${window.location.origin}/unsubscribe/${contact.id}`,
       subscribeUrl: `${window.location.origin}/subscribe/${contact.id}`,
       manageUrl: `${window.location.origin}/manage/${contact.id}`,
@@ -371,7 +372,7 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
             onClick={() => mode === 'html' && handleModeToggle()}
           >
             <Eye className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Visual</span>
+            <span className="hidden sm:inline">{t('Visual')}</span>
           </Button>
           <Button
             type="button"
@@ -385,18 +386,18 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
         </div>
         <div className="flex items-center gap-2 flex-1 sm:flex-none">
           <Label htmlFor="preview-contact" className="text-xs text-neutral-600 whitespace-nowrap">
-            Preview as:
+            {t('Preview as:')}
           </Label>
           <Select
             value={selectedContactId || 'none'}
             onValueChange={val => setSelectedContactId(val === 'none' ? '' : val)}
           >
             <SelectTrigger id="preview-contact" className="h-8 w-full sm:w-[200px] text-xs">
-              <SelectValue placeholder="Select contact…" />
+              <SelectValue placeholder={t('Select contact…')} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">
-                <span className="text-neutral-500">No preview</span>
+                <span className="text-neutral-500">{t('No preview')}</span>
               </SelectItem>
               {contacts.map(contact => (
                 <SelectItem key={contact.id} value={contact.id}>
@@ -422,8 +423,8 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
             <p className="text-[11px] text-red-700">
               {/* Line numbers only exist in the HTML editor's gutter. */}
               {mode === 'html' && syntaxIssue.line !== undefined
-                ? `Line ${syntaxIssue.line}, column ${syntaxIssue.column} — saving will fail until this is fixed.`
-                : 'Saving will fail until this is fixed.'}
+                ? t('Line {line}, column {column} — saving will fail until this is fixed.', {line: syntaxIssue.line, column: syntaxIssue.column})
+                : t('Saving will fail until this is fixed.')}
             </p>
           </div>
         </div>
@@ -439,7 +440,7 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
                 {warning.message}
               </p>
             ))}
-            <p className="text-[11px] text-amber-700">This still sends. Nothing here blocks saving.</p>
+            <p className="text-[11px] text-amber-700">{t('This still sends. Nothing here blocks saving.')}</p>
           </div>
         </div>
       )}
@@ -461,9 +462,9 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
               <div className="border-t border-neutral-200 bg-neutral-100 px-4 py-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <p className="text-xs font-medium text-neutral-600">Preview</p>
+                    <p className="text-xs font-medium text-neutral-600">{t('Preview')}</p>
                     <span className="text-xs text-neutral-500">
-                      ({previewDevice === 'mobile' ? '375px' : previewDevice === 'tablet' ? '768px' : '1200px'})
+                      ({previewDevice === 'mobile' ? t('375px') : previewDevice === 'tablet' ? t('768px') : t('1200px')})
                     </span>
                   </div>
                   <div className="flex gap-1">
@@ -473,7 +474,7 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
                       size="sm"
                       onClick={() => setPreviewDevice('mobile')}
                       className="h-7 w-7 p-0"
-                      title="Mobile (375px)"
+                      title={t('Mobile (375px)')}
                     >
                       <Smartphone className="h-3.5 w-3.5" />
                     </Button>
@@ -483,7 +484,7 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
                       size="sm"
                       onClick={() => setPreviewDevice('tablet')}
                       className="h-7 w-7 p-0"
-                      title="Tablet (768px)"
+                      title={t('Tablet (768px)')}
                     >
                       <Tablet className="h-3.5 w-3.5" />
                     </Button>
@@ -493,7 +494,7 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
                       size="sm"
                       onClick={() => setPreviewDevice('desktop')}
                       className="h-7 w-7 p-0"
-                      title="Desktop (1200px)"
+                      title={t('Desktop (1200px)')}
                     >
                       <Monitor className="h-3.5 w-3.5" />
                     </Button>
@@ -515,7 +516,7 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
                         {subject && (
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <p className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Subject</p>
+                              <p className="text-xs text-neutral-500 uppercase tracking-wide font-medium">{t('Subject')}</p>
                               <p className="text-base font-semibold text-neutral-900 mt-1">{getPreviewSubject()}</p>
                             </div>
                           </div>
@@ -524,13 +525,13 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
                           <div className="flex gap-6 pt-2 border-t border-neutral-200">
                             {from && (
                               <div>
-                                <p className="text-xs text-neutral-500">From</p>
+                                <p className="text-xs text-neutral-500">{t('From')}</p>
                                 <p className="text-sm text-neutral-900 mt-0.5">{from}</p>
                               </div>
                             )}
                             {replyTo && (
                               <div>
-                                <p className="text-xs text-neutral-500">Reply-To</p>
+                                <p className="text-xs text-neutral-500">{t('Reply-To')}</p>
                                 <p className="text-sm text-neutral-900 mt-0.5">{replyTo}</p>
                               </div>
                             )}
@@ -545,7 +546,7 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
                         minHeight: '400px',
                         height: '100%',
                       }}
-                      title="Email preview"
+                      title={t('Email preview')}
                     />
                   </div>
                 </div>
@@ -559,7 +560,7 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
             <HtmlEditor
               value={htmlContent}
               onChange={handleHtmlChange}
-              placeholder={placeholder || 'Your next email starts here'}
+              placeholder={placeholder || t('Your next email starts here')}
             />
           </div>
           {selectedContactId && (
@@ -567,9 +568,9 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
               <div className="border-t border-neutral-200 bg-neutral-100 px-4 py-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <p className="text-xs font-medium text-neutral-600">Preview</p>
+                    <p className="text-xs font-medium text-neutral-600">{t('Preview')}</p>
                     <span className="text-xs text-neutral-500">
-                      ({previewDevice === 'mobile' ? '375px' : previewDevice === 'tablet' ? '768px' : '1200px'})
+                      ({previewDevice === 'mobile' ? t('375px') : previewDevice === 'tablet' ? t('768px') : t('1200px')})
                     </span>
                   </div>
                   <div className="flex gap-1">
@@ -579,7 +580,7 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
                       size="sm"
                       onClick={() => setPreviewDevice('mobile')}
                       className="h-7 w-7 p-0"
-                      title="Mobile (375px)"
+                      title={t('Mobile (375px)')}
                     >
                       <Smartphone className="h-3.5 w-3.5" />
                     </Button>
@@ -589,7 +590,7 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
                       size="sm"
                       onClick={() => setPreviewDevice('tablet')}
                       className="h-7 w-7 p-0"
-                      title="Tablet (768px)"
+                      title={t('Tablet (768px)')}
                     >
                       <Tablet className="h-3.5 w-3.5" />
                     </Button>
@@ -599,7 +600,7 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
                       size="sm"
                       onClick={() => setPreviewDevice('desktop')}
                       className="h-7 w-7 p-0"
-                      title="Desktop (1200px)"
+                      title={t('Desktop (1200px)')}
                     >
                       <Monitor className="h-3.5 w-3.5" />
                     </Button>
@@ -621,7 +622,7 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
                         {subject && (
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <p className="text-xs text-neutral-500 uppercase tracking-wide font-medium">Subject</p>
+                              <p className="text-xs text-neutral-500 uppercase tracking-wide font-medium">{t('Subject')}</p>
                               <p className="text-base font-semibold text-neutral-900 mt-1">{getPreviewSubject()}</p>
                             </div>
                           </div>
@@ -630,13 +631,13 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
                           <div className="flex gap-6 pt-2 border-t border-neutral-200">
                             {from && (
                               <div>
-                                <p className="text-xs text-neutral-500">From</p>
+                                <p className="text-xs text-neutral-500">{t('From')}</p>
                                 <p className="text-sm text-neutral-900 mt-0.5">{from}</p>
                               </div>
                             )}
                             {replyTo && (
                               <div>
-                                <p className="text-xs text-neutral-500">Reply-To</p>
+                                <p className="text-xs text-neutral-500">{t('Reply-To')}</p>
                                 <p className="text-sm text-neutral-900 mt-0.5">{replyTo}</p>
                               </div>
                             )}
@@ -651,7 +652,7 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
                         minHeight: '400px',
                         height: '100%',
                       }}
-                      title="Email preview"
+                      title={t('Email preview')}
                     />
                   </div>
                 </div>
@@ -665,11 +666,11 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
       <Dialog open={showVariableDialog} onOpenChange={setShowVariableDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Insert variable</DialogTitle>
+            <DialogTitle>{t('Insert variable')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label className="text-sm font-medium mb-2 block">Common variables</Label>
+              <Label className="text-sm font-medium mb-2 block">{t('Common variables')}</Label>
               <div className="grid grid-cols-2 gap-2">
                 {commonVariables.map(v => (
                   <Button
@@ -688,7 +689,7 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
 
             {availableFields.length > 0 && (
               <div>
-                <Label className="text-sm font-medium mb-2 block">Contact fields</Label>
+                <Label className="text-sm font-medium mb-2 block">{t('Contact fields')}</Label>
                 <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
                   {availableFields
                     .filter(field => !commonVariables.some(v => v.name === field))
@@ -709,14 +710,14 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
             )}
             <div>
               <Label htmlFor="custom-var" className="text-sm font-medium mb-2 block">
-                Custom variable
+                {t('Custom variable')}
               </Label>
               <div className="space-y-2">
                 <Input
                   id="custom-var"
                   value={customVariable}
                   onChange={e => setCustomVariable(e.target.value)}
-                  placeholder="Variable name (e.g., firstName)"
+                  placeholder={t('Variable name (e.g., firstName)')}
                   onKeyDown={e => {
                     if (e.key === 'Enter' && customVariable) {
                       insertVariable(customVariable, true);
@@ -727,7 +728,7 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
                   id="default-value"
                   value={defaultValue}
                   onChange={e => setDefaultValue(e.target.value)}
-                  placeholder="Default value (optional, e.g., Friend)"
+                  placeholder={t('Default value (optional, e.g., Friend)')}
                   onKeyDown={e => {
                     if (e.key === 'Enter' && customVariable) {
                       insertVariable(customVariable, true);
@@ -740,13 +741,12 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
                   disabled={!customVariable}
                   className="w-full"
                 >
-                  Insert variable
+                  {t('Insert variable')}
                 </Button>
               </div>
               <p className="text-xs text-neutral-500 mt-2">
-                Variables are replaced with actual values when sent. Use{' '}
-                <code className="text-xs bg-neutral-100 px-1 rounded">{'{{name ?? default}}'}</code> syntax for fallback
-                values.
+                {t('Variables are replaced with actual values when sent. Use')}{' '}
+                <code className="text-xs bg-neutral-100 px-1 rounded">{'{{name ?? default}}'}</code> {t('syntax for fallback values.')}
               </p>
             </div>
           </div>
@@ -757,19 +757,19 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
         open={showModeWarningDialog}
         onOpenChange={setShowModeWarningDialog}
         onConfirm={switchToVisualMode}
-        title="Switch to the visual editor?"
-        description="The visual editor may strip or rewrite parts of your HTML, such as:"
+        title={t('Switch to the visual editor?')}
+        description={t('The visual editor may strip or rewrite parts of your HTML, such as:')}
         details={
           <ul className="list-disc space-y-1 rounded-lg border border-neutral-200 py-2.5 pl-8 pr-3 text-sm text-neutral-600 marker:text-neutral-300">
-            <li>Custom HTML elements and attributes</li>
-            <li>Inline styles and CSS classes</li>
-            <li>Complex table structures</li>
-            <li>Custom formatting or layout</li>
+            <li>{t('Custom HTML elements and attributes')}</li>
+            <li>{t('Inline styles and CSS classes')}</li>
+            <li>{t('Complex table structures')}</li>
+            <li>{t('Custom formatting or layout')}</li>
           </ul>
         }
         icon={AlertTriangle}
-        cancelText="Stay in HTML"
-        confirmText="Switch anyway"
+        cancelText={t('Stay in HTML')}
+        confirmText={t('Switch anyway')}
         variant="destructive"
       />
 
@@ -777,12 +777,12 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
       <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Insert image</DialogTitle>
+            <DialogTitle>{t('Insert image')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
               <Label htmlFor="image-url" className="text-sm font-medium mb-2 block">
-                Image URL
+                {t('Image URL')}
               </Label>
               <Input
                 id="image-url"
@@ -800,7 +800,7 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
                     <span className="w-full border-t border-neutral-200" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-2 text-neutral-500">Or upload</span>
+                    <span className="bg-white px-2 text-neutral-500">{t('Or upload')}</span>
                   </div>
                 </div>
 
@@ -825,7 +825,7 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
                     className="w-full"
                   >
                     <Upload className="h-4 w-4 mr-2" />
-                    Choose file
+                    {t('Choose file')}
                   </Button>
                   {imageFile && (
                     <div className="mt-2 flex items-center justify-between p-2 bg-neutral-50 rounded border border-neutral-200">
@@ -841,10 +841,10 @@ export function EmailEditor({value, onChange, placeholder, subject, from, replyT
 
             <div className="flex gap-2 justify-end">
               <Button type="button" variant="outline" onClick={() => setShowImageDialog(false)}>
-                Cancel
+                {t('Cancel')}
               </Button>
               <Button type="button" onClick={handleImageUpload} disabled={!imageUrl && !imageFile}>
-                Insert
+                {t('Insert')}
               </Button>
             </div>
           </div>

@@ -13,6 +13,7 @@ import {
   PanelError,
   PeriodLegend,
 } from '../primitives';
+import {t} from '../../../lib/i18n';
 
 const HEADLINE_RATES: MetricKey[] = ['deliveryRate', 'openRate', 'clickRate'];
 
@@ -55,17 +56,17 @@ export function GlobalSummary({filters}: {filters: GlobalAnalyticsFilters}) {
       <FigureBand figures={[figure('sent'), ...HEADLINE_RATES.map(key => figure(key))]} failed={failed} />
       <FigureBand
         figures={[
-          figure('bounceRate', 'Hard bounce rate', m => m.bounced),
-          figure('complaintRate', 'Complaint rate', m => m.complained),
-          countFigure('Soft bounces', current, m => m.softBounces, 'Emails with a temporary bounce'),
-          countFigure('Failed', current, m => m.failed, 'Rejected before reaching the provider'),
+          figure('bounceRate', t('Hard bounce rate'), m => m.bounced),
+          figure('complaintRate', t('Complaint rate'), m => m.complained),
+          countFigure(t('Soft bounces'), current, m => m.softBounces, t('Emails with a temporary bounce')),
+          countFigure(t('Failed'), current, m => m.failed, t('Rejected before reaching the provider')),
         ]}
         failed={failed}
       />
 
       <Panel
-        title={`Emails sent ${series.data?.granularity === 'hour' ? 'by hour' : 'by day'}`}
-        description="All selected projects together, against the previous period."
+        title={t('Emails sent {value}', {value: series.data?.granularity === 'hour' ? 'by hour' : 'by day'})}
+        description={t('All selected projects together, against the previous period.')}
         actions={<PeriodLegend />}
       >
         {series.error && !series.data ? (
@@ -73,7 +74,7 @@ export function GlobalSummary({filters}: {filters: GlobalAnalyticsFilters}) {
         ) : !series.data ? (
           <ChartSkeleton />
         ) : series.data.current.every(p => p.sent === 0) ? (
-          <PanelEmpty height={260}>No emails were sent in this period.</PanelEmpty>
+          <PanelEmpty height={260}>{t('No emails were sent in this period.')}</PanelEmpty>
         ) : (
           <div className="px-2 pb-3 sm:px-3">
             <MetricChart

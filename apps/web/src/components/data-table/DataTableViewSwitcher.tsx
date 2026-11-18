@@ -1,4 +1,5 @@
 import {LayoutGrid, List} from 'lucide-react';
+import {t} from '../../lib/i18n';
 
 export type DataTableView = 'card' | 'table';
 
@@ -10,8 +11,8 @@ interface DataTableViewSwitcherProps {
 }
 
 const VIEWS = [
-  {value: 'card', label: 'Card view', Icon: LayoutGrid},
-  {value: 'table', label: 'Table view', Icon: List},
+  {value: 'card', label: t('Card view'), Icon: LayoutGrid},
+  {value: 'table', label: t('Table view'), Icon: List},
 ] as const;
 
 /**
@@ -28,7 +29,7 @@ export function DataTableViewSwitcher({view, onChange}: DataTableViewSwitcherPro
   return (
     <div
       role="group"
-      aria-label="View"
+      aria-label={t('View')}
       className="inline-flex shrink-0 items-center gap-px rounded-md border border-neutral-200 bg-neutral-50 p-px"
     >
       {VIEWS.map(({value, label, Icon}) => {

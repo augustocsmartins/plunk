@@ -2,6 +2,7 @@ import {Tabs, TabsContent, TabsList, TabsTrigger} from '@plunk/ui';
 import {AnimatePresence, motion} from 'framer-motion';
 import {Check, Copy} from 'lucide-react';
 import {useState} from 'react';
+import {t} from '../../lib/i18n';
 
 export interface CodeSnippet {
   id: string;
@@ -49,7 +50,7 @@ export function CodeTabs({snippets, defaultTab}: CodeTabsProps) {
           type="button"
           onClick={() => void handleCopy()}
           className="relative flex h-7 items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-2 text-xs font-medium text-neutral-600 hover:text-neutral-900 hover:border-neutral-300 transition-colors overflow-hidden"
-          aria-label={`Copy ${activeSnippet?.label ?? ''} snippet`}
+          aria-label={t('Copy {value} snippet', {value: activeSnippet?.label ?? ''})}
         >
           <AnimatePresence mode="wait" initial={false}>
             {copied ? (
@@ -62,7 +63,7 @@ export function CodeTabs({snippets, defaultTab}: CodeTabsProps) {
                 className="flex items-center gap-1.5"
               >
                 <Check className="h-3.5 w-3.5 text-green-600" />
-                <span className="text-green-600">Copied</span>
+                <span className="text-green-600">{t('Copied')}</span>
               </motion.span>
             ) : (
               <motion.span
@@ -74,7 +75,7 @@ export function CodeTabs({snippets, defaultTab}: CodeTabsProps) {
                 className="flex items-center gap-1.5"
               >
                 <Copy className="h-3.5 w-3.5" />
-                <span>Copy</span>
+                <span>{t('Copy')}</span>
               </motion.span>
             )}
           </AnimatePresence>

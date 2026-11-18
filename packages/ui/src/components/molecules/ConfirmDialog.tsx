@@ -4,7 +4,7 @@ import * as React from 'react';
 
 import {Button, IconSpinner, Input, Label} from '../atoms';
 import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from '../atoms/Dialog';
-import {cn} from '../../lib';
+import {cn, uiT} from '../../lib';
 
 export interface ConfirmDialogProps {
   open: boolean;
@@ -50,9 +50,9 @@ export function ConfirmDialog({
   description,
   details,
   confirmPhrase,
-  confirmText = 'Confirm',
-  loadingText = 'Working…',
-  cancelText = 'Cancel',
+  confirmText,
+  loadingText,
+  cancelText,
   variant = 'default',
   icon,
   confirmDisabled = false,
@@ -157,12 +157,12 @@ export function ConfirmDialog({
 
         <DialogFooter className="gap-2 border-t border-neutral-100 bg-neutral-50 px-6 py-3">
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isLoading}>
-            {cancelText}
+            {cancelText ?? uiT('Cancel')}
           </Button>
           <Button type="button" variant={variant} onClick={handleConfirm} disabled={!canConfirm}>
             {/* Both confirm variants are filled, so the spinner is light on either. */}
             {isLoading && <IconSpinner size="sm" className="border-white/30 border-t-white" />}
-            {isLoading ? loadingText : confirmText}
+            {isLoading ? (loadingText ?? uiT('Working…')) : (confirmText ?? uiT('Confirm'))}
           </Button>
         </DialogFooter>
       </DialogContent>

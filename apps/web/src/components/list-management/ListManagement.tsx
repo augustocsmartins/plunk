@@ -2,10 +2,8 @@ import {createTranslator, isValidLanguageCode, type Translator} from '@plunk/sha
 import type {SnoozeDuration} from '@plunk/types';
 import {Button, Card, IconSpinner, Skeleton} from '@plunk/ui';
 import {AlertCircle, Clock} from 'lucide-react';
-import Image from 'next/image';
 import React, {useEffect, useId, useRef, useState} from 'react';
 
-import {LANDING_URI} from '../../lib/constants';
 import {network} from '../../lib/network';
 import {type ContactInfo, SNOOZE_OPTIONS, snoozeDurationLabel} from '../../lib/snooze';
 
@@ -94,16 +92,11 @@ export function useRecipient(id: string | string[] | undefined) {
   return {state, updateContact};
 }
 
-/**
- * Which hosted page a visitor followed the Plunk attribution from. Sent as `?ref=` on the link to
- * the marketing site, matching the `?ref=badge` the email footer badge uses, so each surface can
- * be told apart in analytics.
- */
+/** Which hosted recipient page is being rendered. */
 export type RecipientPage = 'unsubscribe' | 'subscribe' | 'manage';
 
 /**
- * The page frame: dot-grid ground, a narrow centred column, the card, and the mail provider
- * below it.
+ * The page frame: dot-grid ground, a narrow centred column and the card.
  *
  * There is deliberately no sender header. The sender is named inside the copy ("Stop receiving
  * emails from Acme at ...") instead: a name on its own above the card is a branding slot, reads
@@ -115,13 +108,11 @@ export type RecipientPage = 'unsubscribe' | 'subscribe' | 'manage';
  * as soon as the snooze durations expand.
  */
 export function RecipientShell({
-  page,
-  translator,
   loading = false,
   children,
 }: {
   page: RecipientPage;
-  /** Needed for the provider attribution; absent while the contact (and so its language) loads. */
+  /** Absent while the contact (and so its language) loads. */
   translator?: Translator;
   loading?: boolean;
   children: React.ReactNode;
@@ -137,43 +128,9 @@ export function RecipientShell({
       <main className="flex min-h-full items-center justify-center px-4 py-12">
         <div className="flex w-full max-w-md flex-col gap-4">
           <Card aria-busy={loading || undefined}>{children}</Card>
-          {translator ? <ProviderAttribution translator={translator} page={page} /> : null}
         </div>
       </main>
     </div>
-  );
-}
-
-/**
- * "Sent with Plunk": credits Plunk as the mail provider, below and outside the card, in the
- * smallest type on the page. It must never compete with the sender named in the copy, or
- * recipients read the page as Plunk's own unsubscribe.
- *
- * The sentence is translated with a `{provider}` placeholder so each language keeps its own word
- * order (Japanese puts the name first). The link carries `ref` for attribution and `noreferrer`,
- * because the page URL holds the contact id, which is the only credential these pages require.
- */
-function ProviderAttribution({translator, page}: {translator: Translator; page: RecipientPage}) {
-  const href = new URL(LANDING_URI);
-  href.searchParams.set('ref', page);
-
-  const template = translator.t('pages.common.sentWith');
-  const [before = '', after = ''] = template.includes('{provider}') ? template.split('{provider}') : [`${template} `];
-
-  return (
-    <p className="text-center text-xs text-neutral-500">
-      {before}
-      <a
-        href={href.toString()}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-1 rounded-sm align-bottom font-medium text-neutral-600 transition-colors hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
-      >
-        <Image src="/assets/logo.svg" alt="" aria-hidden width={12} height={12} className="opacity-80" />
-        Plunk
-      </a>
-      {after}
-    </p>
   );
 }
 

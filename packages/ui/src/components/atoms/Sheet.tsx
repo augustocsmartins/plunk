@@ -2,7 +2,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import {X} from 'lucide-react';
 import * as React from 'react';
 
-import {cn} from '../../lib';
+import {cn, uiT} from '../../lib';
 
 /**
  * A panel anchored to the edge of the viewport, built on the same Radix Dialog as
@@ -51,7 +51,7 @@ function SheetContent({className, children, ref, ...props}: React.ComponentProps
         {children}
         <DialogPrimitive.Close className="absolute right-4 top-4 rounded-md p-1.5 opacity-60 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
           <X className="h-5 w-5" />
-          <span className="sr-only">Close</span>
+          <span className="sr-only">{uiT('Close')}</span>
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
     </DialogPrimitive.Portal>

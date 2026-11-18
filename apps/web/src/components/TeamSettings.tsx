@@ -46,6 +46,7 @@ import {useForm} from 'react-hook-form';
 import {zodResolver} from '@hookform/resolvers/zod';
 import type {z} from 'zod';
 import {network} from '../lib/network';
+import {t} from '../lib/i18n';
 
 interface Member {
   userId: string;
@@ -91,7 +92,7 @@ export function TeamSettings({projectId, currentUserRole, currentUserId}: TeamSe
 
     try {
       await network.fetch<void, typeof MembershipSchemas.addMember>('POST', `/projects/${projectId}/members`, values);
-      setSuccess('Member added');
+      setSuccess(t('Member added'));
       await mutate();
       form.reset();
       setShowAddDialog(false);
@@ -102,7 +103,7 @@ export function TeamSettings({projectId, currentUserRole, currentUserId}: TeamSe
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('Couldn’t add that member. Check the email address and try again.');
+        setError(t('Couldn’t add that member. Check the email address and try again.'));
       }
     } finally {
       setIsSubmitting(false);
@@ -118,7 +119,7 @@ export function TeamSettings({projectId, currentUserRole, currentUserId}: TeamSe
 
     try {
       await network.fetch('DELETE', `/projects/${projectId}/members/${memberToRemove.userId}`);
-      setSuccess('Member removed');
+      setSuccess(t('Member removed'));
       await mutate();
       setMemberToRemove(null);
 
@@ -128,7 +129,7 @@ export function TeamSettings({projectId, currentUserRole, currentUserId}: TeamSe
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('Couldn’t remove that member. Try again.');
+        setError(t('Couldn’t remove that member. Try again.'));
       }
     } finally {
       setIsSubmitting(false);
@@ -145,7 +146,7 @@ export function TeamSettings({projectId, currentUserRole, currentUserId}: TeamSe
         `/projects/${projectId}/members/${userId}`,
         {role: newRole},
       );
-      setSuccess('Role updated');
+      setSuccess(t('Role updated'));
       await mutate();
 
       // Clear success message after 3 seconds
@@ -154,7 +155,7 @@ export function TeamSettings({projectId, currentUserRole, currentUserId}: TeamSe
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('Couldn’t change that role. Try again.');
+        setError(t('Couldn’t change that role. Try again.'));
       }
     }
   };
@@ -203,7 +204,7 @@ export function TeamSettings({projectId, currentUserRole, currentUserId}: TeamSe
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Team members</CardTitle>
+              <CardTitle>{t('Team members')}</CardTitle>
             </div>
             {canManageMembers && (
               <Button
@@ -213,7 +214,7 @@ export function TeamSettings({projectId, currentUserRole, currentUserId}: TeamSe
                 }}
               >
                 <UserPlus className="mr-2 h-4 w-4" />
-                Add member
+                {t('Add member')}
               </Button>
             )}
           </div>
@@ -224,13 +225,13 @@ export function TeamSettings({projectId, currentUserRole, currentUserId}: TeamSe
               <IconSpinner />
             </div>
           ) : members.length === 0 ? (
-            <div className="py-8 text-center text-sm text-neutral-500">No members found</div>
+            <div className="py-8 text-center text-sm text-neutral-500">{t('No members found')}</div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
+                  <TableHead>{t('Email')}</TableHead>
+                  <TableHead>{t('Role')}</TableHead>
                   <TableHead className="w-[50px]" />
                 </TableRow>
               </TableHeader>
@@ -247,7 +248,7 @@ export function TeamSettings({projectId, currentUserRole, currentUserId}: TeamSe
                           {member.email}
                           {isCurrentUser && (
                             <Badge variant="outline" className="text-xs">
-                              You
+                              {t('You')}
                             </Badge>
                           )}
                         </div>
@@ -262,8 +263,8 @@ export function TeamSettings({projectId, currentUserRole, currentUserId}: TeamSe
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="ADMIN">Admin</SelectItem>
-                              <SelectItem value="MEMBER">Member</SelectItem>
+                              <SelectItem value="ADMIN">{t('Admin')}</SelectItem>
+                              <SelectItem value="MEMBER">{t('Member')}</SelectItem>
                             </SelectContent>
                           </Select>
                         ) : (
@@ -286,7 +287,7 @@ export function TeamSettings({projectId, currentUserRole, currentUserId}: TeamSe
                                 onClick={() => setMemberToRemove(member)}
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                Remove
+                                {t('Remove')}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -313,9 +314,9 @@ export function TeamSettings({projectId, currentUserRole, currentUserId}: TeamSe
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add team member</DialogTitle>
+            <DialogTitle>{t('Add team member')}</DialogTitle>
             <DialogDescription>
-              Add a user to this project by their email address. They must have an existing account.
+              {t('Add a user to this project by their email address. They must have an existing account.')}
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
@@ -328,7 +329,7 @@ export function TeamSettings({projectId, currentUserRole, currentUserId}: TeamSe
                 name="email"
                 render={({field}) => (
                   <FormItem>
-                    <FormLabel>Email address</FormLabel>
+                    <FormLabel>{t('Email address')}</FormLabel>
                     <FormControl>
                       <Input type="email" placeholder="user@example.com" {...field} />
                     </FormControl>
@@ -341,7 +342,7 @@ export function TeamSettings({projectId, currentUserRole, currentUserId}: TeamSe
                 name="role"
                 render={({field}) => (
                   <FormItem>
-                    <FormLabel>Role</FormLabel>
+                    <FormLabel>{t('Role')}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -351,13 +352,13 @@ export function TeamSettings({projectId, currentUserRole, currentUserId}: TeamSe
                       <SelectContent>
                         <SelectItemWithDescription
                           value="MEMBER"
-                          title="Member"
-                          description="Can view and use the project"
+                          title={t('Member')}
+                          description={t('Can view and use the project')}
                         />
                         <SelectItemWithDescription
                           value="ADMIN"
-                          title="Admin"
-                          description="Can manage settings and members"
+                          title={t('Admin')}
+                          description={t('Can manage settings and members')}
                         />
                       </SelectContent>
                     </Select>
@@ -374,10 +375,10 @@ export function TeamSettings({projectId, currentUserRole, currentUserId}: TeamSe
                     setShowAddDialog(false);
                   }}
                 >
-                  Cancel
+                  {t('Cancel')}
                 </Button>
                 <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? 'Adding…' : 'Add Member'}
+                  {isSubmitting ? t('Adding…') : t('Add Member')}
                 </Button>
               </DialogFooter>
             </form>
@@ -389,11 +390,11 @@ export function TeamSettings({projectId, currentUserRole, currentUserId}: TeamSe
         open={!!memberToRemove}
         onOpenChange={open => !open && setMemberToRemove(null)}
         onConfirm={handleRemoveMember}
-        title={`Remove ${memberToRemove?.email}?`}
-        description="They lose access to this project immediately. Their Plunk account is not affected."
+        title={t('Remove {email}?', {email: memberToRemove?.email})}
+        description={t('They lose access to this project immediately. Their Plunk account is not affected.')}
         icon={UserMinus}
-        confirmText="Remove member"
-        loadingText="Removing…"
+        confirmText={t('Remove member')}
+        loadingText={t('Removing…')}
         variant="destructive"
       />
     </div>

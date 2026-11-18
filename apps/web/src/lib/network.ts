@@ -1,6 +1,7 @@
 import type {infer as ZodInfer, ZodSchema} from 'zod';
 
 import {API_URI} from './constants';
+import {t} from './i18n';
 
 interface Json {
   [x: string]: string | number | boolean | Date | Json | JsonArray;
@@ -63,12 +64,12 @@ export class network {
         if (typeof window !== 'undefined' && !window.location.href.includes('/auth/verify-email')) {
           window.location.href = '/auth/verify-email';
         }
-        throw new Error(res.error.message ?? 'Please verify your email address to continue');
+        throw new Error(t(res.error.message ?? 'Please verify your email address to continue'));
       }
 
       // Extract error message from standardized error response or fall back to direct message property
       const errorMessage = res.error?.message ?? res.message ?? 'Something went wrong!';
-      throw new Error(errorMessage);
+      throw new Error(t(errorMessage));
     }
 
     return res as T;
@@ -106,12 +107,12 @@ export class network {
         if (typeof window !== 'undefined') {
           window.location.href = '/auth/verify-email';
         }
-        throw new Error(res.error.message ?? 'Please verify your email address to continue');
+        throw new Error(t(res.error.message ?? 'Please verify your email address to continue'));
       }
 
       // Extract error message from standardized error response or fall back to direct message property
       const errorMessage = res.error?.message ?? res.message ?? 'Something went wrong!';
-      throw new Error(errorMessage);
+      throw new Error(t(errorMessage));
     }
 
     return res as T;

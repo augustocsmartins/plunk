@@ -28,6 +28,7 @@ import {useActiveProject} from '../../lib/contexts/ActiveProjectProvider';
 import {useLogout} from '../../lib/hooks/useLogout';
 import {useProjects} from '../../lib/hooks/useProject';
 import {network} from '../../lib/network';
+import {t} from '../../lib/i18n';
 
 export default function CreateProject() {
   const {mutate: projectsMutate} = useProjects();
@@ -61,13 +62,13 @@ export default function CreateProject() {
       // Redirect into onboarding for this project
       await router.push('/onboarding');
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Something went wrong');
+      setErrorMessage(error instanceof Error ? error.message : t('Something went wrong'));
     }
   }
 
   return (
     <>
-      <NextSeo title="Create project" />
+      <NextSeo title={t('Create project')} />
       {/* Same ground, lockup and card rhythm as the auth screens, so signup into first
           project reads as one continuous surface. */}
       <div
@@ -83,7 +84,7 @@ export default function CreateProject() {
             <div className="h-8 w-8 rounded-lg bg-white shadow-sm border border-neutral-200 flex items-center justify-center p-1">
               <Image src="/assets/logo.svg" alt="" aria-hidden width={24} height={24} />
             </div>
-            <span className="text-lg font-bold tracking-tight text-neutral-900">Plunk</span>
+            <span className="text-lg font-bold tracking-tight text-neutral-900">{t('Plunk')}</span>
           </div>
 
           <Card>
@@ -98,9 +99,9 @@ export default function CreateProject() {
                 >
                   <div className="flex flex-col gap-6">
                     <div className="flex flex-col gap-1.5">
-                      <h1 className="text-2xl font-bold tracking-tight">Create a project</h1>
+                      <h1 className="text-2xl font-bold tracking-tight">{t('Create a project')}</h1>
                       <p className="text-sm text-neutral-500">
-                        A project keeps its own contacts, templates and campaigns. Most teams need only one.
+                        {t('A project keeps its own contacts, templates and campaigns. Most teams need only one.')}
                       </p>
                     </div>
 
@@ -109,11 +110,11 @@ export default function CreateProject() {
                       name="name"
                       render={({field}) => (
                         <FormItem>
-                          <FormLabel>Project name</FormLabel>
+                          <FormLabel>{t('Project name')}</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g. Northwind Coffee" autoFocus {...field} />
+                            <Input placeholder={t('e.g. Northwind Coffee')} autoFocus {...field} />
                           </FormControl>
-                          <FormDescription>You can change this later</FormDescription>
+                          <FormDescription>{t('You can change this later')}</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -137,16 +138,16 @@ export default function CreateProject() {
                         {form.formState.isSubmitting ? (
                           <>
                             <IconSpinner size="sm" className="mr-2" />
-                            Creating…
+                            {t('Creating…')}
                           </>
                         ) : (
-                          'Create project'
+                          t('Create project')
                         )}
                       </Button>
                     </motion.div>
 
                     <p className="text-center text-sm text-neutral-500">
-                      Joining a team instead? Ask an admin to invite you from Settings → Team.
+                      {t('Joining a team instead? Ask an admin to invite you from Settings → Team.')}
                     </p>
                   </div>
                 </form>
@@ -158,7 +159,7 @@ export default function CreateProject() {
               so this is a zero-project user's sole route to their account or to signing out. */}
           <div className="flex items-center justify-center gap-3 text-sm">
             <Link href="/account" className="text-neutral-500 hover:text-neutral-900 transition-colors">
-              Account settings
+              {t('Account settings')}
             </Link>
             <span className="text-neutral-300" aria-hidden="true">
               ·
@@ -168,7 +169,7 @@ export default function CreateProject() {
               onClick={() => void logout()}
               className="text-neutral-500 hover:text-neutral-900 transition-colors"
             >
-              Log out
+              {t('Log out')}
             </button>
           </div>
         </div>

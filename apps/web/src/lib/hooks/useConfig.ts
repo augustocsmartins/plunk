@@ -15,6 +15,7 @@ export interface ConfigResponse {
     signup: {signupsDisabled: boolean};
     email: {trackingToggleEnabled: boolean};
     sponsor: {enabled: boolean};
+    whatsapp: {enabled: boolean};
     smtp: {
       enabled: boolean;
       domain: string | null;

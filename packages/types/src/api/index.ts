@@ -13,3 +13,4 @@ export * from './membership.js';
 export * from './user.js';
 export * from './verification.js';
 export * from './workflow.js';
+export * from './whatsapp.js';

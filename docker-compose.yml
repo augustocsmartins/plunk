@@ -129,6 +129,7 @@ services:
       NGINX_PORT: ${NGINX_PORT:-80}
       WIKI_PORT: ${WIKI_PORT:-1000}
       DISABLE_WIKI: ${DISABLE_WIKI:-false}
+      DISABLE_LANDING: ${DISABLE_LANDING:-true}
       DISABLE_SMTP: ${DISABLE_SMTP:-false}
       PORT_SECURE: ${SMTP_PORT_SECURE:-465}
       PORT_SUBMISSION: ${SMTP_PORT_SUBMISSION:-587}
@@ -199,7 +200,14 @@ services:
 
       # Self-hosting user management (documented in .env.self-host.example
       # and read by apps/api/src/app/constants.ts at import time)
-      DISABLE_SIGNUPS: ${DISABLE_SIGNUPS:-false}
+      DISABLE_SIGNUPS: ${DISABLE_SIGNUPS:-true}
+      SHOW_SPONSOR: ${SHOW_SPONSOR:-false}
+
+      # WhatsApp (Evolution API) — transactional messages from the API and workflows
+      EVOLUTION_BASE_URL: ${EVOLUTION_BASE_URL:-}
+      EVOLUTION_ADMIN_TOKEN: ${EVOLUTION_ADMIN_TOKEN:-}
+      WHATSAPP_WEBHOOK_BASE_URL: ${WHATSAPP_WEBHOOK_BASE_URL:-}
+      WHATSAPP_RATE_LIMIT_PER_MINUTE: ${WHATSAPP_RATE_LIMIT_PER_MINUTE:-20}
 
       # Explicit SES sending rate (avoid silent fallback to 14/sec when
       # ses:GetSendQuota is denied or transiently fails at worker startup)

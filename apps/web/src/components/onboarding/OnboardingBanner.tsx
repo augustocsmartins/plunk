@@ -9,6 +9,7 @@ import {useOnboardingComplete} from '../../lib/hooks/useOnboardingComplete';
 import {type OnboardingPath, useOnboardingPath} from '../../lib/hooks/useOnboardingPath';
 import {useOnboardingStatus} from '../../lib/hooks/useOnboardingStatus';
 import {useProjectSetupState} from '../../lib/hooks/useProjectSetupState';
+import {t} from '../../lib/i18n';
 
 // Keys the banner derives state from. Revalidated on every route change so
 // progress reflects the latest state as soon as the user moves between pages.
@@ -29,21 +30,21 @@ function buildMarketingSteps(setupState: ReturnType<typeof useProjectSetupState>
     {
       id: 'domain',
       icon: ShieldCheck,
-      title: 'Verify your domain',
+      title: t('Verify your domain'),
       href: '/settings?tab=domains',
       done: setupState.hasVerifiedDomain,
     },
     {
       id: 'contacts',
       icon: Users,
-      title: 'Add contacts',
+      title: t('Add contacts'),
       href: '/contacts',
       done: setupState.contactCount > 0,
     },
     {
       id: 'campaign',
       icon: Mail,
-      title: 'Draft your first campaign',
+      title: t('Draft your first campaign'),
       href: '/campaigns/create',
       done: setupState.lastCampaignSentAt !== null,
     },
@@ -56,14 +57,14 @@ function buildDeveloperSteps(setupState: ReturnType<typeof useProjectSetupState>
     {
       id: 'domain',
       icon: ShieldCheck,
-      title: 'Verify your domain',
+      title: t('Verify your domain'),
       href: '/settings?tab=domains',
       done: setupState.hasVerifiedDomain,
     },
     {
       id: 'snippets',
       icon: Code2,
-      title: 'Send your first email',
+      title: t('Send your first email'),
       href: '/onboarding/developer',
       done: false,
     },
@@ -76,28 +77,28 @@ function buildWorkflowSteps(setupState: ReturnType<typeof useProjectSetupState>[
     {
       id: 'domain',
       icon: ShieldCheck,
-      title: 'Verify your domain',
+      title: t('Verify your domain'),
       href: '/settings?tab=domains',
       done: setupState.hasVerifiedDomain,
     },
     {
       id: 'event',
       icon: Zap,
-      title: 'Fire your first event',
+      title: t('Fire your first event'),
       href: '/onboarding/workflows',
       done: false,
     },
     {
       id: 'template',
       icon: FileText,
-      title: 'Create a template',
+      title: t('Create a template'),
       href: '/templates/create',
       done: false,
     },
     {
       id: 'workflow',
       icon: Workflow,
-      title: 'Build a workflow',
+      title: t('Build a workflow'),
       href: '/workflows',
       done: setupState.hasEnabledWorkflow,
     },
@@ -176,16 +177,16 @@ export function OnboardingBanner() {
           <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:p-5">
             <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-start sm:justify-center">
               <div className="flex flex-col gap-0.5">
-                <p className="text-sm font-semibold text-neutral-900">Finish your setup</p>
+                <p className="text-sm font-semibold text-neutral-900">{t('Finish your setup')}</p>
                 <p className="text-xs text-neutral-500 tabular-nums">
-                  {doneCount} of {steps.length} {doneCount === 1 ? 'step' : 'steps'} done
+                  {doneCount} {t('of')} {steps.length} {doneCount === 1 ? t('step') : t('steps')} {t('done')}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={handleDismiss}
                 className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 transition-colors sm:hidden"
-                aria-label="Dismiss setup guide"
+                aria-label={t('Dismiss setup guide')}
               >
                 <X className="h-4 w-4" />
               </button>
@@ -234,7 +235,7 @@ export function OnboardingBanner() {
               type="button"
               onClick={handleDismiss}
               className="hidden h-8 w-8 flex-shrink-0 items-center justify-center rounded-md text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 transition-colors sm:flex"
-              aria-label="Dismiss setup guide"
+              aria-label={t('Dismiss setup guide')}
             >
               <X className="h-4 w-4" />
             </button>

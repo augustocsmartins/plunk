@@ -11,6 +11,7 @@ import {
 } from '@plunk/ui';
 import {useMemo} from 'react';
 import useSWR from 'swr';
+import {t} from '../lib/i18n';
 
 type EntryMode = 'once' | 'always' | 'throttle';
 type WindowUnit = 'm' | 'h' | 'd' | 'none';
@@ -34,16 +35,16 @@ const UNIT_SECONDS: Record<Exclude<WindowUnit, 'none'>, number> = {m: 60, h: 360
 const NO_KEY = '__contact__';
 
 const MODES: Array<{value: EntryMode; label: string; description: string}> = [
-  {value: 'once', label: 'Once per contact', description: 'A contact goes through this workflow one time, ever.'},
+  {value: 'once', label: t('Once per contact'), description: t('A contact goes through this workflow one time, ever.')},
   {
     value: 'always',
-    label: 'Every time the event fires',
-    description: 'A contact enters again each time, even while an earlier run is still waiting.',
+    label: t('Every time the event fires'),
+    description: t('A contact enters again each time, even while an earlier run is still waiting.'),
   },
   {
     value: 'throttle',
-    label: 'At most once per period',
-    description: 'Extra events within the period are ignored, so you can track the event as often as it happens.',
+    label: t('At most once per period'),
+    description: t('Extra events within the period are ignored, so you can track the event as often as it happens.'),
   },
 ];
 
@@ -98,17 +99,17 @@ export function entryRuleError(rule: EntryRule): string | null {
   }
 
   if (rule.unit === 'none') {
-    return rule.key ? null : 'Pick a field to count by, or set a period';
+    return rule.key ? null : t('Pick a field to count by, or set a period');
   }
 
   const amount = Number(rule.amount);
   if (!Number.isInteger(amount) || amount < 1) {
-    return 'Enter a whole number of 1 or more';
+    return t('Enter a whole number of 1 or more');
   }
 
   const seconds = amount * UNIT_SECONDS[rule.unit];
   if (seconds > 365 * UNIT_SECONDS.d) {
-    return 'The period can be at most 365 days';
+    return t('The period can be at most 365 days');
   }
 
   return null;
@@ -168,7 +169,7 @@ export function WorkflowEntryRules({value, onChange, eventName}: WorkflowEntryRu
 
   return (
     <div className="space-y-2">
-      <Label>Who can enter</Label>
+      <Label>{t('Who can enter')}</Label>
       <RadioGroup value={value.mode} onValueChange={mode => onChange({...value, mode: mode as EntryMode})} className="gap-2">
         {MODES.map(option => (
           <div key={option.value} className="rounded-md border border-neutral-200">
@@ -187,7 +188,7 @@ export function WorkflowEntryRules({value, onChange, eventName}: WorkflowEntryRu
               <div className="space-y-3 border-t border-neutral-200 px-3 pb-3 pt-3 pl-10">
                 <div>
                   <Label htmlFor="entryWindowAmount" className="text-xs text-neutral-600">
-                    Period
+                    {t('Period')}
                   </Label>
                   <div className="mt-1 flex gap-2">
                     {value.unit !== 'none' && (
@@ -211,15 +212,15 @@ export function WorkflowEntryRules({value, onChange, eventName}: WorkflowEntryRu
                         })
                       }
                     >
-                      <SelectTrigger className="flex-1" aria-label="Period unit">
+                      <SelectTrigger className="flex-1" aria-label={t('Period unit')}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="m">{value.amount === '1' ? 'minute' : 'minutes'}</SelectItem>
-                        <SelectItem value="h">{value.amount === '1' ? 'hour' : 'hours'}</SelectItem>
-                        <SelectItem value="d">{value.amount === '1' ? 'day' : 'days'}</SelectItem>
+                        <SelectItem value="m">{value.amount === '1' ? t('minute') : t('minutes')}</SelectItem>
+                        <SelectItem value="h">{value.amount === '1' ? t('hour') : t('hours')}</SelectItem>
+                        <SelectItem value="d">{value.amount === '1' ? 'day' : t('days')}</SelectItem>
                         <SelectItem value="none" disabled={!value.key}>
-                          Once per field value
+                          {t('Once per field value')}
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -228,7 +229,7 @@ export function WorkflowEntryRules({value, onChange, eventName}: WorkflowEntryRu
 
                 <div>
                   <Label htmlFor="entryKey" className="text-xs text-neutral-600">
-                    Count separately for each
+                    {t('Count separately for each')}
                   </Label>
                   <Select
                     value={value.key || NO_KEY}
@@ -246,7 +247,7 @@ export function WorkflowEntryRules({value, onChange, eventName}: WorkflowEntryRu
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={NO_KEY}>Contact</SelectItem>
+                      <SelectItem value={NO_KEY}>{t('Contact')}</SelectItem>
                       {Object.entries(grouped).map(([category, fields]) => (
                         <div key={category}>
                           <div className="px-2 py-1.5 text-xs font-semibold text-neutral-500">{category}</div>
@@ -260,7 +261,7 @@ export function WorkflowEntryRules({value, onChange, eventName}: WorkflowEntryRu
                     </SelectContent>
                   </Select>
                   <p className="mt-1 text-xs text-neutral-500">
-                    For example an organisation ID, so a person in two organisations is counted once for each.
+                    {t('For example an organisation ID, so a person in two organisations is counted once for each.')}
                   </p>
                 </div>
 

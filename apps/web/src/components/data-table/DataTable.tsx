@@ -1,5 +1,6 @@
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@plunk/ui';
 import {flexRender, type Table as TanstackTable} from '@tanstack/react-table';
+import {t} from '../../lib/i18n';
 
 /**
  * Per-column presentation hints read off `columnDef.meta`. Optional — a column
@@ -81,7 +82,7 @@ export function DataTable<TData>({table, emptyState, getRowSelected}: DataTableP
         {rows.length === 0 ? (
           <TableRow className="hover:bg-transparent">
             <TableCell colSpan={leafColumnCount} className="h-24 text-center text-sm text-neutral-500">
-              {emptyState ?? 'No results.'}
+              {emptyState ?? t('No results.')}
             </TableCell>
           </TableRow>
         ) : (

@@ -66,9 +66,6 @@ export default function handler(req: NextRequest) {
               Plunk
             </span>
           </div>
-          <span style={{fontSize: '15px', color: '#a3a3a3', letterSpacing: '0.01em'}}>
-            next-app.useplunk.com
-          </span>
         </div>
 
         {/* Main content */}

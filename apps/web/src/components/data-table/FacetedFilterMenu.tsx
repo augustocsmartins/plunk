@@ -1,6 +1,7 @@
 import {Command, CommandEmpty, CommandGroup, CommandItem, CommandList, CommandSeparator} from '@plunk/ui';
 import {Check} from 'lucide-react';
 import type {ComponentType, ReactNode} from 'react';
+import {t} from '../../lib/i18n';
 
 export interface FacetedFilterOption {
   /** Stable value sent back through `onChange` (e.g. a `TemplateType` enum member). */
@@ -44,7 +45,7 @@ export function FacetedFilterMenu({title, options, selected, onChange, multiple 
   return (
     <Command>
       <CommandList>
-        <CommandEmpty>No options.</CommandEmpty>
+        <CommandEmpty>{t('No options.')}</CommandEmpty>
         <CommandGroup heading={title}>
           {options.map(option => {
             const isSelected = selectedSet.has(option.value);
@@ -73,7 +74,7 @@ export function FacetedFilterMenu({title, options, selected, onChange, multiple 
                 onSelect={() => onChange([])}
                 className="cursor-pointer justify-center text-center text-sm text-neutral-600"
               >
-                Clear filter
+                {t('Clear filter')}
               </CommandItem>
             </CommandGroup>
           </>

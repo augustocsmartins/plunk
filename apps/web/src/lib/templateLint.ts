@@ -1,4 +1,5 @@
 import type {ContactField} from './hooks/useContacts';
+import {t} from './i18n';
 
 /**
  * A reference that parses but probably will not do what the author meant.
@@ -278,7 +279,7 @@ export function lintTemplateFields(source: string, fields: ContactField[]): Temp
         field: name,
         message: suggestion
           ? `No contact has a field called ${name}. Did you mean ${suggestion}?`
-          : `No contact has a field called ${name}, so this will always be empty.`,
+          : t('No contact has a field called {name}, so this will always be empty.', {name: name}),
       });
       continue;
     }
@@ -288,7 +289,7 @@ export function lintTemplateFields(source: string, fields: ContactField[]): Temp
       warnings.push({
         kind: 'sparse',
         field: name,
-        message: `Only ${Math.round(field.coverage)}% of contacts have ${name}. The rest see this as empty.`,
+        message: t('Only {Math}% of contacts have {name}. The rest see this as empty.', {Math: Math.round(field.coverage), name: name}),
       });
     }
   }

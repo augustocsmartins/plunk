@@ -69,6 +69,7 @@ import useSWR from 'swr';
 import dayjs from 'dayjs';
 import {useColumnVisibility} from '../../lib/hooks/useColumnVisibility';
 import {usePersistentState} from '../../lib/hooks/usePersistentState';
+import {t} from '../../lib/i18n';
 
 type StatusFilter = 'ALL' | 'DRAFT' | 'SCHEDULED' | 'SENDING' | 'SENT' | 'CANCELLED';
 
@@ -112,11 +113,11 @@ const ARCHIVABLE_STATUSES: ReadonlyArray<CampaignStatus> = [
 ];
 
 const statusBadgeConfig: Record<CampaignStatus, {label: string; variant: 'neutral' | 'default' | 'success'}> = {
-  DRAFT: {label: 'Draft', variant: 'neutral'},
-  SCHEDULED: {label: 'Scheduled', variant: 'default'},
-  SENDING: {label: 'Sending', variant: 'default'},
-  SENT: {label: 'Sent', variant: 'success'},
-  CANCELLED: {label: 'Cancelled', variant: 'neutral'},
+  DRAFT: {label: t('Draft'), variant: 'neutral'},
+  SCHEDULED: {label: t('Scheduled'), variant: 'default'},
+  SENDING: {label: t('Sending'), variant: 'default'},
+  SENT: {label: t('Sent'), variant: 'success'},
+  CANCELLED: {label: t('Cancelled'), variant: 'neutral'},
 };
 
 const getStatusBadge = (status: CampaignStatus) => {
@@ -134,10 +135,10 @@ function Audience({campaign, className = ''}: {campaign: CampaignListItem; class
   const Icon = campaign.audienceType === 'FILTERED' ? Filter : Users;
   const label =
     campaign.audienceType === 'SEGMENT'
-      ? (campaign.segment?.name ?? 'Deleted segment')
+      ? (campaign.segment?.name ?? t('Deleted segment'))
       : campaign.audienceType === 'FILTERED'
-        ? 'Custom filter'
-        : 'All contacts';
+        ? t('Custom filter')
+        : t('All contacts');
   return (
     <span className={'inline-flex min-w-0 items-center gap-1.5 text-neutral-500 ' + className}>
       <Icon className="h-3 w-3 shrink-0" />
@@ -160,7 +161,7 @@ function CampaignTiming({campaign, className = ''}: {campaign: CampaignListItem;
       break;
     case 'SENDING':
       date = campaign.sentAt ?? campaign.updatedAt;
-      label = 'Sending now';
+      label = t('Sending now');
       break;
     case 'SENT':
       date = campaign.sentAt ?? campaign.updatedAt;
@@ -204,7 +205,7 @@ function CampaignCardStats({campaign}: {campaign: CampaignListItem}) {
         <div className="flex items-baseline justify-between">
           {stat(`${pct.toFixed(0)}%`, 'sent')}
           <span className="text-xs text-neutral-400 tabular-nums">
-            {campaign.sentCount.toLocaleString()} of {campaign.totalRecipients.toLocaleString()}
+            {campaign.sentCount.toLocaleString()} {t('of')} {campaign.totalRecipients.toLocaleString()}
           </span>
         </div>
         <div className="mt-1.5 h-1 rounded-full bg-neutral-100">
@@ -227,7 +228,7 @@ function CampaignCardStats({campaign}: {campaign: CampaignListItem}) {
             {divider}
             <span className="text-amber-700">
               <strong className="font-semibold tabular-nums">{campaign.failedCount.toLocaleString()}</strong>
-              <span className="ml-1 text-xs">not sent</span>
+              <span className="ml-1 text-xs">{t('not sent')}</span>
             </span>
           </>
         )}
@@ -335,14 +336,14 @@ export default function CampaignsPage() {
       // it would have to poll for. The next load shows where it landed.
       toast.success(
         res.revertPending
-          ? 'Campaign stopped. Clearing its unsent emails, then it returns to draft.'
+          ? t('Campaign stopped. Clearing its unsent emails, then it returns to draft.')
           : res.data.status === CampaignStatus.DRAFT
-            ? 'Campaign stopped and returned to draft'
-            : 'Campaign canceled',
+            ? t('Campaign stopped and returned to draft')
+            : t('Campaign canceled'),
       );
       void mutate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t cancel the campaign. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t cancel the campaign. Try again.'));
     } finally {
       setCampaignToCancel(null);
     }
@@ -351,20 +352,20 @@ export default function CampaignsPage() {
   const handleDuplicate = async (campaignId: string) => {
     try {
       await network.fetch('POST', `/campaigns/${campaignId}/duplicate`);
-      toast.success('Campaign duplicated');
+      toast.success(t('Campaign duplicated'));
       void mutate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t duplicate the campaign. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t duplicate the campaign. Try again.'));
     }
   };
 
   const handleUnarchive = async (campaignId: string) => {
     try {
       await network.fetch('POST', `/campaigns/${campaignId}/unarchive`);
-      toast.success('Campaign restored');
+      toast.success(t('Campaign restored'));
       void mutate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn\u2019t restore the campaign. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t restore the campaign. Try again.'));
     }
   };
 
@@ -373,12 +374,12 @@ export default function CampaignsPage() {
   const handleArchive = async (campaignId: string) => {
     try {
       await network.fetch('POST', `/campaigns/${campaignId}/archive`);
-      toast.success('Campaign archived', {
-        action: {label: 'Undo', onClick: () => void handleUnarchive(campaignId)},
+      toast.success(t('Campaign archived'), {
+        action: {label: t('Undo'), onClick: () => void handleUnarchive(campaignId)},
       });
       void mutate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn\u2019t archive the campaign. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t archive the campaign. Try again.'));
     }
   };
 
@@ -387,10 +388,10 @@ export default function CampaignsPage() {
 
     try {
       await network.fetch('DELETE', `/campaigns/${campaignToDelete}`);
-      toast.success('Campaign deleted');
+      toast.success(t('Campaign deleted'));
       void mutate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t delete the campaign. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t delete the campaign. Try again.'));
     } finally {
       setCampaignToDelete(null);
     }
@@ -411,11 +412,11 @@ export default function CampaignsPage() {
         },
       );
       const count = result?.deleted ?? selectedIds.length;
-      toast.success(`${count} campaign${count === 1 ? '' : 's'} deleted`);
+      toast.success(t('{count} campaign{value} deleted', {count: count, value: count === 1 ? '' : 's'}));
       setRowSelection({});
       void mutate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t delete those campaigns. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t delete those campaigns. Try again.'));
     } finally {
       // ConfirmDialog closes itself after onConfirm resolves.
       setBulkDeleteStatus('idle');
@@ -435,14 +436,14 @@ export default function CampaignsPage() {
         },
       );
       const count = result?.updated ?? selectedIds.length;
-      toast.success(`${count} campaign${count === 1 ? '' : 's'} ${archived ? 'archived' : 'restored'}`);
+      toast.success(t('{count} campaign{value} {value2}', {count: count, value: count === 1 ? '' : 's', value2: archived ? 'archived' : 'restored'}));
       setRowSelection({});
       void mutate();
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
-          : `Couldn\u2019t ${archived ? 'archive' : 'restore'} those campaigns. Try again.`,
+          : t('Couldn’t {value} those campaigns. Try again.', {value: archived ? 'archive' : 'restore'}),
       );
     } finally {
       setBulkArchiveStatus('idle');
@@ -543,7 +544,7 @@ export default function CampaignsPage() {
       return (
         <div className="ml-auto w-24 text-sm tabular-nums">
           <span className="font-semibold text-neutral-900">{pct.toFixed(0)}%</span>
-          <span className="text-xs text-neutral-400"> sent</span>
+          <span className="text-xs text-neutral-400"> {t('sent')}</span>
           <div className="mt-1 h-1 rounded-full bg-neutral-100">
             <div className="h-1 rounded-full bg-neutral-900" style={{width: `${pct}%`}} />
           </div>
@@ -557,7 +558,7 @@ export default function CampaignsPage() {
       return (
         <div className="text-sm tabular-nums">
           <span className="font-semibold text-neutral-900">{count.toLocaleString()}</span>
-          <div className="text-xs text-amber-700">{campaign.failedCount.toLocaleString()} not sent</div>
+          <div className="text-xs text-amber-700">{campaign.failedCount.toLocaleString()} {t('not sent')}</div>
         </div>
       );
     }
@@ -567,7 +568,7 @@ export default function CampaignsPage() {
           'text-sm tabular-nums ' +
           (campaign.status === 'SENT' ? 'font-semibold text-neutral-900' : 'text-neutral-500')
         }
-        title={campaign.status === 'SENT' ? undefined : 'Estimated, counted when the campaign sends'}
+        title={campaign.status === 'SENT' ? undefined : t('Estimated, counted when the campaign sends')}
       >
         {count.toLocaleString()}
       </span>
@@ -582,7 +583,7 @@ export default function CampaignsPage() {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" aria-label={`Actions for ${campaign.name}`} title="Actions">
+          <Button variant="ghost" size="sm" aria-label={t('Actions for {name}', {name: campaign.name})} title={t('Actions')}>
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
@@ -590,18 +591,18 @@ export default function CampaignsPage() {
           {showArchived ? (
             <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => void handleUnarchive(campaign.id)}>
               <ArchiveRestore className="h-4 w-4" />
-              Restore
+              {t('Restore')}
             </DropdownMenuItem>
           ) : (
             <>
               <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => void handleDuplicate(campaign.id)}>
                 <Copy className="h-4 w-4" />
-                Duplicate
+                {t('Duplicate')}
               </DropdownMenuItem>
               {ARCHIVABLE_STATUSES.includes(campaign.status) && (
                 <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => void handleArchive(campaign.id)}>
                   <Archive className="h-4 w-4" />
-                  Archive
+                  {t('Archive')}
                 </DropdownMenuItem>
               )}
               {(campaign.status === 'DRAFT' || canCancel) && <DropdownMenuSeparator />}
@@ -614,7 +615,7 @@ export default function CampaignsPage() {
                   }}
                 >
                   <Trash2 className="h-4 w-4" />
-                  Delete
+                  {t('Delete')}
                 </DropdownMenuItem>
               )}
               {canCancel && (
@@ -626,7 +627,7 @@ export default function CampaignsPage() {
                   }}
                 >
                   <Ban className="h-4 w-4" />
-                  {campaign.status === 'SCHEDULED' ? 'Stop' : 'Cancel sending'}
+                  {campaign.status === 'SCHEDULED' ? t('Stop') : t('Cancel sending')}
                 </DropdownMenuItem>
               )}
             </>
@@ -642,10 +643,10 @@ export default function CampaignsPage() {
         id: 'select',
         enableSorting: false,
         enableHiding: false, // Selection column is locked-visible.
-        meta: {label: 'Select', headClassName: 'w-10', cellClassName: 'w-10'} satisfies DataTableColumnMeta,
+        meta: {label: t('Select'), headClassName: 'w-10', cellClassName: 'w-10'} satisfies DataTableColumnMeta,
         header: ({table}) => (
           <Checkbox
-            aria-label="Select all rows on this page"
+            aria-label={t('Select all rows on this page')}
             checked={
               table.getIsAllPageRowsSelected()
                 ? true
@@ -658,7 +659,7 @@ export default function CampaignsPage() {
         ),
         cell: ({row}) => (
           <Checkbox
-            aria-label={`Select ${row.original.name}`}
+            aria-label={t('Select {name}', {name: row.original.name})}
             checked={row.getIsSelected()}
             // Capture shift-key state before the toggle, then apply range
             // selection on change (see useShiftClickSelection below).
@@ -674,8 +675,8 @@ export default function CampaignsPage() {
         id: 'name',
         accessorKey: 'name',
         enableHiding: false, // Name column is locked-visible.
-        meta: {label: 'Name', cellClassName: 'max-w-[18rem]'} satisfies DataTableColumnMeta,
-        header: ({column}) => <DataTableColumnHeader column={column}>Name</DataTableColumnHeader>,
+        meta: {label: t('Name'), cellClassName: 'max-w-[18rem]'} satisfies DataTableColumnMeta,
+        header: ({column}) => <DataTableColumnHeader column={column}>{t('Name')}</DataTableColumnHeader>,
         cell: ({row}) => (
           <div className="min-w-0">
             <Link
@@ -685,7 +686,7 @@ export default function CampaignsPage() {
               {row.original.name}
             </Link>
             <p className="truncate text-xs text-neutral-500" title={row.original.subject}>
-              {row.original.subject || <span className="italic text-neutral-400">No subject</span>}
+              {row.original.subject || <span className="italic text-neutral-400">{t('No subject')}</span>}
             </p>
           </div>
         ),
@@ -694,24 +695,24 @@ export default function CampaignsPage() {
         id: 'status',
         accessorKey: 'status',
         enableSorting: false, // Status is faceted-filtered, not sorted.
-        meta: {label: 'Status'} satisfies DataTableColumnMeta,
-        header: ({column}) => <DataTableColumnHeader column={column}>Status</DataTableColumnHeader>,
+        meta: {label: t('Status')} satisfies DataTableColumnMeta,
+        header: ({column}) => <DataTableColumnHeader column={column}>{t('Status')}</DataTableColumnHeader>,
         cell: ({row}) => getStatusBadge(row.original.status),
       },
       {
         id: 'audience',
         enableSorting: false,
-        meta: {label: 'Audience', cellClassName: 'max-w-[12rem]'} satisfies DataTableColumnMeta,
-        header: ({column}) => <DataTableColumnHeader column={column}>Audience</DataTableColumnHeader>,
+        meta: {label: t('Audience'), cellClassName: 'max-w-[12rem]'} satisfies DataTableColumnMeta,
+        header: ({column}) => <DataTableColumnHeader column={column}>{t('Audience')}</DataTableColumnHeader>,
         cell: ({row}) => <Audience campaign={row.original} className="max-w-full text-sm" />,
       },
       {
         id: 'sent',
         enableSorting: false, // No backend sort field for counts.
-        meta: {label: 'Recipients', headClassName: 'text-right', cellClassName: 'text-right'} satisfies DataTableColumnMeta,
+        meta: {label: t('Recipients'), headClassName: 'text-right', cellClassName: 'text-right'} satisfies DataTableColumnMeta,
         header: ({column}) => (
           <DataTableColumnHeader column={column} align="right">
-            Recipients
+            {t('Recipients')}
           </DataTableColumnHeader>
         ),
         cell: ({row}) => recipientsCell(row.original),
@@ -719,10 +720,10 @@ export default function CampaignsPage() {
       {
         id: 'opened',
         enableSorting: false,
-        meta: {label: 'Opened', headClassName: 'text-right', cellClassName: 'text-right'} satisfies DataTableColumnMeta,
+        meta: {label: t('Opened'), headClassName: 'text-right', cellClassName: 'text-right'} satisfies DataTableColumnMeta,
         header: ({column}) => (
           <DataTableColumnHeader column={column} align="right">
-            Opened
+            {t('Opened')}
           </DataTableColumnHeader>
         ),
         cell: ({row}) => <MetricCell value={row.original.openedCount} of={row.original.sentCount} />,
@@ -730,10 +731,10 @@ export default function CampaignsPage() {
       {
         id: 'clicked',
         enableSorting: false,
-        meta: {label: 'Clicked', headClassName: 'text-right', cellClassName: 'text-right'} satisfies DataTableColumnMeta,
+        meta: {label: t('Clicked'), headClassName: 'text-right', cellClassName: 'text-right'} satisfies DataTableColumnMeta,
         header: ({column}) => (
           <DataTableColumnHeader column={column} align="right">
-            Clicked
+            {t('Clicked')}
           </DataTableColumnHeader>
         ),
         cell: ({row}) => <MetricCell value={row.original.clickedCount} of={row.original.sentCount} />,
@@ -741,10 +742,10 @@ export default function CampaignsPage() {
       {
         id: 'bounced',
         enableSorting: false,
-        meta: {label: 'Bounced', headClassName: 'text-right', cellClassName: 'text-right'} satisfies DataTableColumnMeta,
+        meta: {label: t('Bounced'), headClassName: 'text-right', cellClassName: 'text-right'} satisfies DataTableColumnMeta,
         header: ({column}) => (
           <DataTableColumnHeader column={column} align="right">
-            Bounced
+            {t('Bounced')}
           </DataTableColumnHeader>
         ),
         cell: ({row}) => <MetricCell value={row.original.bouncedCount} of={row.original.sentCount} />,
@@ -752,10 +753,10 @@ export default function CampaignsPage() {
       {
         id: 'complained',
         enableSorting: false,
-        meta: {label: 'Complaints', headClassName: 'text-right', cellClassName: 'text-right'} satisfies DataTableColumnMeta,
+        meta: {label: t('Complaints'), headClassName: 'text-right', cellClassName: 'text-right'} satisfies DataTableColumnMeta,
         header: ({column}) => (
           <DataTableColumnHeader column={column} align="right">
-            Complaints
+            {t('Complaints')}
           </DataTableColumnHeader>
         ),
         // Two decimals: complaint thresholds sit around 0.1%, which one decimal would flatten.
@@ -764,16 +765,16 @@ export default function CampaignsPage() {
       {
         id: 'when',
         enableSorting: false, // Mixes sent/scheduled/edited dates, which no single backend field sorts.
-        meta: {label: 'Date'} satisfies DataTableColumnMeta,
-        header: ({column}) => <DataTableColumnHeader column={column}>Date</DataTableColumnHeader>,
+        meta: {label: t('Date')} satisfies DataTableColumnMeta,
+        header: ({column}) => <DataTableColumnHeader column={column}>{t('Date')}</DataTableColumnHeader>,
         cell: ({row}) => <CampaignTiming campaign={row.original} className="text-sm text-neutral-500" />,
       },
       {
         id: 'actions',
         enableSorting: false,
         enableHiding: false, // Actions column is locked-visible.
-        meta: {label: 'Actions', headClassName: 'text-right w-12', cellClassName: 'text-right'} satisfies DataTableColumnMeta,
-        header: () => <span className="sr-only">Actions</span>,
+        meta: {label: t('Actions'), headClassName: 'text-right w-12', cellClassName: 'text-right'} satisfies DataTableColumnMeta,
+        header: () => <span className="sr-only">{t('Actions')}</span>,
         cell: ({row}) => <div className="flex justify-end">{actionsMenu(row.original)}</div>,
       },
     ],
@@ -817,23 +818,23 @@ export default function CampaignsPage() {
 
   return (
     <>
-      <NextSeo title="Campaigns" />
+      <NextSeo title={t('Campaigns')} />
       <DashboardLayout>
         <div className="space-y-6">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900">Campaigns</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900">{t('Campaigns')}</h1>
               <p className="text-neutral-500 mt-2 text-sm sm:text-base">
-                One-off emails sent to a list of contacts. {data?.total ? `${data.total} total` : ''}
+                {t('One-off emails sent to a list of contacts.')}{' '}{data?.total ? t('{total} total', {total: data.total}) : ''}
               </p>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button className="w-full sm:w-auto">
                   <Plus className="h-4 w-4" />
-                  <span className="hidden sm:inline">Create campaign</span>
-                  <span className="sm:hidden">Create</span>
+                  <span className="hidden sm:inline">{t('Create campaign')}</span>
+                  <span className="sm:hidden">{t('Create')}</span>
                   <ChevronDown className="h-4 w-4 ml-1" />
                 </Button>
               </DropdownMenuTrigger>
@@ -842,9 +843,9 @@ export default function CampaignsPage() {
                   <Link href="/campaigns/create" className="flex items-start gap-3">
                     <Mail className="h-4 w-4 mt-0.5 text-neutral-700" />
                     <div className="flex flex-col gap-0.5 flex-1">
-                      <span className="font-medium text-sm">Empty campaign</span>
+                      <span className="font-medium text-sm">{t('Empty campaign')}</span>
                       <span className="text-xs text-neutral-500 leading-snug">
-                        Start from scratch with a blank canvas
+                        {t('Start from scratch with a blank canvas')}
                       </span>
                     </div>
                   </Link>
@@ -853,9 +854,9 @@ export default function CampaignsPage() {
                   <div className="flex items-start gap-3">
                     <FileText className="h-4 w-4 mt-0.5 text-neutral-700" />
                     <div className="flex flex-col gap-0.5 flex-1">
-                      <span className="font-medium text-sm">From template</span>
+                      <span className="font-medium text-sm">{t('From template')}</span>
                       <span className="text-xs text-neutral-500 leading-snug">
-                        Use an existing template as a starting point
+                        {t('Use an existing template as a starting point')}
                       </span>
                     </div>
                   </div>
@@ -864,9 +865,9 @@ export default function CampaignsPage() {
                   <div className="flex items-start gap-3">
                     <RefreshCw className="h-4 w-4 mt-0.5 text-neutral-700" />
                     <div className="flex flex-col gap-0.5 flex-1">
-                      <span className="font-medium text-sm">From previous campaign</span>
+                      <span className="font-medium text-sm">{t('From previous campaign')}</span>
                       <span className="text-xs text-neutral-500 leading-snug">
-                        Copy content and settings from an existing campaign
+                        {t('Copy content and settings from an existing campaign')}
                       </span>
                     </div>
                   </div>
@@ -890,12 +891,12 @@ export default function CampaignsPage() {
                 setSearch('');
                 setPage(1);
               }}
-              placeholder="Search campaigns…"
+              placeholder={t('Search campaigns…')}
               className="flex-1"
             />
             <div className="flex items-center gap-2 shrink-0">
               <FilterPill
-                title="Status"
+                title={t('Status')}
                 multiple={false}
                 options={STATUS_OPTIONS.map(s => ({value: s, label: statusBadgeConfig[s].label}))}
                 selected={statusFilter === 'ALL' ? [] : [statusFilter]}
@@ -917,12 +918,12 @@ export default function CampaignsPage() {
                   variant="outline"
                   size="sm"
                   aria-pressed={showArchived}
-                  title={showArchived ? 'Back to active campaigns' : 'Show archived campaigns'}
+                  title={showArchived ? t('Back to active campaigns') : t('Show archived campaigns')}
                   onClick={() => handleToggleArchived(!showArchived)}
                   className={'gap-1.5 ' + (showArchived ? 'bg-neutral-100 border-neutral-300' : '')}
                 >
                   <Archive className="h-4 w-4 text-neutral-500" />
-                  <span>Archived</span>
+                  <span>{t('Archived')}</span>
                   {!showArchived && archivedCount > 0 && (
                     <span className="text-neutral-500 tabular-nums">{archivedCount.toLocaleString()}</span>
                   )}
@@ -937,13 +938,13 @@ export default function CampaignsPage() {
               already carries the state, this just makes it unmissable and offers the exit. */}
           {showArchived && (
             <div className="flex items-center gap-2 text-sm text-neutral-500">
-              <span>Showing archived campaigns.</span>
+              <span>{t('Showing archived campaigns.')}</span>
               <button
                 type="button"
                 onClick={() => handleToggleArchived(false)}
                 className="font-medium text-neutral-900 underline underline-offset-2 hover:text-neutral-600 transition-colors"
               >
-                Back to active
+                {t('Back to active')}
               </button>
             </div>
           )}
@@ -962,7 +963,7 @@ export default function CampaignsPage() {
                   disabled={bulkArchiveStatus === 'loading'}
                 >
                   <ArchiveRestore className="h-4 w-4" />
-                  Restore selected
+                  {t('Restore selected')}
                 </Button>
               ) : (
                 <>
@@ -974,7 +975,7 @@ export default function CampaignsPage() {
                     disabled={bulkArchiveStatus === 'loading'}
                   >
                     <Archive className="h-4 w-4" />
-                    Archive selected
+                    {t('Archive selected')}
                   </Button>
                   <Button
                     type="button"
@@ -984,7 +985,7 @@ export default function CampaignsPage() {
                     disabled={bulkDeleteStatus === 'loading'}
                   >
                     <Trash2 className="h-4 w-4" />
-                    Delete selected
+                    {t('Delete selected')}
                   </Button>
                 </>
               )}
@@ -1016,11 +1017,11 @@ export default function CampaignsPage() {
                     // archived campaign without leaving the scope.
                     <EmptyState
                       icon={Archive}
-                      title="No archived campaigns"
-                      description="Archiving hides a campaign from your list without deleting it. Its stats stay available."
+                      title={t('No archived campaigns')}
+                      description={t('Archiving hides a campaign from your list without deleting it. Its stats stay available.')}
                       action={
                         <Button variant="outline" onClick={() => handleToggleArchived(false)}>
-                          Back to active
+                          {t('Back to active')}
                         </Button>
                       }
                     />
@@ -1028,14 +1029,14 @@ export default function CampaignsPage() {
                     // Genuinely empty project — first-run state.
                     <EmptyState
                       icon={Mail}
-                      title="No campaigns yet"
-                      description="Send one-off emails to groups of contacts."
+                      title={t('No campaigns yet')}
+                      description={t('Send one-off emails to groups of contacts.')}
                       action={
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button>
                               <Plus className="h-4 w-4" />
-                              Create Campaign
+                              {t('Create Campaign')}
                               <ChevronDown className="h-4 w-4 ml-1" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -1044,9 +1045,9 @@ export default function CampaignsPage() {
                               <Link href="/campaigns/create" className="flex items-start gap-3">
                                 <Mail className="h-4 w-4 mt-0.5 text-neutral-700" />
                                 <div className="flex flex-col gap-0.5 flex-1">
-                                  <span className="font-medium text-sm">Empty campaign</span>
+                                  <span className="font-medium text-sm">{t('Empty campaign')}</span>
                                   <span className="text-xs text-neutral-500 leading-snug">
-                                    Start from scratch with a blank canvas
+                                    {t('Start from scratch with a blank canvas')}
                                   </span>
                                 </div>
                               </Link>
@@ -1055,9 +1056,9 @@ export default function CampaignsPage() {
                               <div className="flex items-start gap-3">
                                 <FileText className="h-4 w-4 mt-0.5 text-neutral-700" />
                                 <div className="flex flex-col gap-0.5 flex-1">
-                                  <span className="font-medium text-sm">From template</span>
+                                  <span className="font-medium text-sm">{t('From template')}</span>
                                   <span className="text-xs text-neutral-500 leading-snug">
-                                    Use an existing template as a starting point
+                                    {t('Use an existing template as a starting point')}
                                   </span>
                                 </div>
                               </div>
@@ -1066,9 +1067,9 @@ export default function CampaignsPage() {
                               <div className="flex items-start gap-3">
                                 <RefreshCw className="h-4 w-4 mt-0.5 text-neutral-700" />
                                 <div className="flex flex-col gap-0.5 flex-1">
-                                  <span className="font-medium text-sm">From previous campaign</span>
+                                  <span className="font-medium text-sm">{t('From previous campaign')}</span>
                                   <span className="text-xs text-neutral-500 leading-snug">
-                                    Copy content and settings from an existing campaign
+                                    {t('Copy content and settings from an existing campaign')}
                                   </span>
                                 </div>
                               </div>
@@ -1093,14 +1094,14 @@ export default function CampaignsPage() {
                           href={`/campaigns/${campaign.id}`}
                           data-card-link=""
                           className="flex-1 block p-6 pb-4 hover:bg-neutral-50/50 transition-colors rounded-t-xl focus-visible:outline-none"
-                          aria-label={`Open ${campaign.name}`}
+                          aria-label={t('Open {name}', {name: campaign.name})}
                         >
                           <div className="flex items-start justify-between gap-3">
                             <h3 className="font-semibold text-neutral-900 leading-snug truncate">{campaign.name}</h3>
                             {getStatusBadge(campaign.status)}
                           </div>
                           <p className="mt-0.5 text-sm text-neutral-500 truncate">
-                            {campaign.subject || <span className="italic text-neutral-400">No subject</span>}
+                            {campaign.subject || <span className="italic text-neutral-400">{t('No subject')}</span>}
                           </p>
                           <CampaignCardStats campaign={campaign} />
                         </Link>
@@ -1127,15 +1128,15 @@ export default function CampaignsPage() {
                 {data && data.totalPages > 1 && (
                   <div className="flex items-center justify-between">
                     <p className="text-sm text-neutral-500">
-                      Showing {(page - 1) * data.pageSize + 1} to {Math.min(page * data.pageSize, data.total)} of{' '}
-                      {data.total} campaigns
+                      {t('Showing')}{' '}{(page - 1) * data.pageSize + 1} {t('to')} {Math.min(page * data.pageSize, data.total)} {t('of')}{' '}
+                      {data.total} {t('campaigns')}
                     </p>
                     <div className="flex items-center gap-2">
                       <Button variant="outline" size="sm" onClick={() => setPage(p => p - 1)} disabled={page === 1}>
-                        Previous
+                        {t('Previous')}
                       </Button>
                       <span className="text-sm text-neutral-700">
-                        Page {page} of {data.totalPages}
+                        {t('Page')}{' '}{page} {t('of')} {data.totalPages}
                       </span>
                       <Button
                         variant="outline"
@@ -1143,7 +1144,7 @@ export default function CampaignsPage() {
                         onClick={() => setPage(p => p + 1)}
                         disabled={page === data.totalPages}
                       >
-                        Next
+                        {t('Next')}
                       </Button>
                     </div>
                   </div>
@@ -1157,15 +1158,15 @@ export default function CampaignsPage() {
           open={showCancelDialog}
           onOpenChange={setShowCancelDialog}
           onConfirm={handleCancel}
-          title={campaignToCancel?.status === CampaignStatus.SCHEDULED ? 'Stop this campaign?' : 'Cancel this campaign?'}
+          title={campaignToCancel?.status === CampaignStatus.SCHEDULED ? t('Stop this campaign?') : t('Cancel this campaign?')}
           description={
             campaignToCancel?.status === CampaignStatus.SCHEDULED
-              ? 'Nothing has been sent yet, so the campaign returns to draft and stays editable.'
-              : 'Sending stops now. If nothing has gone out yet the campaign returns to draft; otherwise it is permanently cancelled and contacts who already received it keep their copy.'
+              ? t('Nothing has been sent yet, so the campaign returns to draft and stays editable.')
+              : t('Sending stops now. If nothing has gone out yet the campaign returns to draft; otherwise it is permanently cancelled and contacts who already received it keep their copy.')
           }
-          cancelText="Keep sending"
+          cancelText={t('Keep sending')}
           icon={CircleStop}
-          confirmText={campaignToCancel?.status === CampaignStatus.SCHEDULED ? 'Stop campaign' : 'Cancel campaign'}
+          confirmText={campaignToCancel?.status === CampaignStatus.SCHEDULED ? t('Stop campaign') : t('Cancel campaign')}
           variant="destructive"
         />
 
@@ -1173,9 +1174,9 @@ export default function CampaignsPage() {
           open={showDeleteDialog}
           onOpenChange={setShowDeleteDialog}
           onConfirm={handleDelete}
-          title="Delete this draft?"
-          description="The draft and its content are gone for good."
-          confirmText="Delete campaign"
+          title={t('Delete this draft?')}
+          description={t('The draft and its content are gone for good.')}
+          confirmText={t('Delete campaign')}
           variant="destructive"
         />
 
@@ -1183,9 +1184,9 @@ export default function CampaignsPage() {
           open={showBulkDeleteDialog}
           onOpenChange={setShowBulkDeleteDialog}
           onConfirm={handleBulkDelete}
-          title={`Delete ${selectedIds.length} campaign${selectedIds.length === 1 ? '' : 's'}?`}
-          description="Only drafts can be deleted. If your selection includes a sent or scheduled campaign, nothing will be deleted."
-          confirmText="Delete campaigns"
+          title={t('Delete {length} campaign{value}?', {length: selectedIds.length, value: selectedIds.length === 1 ? '' : 's'})}
+          description={t('Only drafts can be deleted. If your selection includes a sent or scheduled campaign, nothing will be deleted.')}
+          confirmText={t('Delete campaigns')}
           variant="destructive"
           status={bulkDeleteStatus}
         />

@@ -1,5 +1,6 @@
 import {Input, cn} from '@plunk/ui';
 import {Search, X} from 'lucide-react';
+import {t} from '../../lib/i18n';
 
 /**
  * The search field at the start of a list toolbar. One component so every list page has
@@ -36,7 +37,7 @@ export function SearchInput({
       {value && (
         <button
           type="button"
-          aria-label="Clear search"
+          aria-label={t('Clear search')}
           onClick={() => (onClear ? onClear() : onChange(''))}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 transition-colors hover:text-neutral-600"
         >

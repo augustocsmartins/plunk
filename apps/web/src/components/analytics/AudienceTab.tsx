@@ -5,11 +5,12 @@ import {Bar, BarChart, CartesianGrid, ReferenceLine, XAxis, YAxis} from 'rechart
 import {type AnalyticsFilters, useAnalyticsData} from '../../lib/hooks/useAnalytics';
 import {computeDelta, formatBucket, formatBucketLong, formatCompact, formatCount} from './metrics';
 import {ChartSkeleton, DeltaLabel, FigureBand, Panel, PanelEmpty, PanelError, RowsSkeleton} from './primitives';
+import {t} from '../../lib/i18n';
 
 const config = {
-  newContacts: {label: 'New contacts', color: '#171717'},
-  unsubscribed: {label: 'Unsubscribed', color: '#a3a3a3'},
-  suppressed: {label: 'Bounced or reported spam', color: '#f87171'},
+  newContacts: {label: t('New contacts'), color: '#171717'},
+  unsubscribed: {label: t('Unsubscribed'), color: '#a3a3a3'},
+  suppressed: {label: t('Bounced or reported spam'), color: '#f87171'},
 } satisfies ChartConfig;
 
 const grows = {kind: 'count', better: 'up'} as const;
@@ -30,41 +31,41 @@ export function AudienceTab({filters}: {filters: AnalyticsFilters}) {
         failed={!!error && !data}
         figures={[
           {
-            label: 'Subscribed contacts',
+            label: t('Subscribed contacts'),
             value: data && formatCount(data.subscribedContacts),
             detail: data && `of ${formatCount(data.totalContacts)} contacts`,
           },
           {
-            label: 'New contacts',
+            label: t('New contacts'),
             value: totals && formatCount(totals.newContacts),
             detail: totals && before && <DeltaLabel delta={computeDelta(grows, totals.newContacts, before.newContacts, hadBefore)} />,
           },
           {
-            label: 'Unsubscribed',
+            label: t('Unsubscribed'),
             value: totals && formatCount(totals.unsubscribed),
             detail: totals && before && (
               <DeltaLabel delta={computeDelta(shrinks, totals.unsubscribed, before.unsubscribed, hadBefore)} />
             ),
           },
           {
-            label: 'Bounced or reported spam',
+            label: t('Bounced or reported spam'),
             value: totals && formatCount(totals.suppressed),
             detail: totals && before && (
               <DeltaLabel delta={computeDelta(shrinks, totals.suppressed, before.suppressed, hadBefore)} />
             ),
           },
           {
-            label: 'Net growth',
+            label: t('Net growth'),
             value: totals && `${net > 0 ? '+' : net < 0 ? '−' : ''}${formatCount(Math.abs(net))}`,
             tone: totals && net < 0 ? 'text-red-600' : undefined,
-            detail: totals && before && (hadBefore > 0 ? `${previousNet >= 0 ? '+' : '−'}${formatCount(Math.abs(previousNet))} the period before` : 'No earlier data'),
+            detail: totals && before && (hadBefore > 0 ? t('{value}{value2} the period before', {value: previousNet >= 0 ? '+' : '−', value2: formatCount(Math.abs(previousNet))}) : t('No earlier data')),
           },
         ]}
       />
 
       <Panel
-        title={`List growth ${data?.granularity === 'hour' ? 'by hour' : 'by day'}`}
-        description="New contacts above the line; contacts who unsubscribed, bounced or reported spam below it."
+        title={t('List growth {value}', {value: data?.granularity === 'hour' ? 'by hour' : 'by day'})}
+        description={t('New contacts above the line; contacts who unsubscribed, bounced or reported spam below it.')}
         actions={<GrowthLegend />}
       >
         {error && !data ? (
@@ -104,7 +105,7 @@ function GrowthChart({data}: {data: AnalyticsAudience}) {
   }));
 
   if (rows.every(r => r.newContacts === 0 && r.unsubscribed === 0 && r.suppressed === 0)) {
-    return <PanelEmpty height={260}>No contacts joined or left in this period.</PanelEmpty>;
+    return <PanelEmpty height={260}>{t('No contacts joined or left in this period.')}</PanelEmpty>;
   }
 
   return (
@@ -142,7 +143,7 @@ function GrowthChart({data}: {data: AnalyticsAudience}) {
                       </div>
                     ))}
                     <div className="flex items-center justify-between gap-4 border-t border-neutral-100 pt-1">
-                      <dt className="font-medium text-neutral-900">Net</dt>
+                      <dt className="font-medium text-neutral-900">{t('Net')}</dt>
                       <dd className="font-medium tabular-nums text-neutral-900">
                         {net > 0 ? '+' : net < 0 ? '−' : ''}
                         {formatCount(Math.abs(net))}
@@ -166,13 +167,13 @@ function TopEvents({filters}: {filters: AnalyticsFilters}) {
   const {data, error, mutate} = useAnalyticsData<AnalyticsTopEvents>('events', filters);
 
   return (
-    <Panel title="Events" description="The events your app tracked most often, against the period before.">
+    <Panel title={t('Events')} description={t('The events your app tracked most often, against the period before.')}>
       {error && !data ? (
         <PanelError onRetry={() => void mutate()} />
       ) : !data ? (
         <RowsSkeleton />
       ) : data.events.length === 0 ? (
-        <PanelEmpty>No events were tracked in this period. Events you send with the API show up here.</PanelEmpty>
+        <PanelEmpty>{t('No events were tracked in this period. Events you send with the API show up here.')}</PanelEmpty>
       ) : (
         <ul className="divide-y divide-neutral-100 border-t border-neutral-100">
           {data.events.map(event => (
@@ -182,7 +183,7 @@ function TopEvents({filters}: {filters: AnalyticsFilters}) {
               <DeltaLabel
                 className="w-20 text-right"
                 neutral
-                fallback="New"
+                fallback={t('New')}
                 delta={computeDelta({kind: 'count', better: 'up'}, event.count, event.previousCount, event.previousCount)}
               />
             </li>

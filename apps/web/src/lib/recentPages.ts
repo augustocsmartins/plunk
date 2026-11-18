@@ -1,3 +1,4 @@
+import {t} from './i18n';
 const RECENT_KEY = 'cmdPaletteRecents';
 const MAX_RECENT = 5;
 
@@ -21,18 +22,18 @@ export function addRecentPage(page: RecentPage) {
 }
 
 const STATIC_LABELS: Record<string, string> = {
-  '/': 'Dashboard',
-  '/contacts': 'Contacts',
-  '/segments': 'Segments',
-  '/activity': 'Activity',
-  '/analytics': 'Analytics',
-  '/templates': 'Templates',
-  '/workflows': 'Workflows',
-  '/campaigns': 'Campaigns',
-  '/settings': 'Settings',
-  '/campaigns/create': 'New Campaign',
-  '/templates/create': 'New Template',
-  '/segments/new': 'New Segment',
+  '/': t('Dashboard'),
+  '/contacts': t('Contacts'),
+  '/segments': t('Segments'),
+  '/activity': t('Activity'),
+  '/analytics': t('Analytics'),
+  '/templates': t('Templates'),
+  '/workflows': t('Workflows'),
+  '/campaigns': t('Campaigns'),
+  '/settings': t('Settings'),
+  '/campaigns/create': t('New Campaign'),
+  '/templates/create': t('New Template'),
+  '/segments/new': t('New Segment'),
 };
 
 const DYNAMIC_LABELS: [RegExp, string][] = [

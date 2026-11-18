@@ -14,7 +14,9 @@ function port(name, fallback) {
 
 const wikiPort = port('WIKI_PORT', 1000);
 const nginxPort = port('NGINX_PORT', 80);
-const ports = [nginxPort, 8080, 3000, 4000];
+const landingEnabled = process.env.DISABLE_LANDING !== 'true';
+const ports = [nginxPort, 8080, 3000];
+if (landingEnabled) ports.push(4000);
 if (process.env.DISABLE_WIKI !== 'true') ports.push(wikiPort);
 if (process.env.DISABLE_SMTP !== 'true') {
   ports.push(port('PORT_SECURE', 465), port('PORT_SUBMISSION', 587), 8888);
@@ -31,7 +33,9 @@ module.exports = {
       CERT_PATH: '/certs', ACME_JSON_PATH: '/certs/acme.json',
     })]),
     app('web', 'apps/web/server.js', {PORT: 3000, HOSTNAME: '0.0.0.0'}, '/app/apps/web/.next/standalone'),
-    app('landing', 'apps/landing/server.js', {PORT: 4000, HOSTNAME: '0.0.0.0'}, '/app/apps/landing/.next/standalone'),
+    ...(landingEnabled ? [
+      app('landing', 'apps/landing/server.js', {PORT: 4000, HOSTNAME: '0.0.0.0'}, '/app/apps/landing/.next/standalone'),
+    ] : []),
     ...(process.env.DISABLE_WIKI === 'true' ? [] : [
       app('wiki', 'apps/wiki/server.js', {PORT: wikiPort, HOSTNAME: '0.0.0.0'}, '/app/apps/wiki/.next/standalone'),
     ]),

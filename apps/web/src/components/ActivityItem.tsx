@@ -28,6 +28,7 @@ import useSWR from 'swr';
 import {network} from '../lib/network';
 
 import {EmailPreviewModal, type EmailPreviewModalProps} from './EmailPreviewModal';
+import {t} from '../lib/i18n';
 
 type Metadata = Record<string, unknown>;
 
@@ -61,17 +62,17 @@ function getSubscriptionReason(metadata: Metadata): string | undefined {
 
   switch (eventData?.reason) {
     case 'bounce':
-      return 'Removed after a hard bounce';
+      return t('Removed after a hard bounce');
     case 'complaint':
-      return 'Removed after a spam complaint';
+      return t('Removed after a spam complaint');
     case 'snooze': {
       // Snoozing reuses `contact.unsubscribed`, so without this the feed would report a
       // recipient who asked for a two-week break as a lost subscriber.
       const until = formatSnoozeDate(eventData?.snoozedUntil);
-      return until ? `Snoozed until ${until}` : 'Snoozed';
+      return until ? t('Snoozed until {until}', {until: until}) : t('Snoozed');
     }
     case 'snooze_expired':
-      return 'Snooze ended, resubscribed automatically';
+      return t('Snooze ended, resubscribed automatically');
     default:
       return undefined;
   }
@@ -114,17 +115,17 @@ function getSource(activity: Activity): {label: string; href?: string} | undefin
   if (type.startsWith('workflow.') && type !== 'workflow.email.scheduled') return undefined;
   const campaign = str(metadata.campaignName);
   if (campaign) {
-    return {label: `Campaign: ${campaign}`, href: str(metadata.campaignId) && `/campaigns/${str(metadata.campaignId)}`};
+    return {label: t('Campaign: {campaign}', {campaign: campaign}), href: str(metadata.campaignId) && `/campaigns/${str(metadata.campaignId)}`};
   }
   const workflow = str(metadata.workflowName);
   if (workflow) {
-    return {label: `Workflow: ${workflow}`, href: str(metadata.workflowId) && `/workflows/${str(metadata.workflowId)}`};
+    return {label: t('Workflow: {workflow}', {workflow: workflow}), href: str(metadata.workflowId) && `/workflows/${str(metadata.workflowId)}`};
   }
   if (str(metadata.templateId)) {
-    return {label: 'Transactional template', href: `/templates/${str(metadata.templateId)}`};
+    return {label: t('Transactional template'), href: `/templates/${str(metadata.templateId)}`};
   }
   if (metadata.sourceType === 'TRANSACTIONAL') {
-    return {label: 'Transactional'};
+    return {label: t('Transactional')};
   }
   return undefined;
 }
@@ -140,7 +141,7 @@ const TILE = {
 /** "5 minutes ago" for today; older rows sit under a day heading, so the clock time reads better there */
 function formatWhen(date: dayjs.Dayjs, upcoming: boolean): string {
   if (upcoming) {
-    return date.isSame(dayjs(), 'day') ? `today at ${date.format('HH:mm')}` : date.format('ddd, MMM D [at] HH:mm');
+    return date.isSame(dayjs(), 'day') ? t('today at {value}', {value: date.format('HH:mm')}) : date.format('ddd, MMM D [at] HH:mm');
   }
   if (!date.isSame(dayjs(), 'day')) {
     return date.format('HH:mm');
@@ -171,33 +172,33 @@ function getActivityConfig(activity: Activity): ActivityConfig {
       return {
         icon: Zap,
         tile: TILE.amber,
-        title: str(metadata.eventName) ?? 'Event triggered',
-        badge: {label: 'Event', variant: 'default'},
+        title: str(metadata.eventName) ?? t('Event triggered'),
+        badge: {label: t('Event'), variant: 'default'},
       };
 
     case 'email.sent':
       return {
         icon: Send,
         tile: TILE.neutral,
-        title: subject ?? 'Email sent',
-        badge: {label: 'Sent', variant: 'default'},
+        title: subject ?? t('Email sent'),
+        badge: {label: t('Sent'), variant: 'default'},
       };
 
     case 'email.delivered':
       return {
         icon: CheckCircle,
         tile: TILE.emerald,
-        title: subject ?? 'Email delivered',
-        badge: {label: 'Delivered', variant: 'default'},
+        title: subject ?? t('Email delivered'),
+        badge: {label: t('Delivered'), variant: 'default'},
       };
 
     case 'email.received':
       return {
         icon: Inbox,
         tile: TILE.neutral,
-        title: subject ?? 'Email received',
-        badge: {label: 'Received', variant: 'default'},
-        detail: activity.contactEmail ? `From ${activity.contactEmail}` : 'Inbound email',
+        title: subject ?? t('Email received'),
+        badge: {label: t('Received'), variant: 'default'},
+        detail: activity.contactEmail ? `From ${activity.contactEmail}` : t('Inbound email'),
       };
 
     case 'email.opened': {
@@ -205,8 +206,8 @@ function getActivityConfig(activity: Activity): ActivityConfig {
       return {
         icon: Eye,
         tile: TILE.emerald,
-        title: subject ?? 'Email opened',
-        badge: {label: 'Opened', variant: 'default'},
+        title: subject ?? t('Email opened'),
+        badge: {label: t('Opened'), variant: 'default'},
         detail: opens && opens > 1 ? `Opened ${opens} times` : undefined,
       };
     }
@@ -216,8 +217,8 @@ function getActivityConfig(activity: Activity): ActivityConfig {
       return {
         icon: MousePointerClick,
         tile: TILE.sky,
-        title: subject ?? 'Email clicked',
-        badge: {label: 'Clicked', variant: 'default'},
+        title: subject ?? t('Email clicked'),
+        badge: {label: t('Clicked'), variant: 'default'},
         detail: clicks && clicks > 1 ? `Clicked ${clicks} times` : undefined,
       };
     }
@@ -226,33 +227,33 @@ function getActivityConfig(activity: Activity): ActivityConfig {
       return {
         icon: XCircle,
         tile: TILE.red,
-        title: subject ?? 'Email bounced',
-        badge: {label: 'Bounced', variant: 'destructive'},
-        detail: str(metadata.bounceType) === 'Permanent' ? 'Hard bounce' : undefined,
+        title: subject ?? t('Email bounced'),
+        badge: {label: t('Bounced'), variant: 'destructive'},
+        detail: str(metadata.bounceType) === 'Permanent' ? t('Hard bounce') : undefined,
       };
 
     case 'email.complaint':
       return {
         icon: ShieldAlert,
         tile: TILE.red,
-        title: subject ?? 'Spam complaint',
-        badge: {label: 'Complaint', variant: 'destructive'},
+        title: subject ?? t('Spam complaint'),
+        badge: {label: t('Complaint'), variant: 'destructive'},
       };
 
     case 'workflow.started':
       return {
         icon: Workflow,
         tile: TILE.amber,
-        title: str(metadata.workflowName) ?? 'Workflow started',
-        badge: {label: 'Started', variant: 'default'},
+        title: str(metadata.workflowName) ?? t('Workflow started'),
+        badge: {label: t('Started'), variant: 'default'},
       };
 
     case 'workflow.completed':
       return {
         icon: CheckCheck,
         tile: TILE.amber,
-        title: str(metadata.workflowName) ?? 'Workflow completed',
-        badge: {label: 'Completed', variant: 'default'},
+        title: str(metadata.workflowName) ?? t('Workflow completed'),
+        badge: {label: t('Completed'), variant: 'default'},
         detail: str(metadata.exitReason) ? `Exited: ${str(metadata.exitReason)}` : undefined,
       };
 
@@ -261,8 +262,8 @@ function getActivityConfig(activity: Activity): ActivityConfig {
       return {
         icon: resumed ? Clock : UserPlus,
         tile: TILE.emerald,
-        title: str(metadata.sourceSubject) ?? (resumed ? 'Snooze ended' : 'Contact subscribed'),
-        badge: {label: resumed ? 'Resumed' : 'Subscribed', variant: 'default'},
+        title: str(metadata.sourceSubject) ?? (resumed ? t('Snooze ended') : t('Contact subscribed')),
+        badge: {label: resumed ? t('Resumed') : t('Subscribed'), variant: 'default'},
         detail: getSubscriptionReason(metadata),
       };
     }
@@ -272,10 +273,10 @@ function getActivityConfig(activity: Activity): ActivityConfig {
       return {
         icon: snoozed ? Clock : UserMinus,
         tile: TILE.neutral,
-        title: str(metadata.sourceSubject) ?? (snoozed ? 'Contact snoozed' : 'Contact unsubscribed'),
+        title: str(metadata.sourceSubject) ?? (snoozed ? t('Contact snoozed') : t('Contact unsubscribed')),
         // `outline` is this feed's marker for scheduled, not-yet-happened items; a past
         // opt-out takes the muted fill instead.
-        badge: {label: snoozed ? 'Snoozed' : 'Unsubscribed', variant: 'neutral'},
+        badge: {label: snoozed ? t('Snoozed') : t('Unsubscribed'), variant: 'neutral'},
         detail: getSubscriptionReason(metadata),
       };
     }
@@ -285,8 +286,8 @@ function getActivityConfig(activity: Activity): ActivityConfig {
       return {
         icon: Calendar,
         tile: TILE.sky,
-        title: str(metadata.campaignName) ?? 'Campaign scheduled',
-        badge: {label: 'Scheduled', variant: 'outline'},
+        title: str(metadata.campaignName) ?? t('Campaign scheduled'),
+        badge: {label: t('Scheduled'), variant: 'outline'},
         detail: recipients ? `${recipients.toLocaleString()} recipients` : undefined,
       };
     }
@@ -295,8 +296,8 @@ function getActivityConfig(activity: Activity): ActivityConfig {
       return {
         icon: Calendar,
         tile: TILE.amber,
-        title: str(metadata.stepName) ?? 'Workflow email scheduled',
-        badge: {label: 'Scheduled', variant: 'outline'},
+        title: str(metadata.stepName) ?? t('Workflow email scheduled'),
+        badge: {label: t('Scheduled'), variant: 'outline'},
         detail: subject,
       };
 
@@ -304,16 +305,16 @@ function getActivityConfig(activity: Activity): ActivityConfig {
       return {
         icon: Calendar,
         tile: TILE.neutral,
-        title: subject ?? 'Email scheduled',
-        badge: {label: 'Scheduled', variant: 'outline'},
+        title: subject ?? t('Email scheduled'),
+        badge: {label: t('Scheduled'), variant: 'outline'},
       };
 
     default:
       return {
         icon: AlertCircle,
         tile: TILE.neutral,
-        title: 'Unknown activity',
-        badge: {label: 'Unknown', variant: 'outline'},
+        title: t('Unknown activity'),
+        badge: {label: t('Unknown'), variant: 'outline'},
       };
   }
 }
@@ -330,19 +331,19 @@ function getDetails(activity: Activity): {label: string; value: ReactNode}[] {
   };
 
   if (isEmailActivity(type) || type === SCHEDULED_EMAIL) {
-    add('Subject', str(metadata.subject));
+    add(t('Subject'), str(metadata.subject));
     const fromName = str(metadata.fromName);
     const from = str(metadata.from);
     const isInbound = metadata.sourceType === 'INBOUND';
-    add('From', isInbound ? activity.contactEmail : from && (fromName ? `${fromName} <${from}>` : from));
-    add('To', isInbound ? from : activity.contactEmail);
-    add('Reply-to', str(metadata.replyTo));
+    add(t('From'), isInbound ? activity.contactEmail : from && (fromName ? `${fromName} <${from}>` : from));
+    add(t('To'), isInbound ? from : activity.contactEmail);
+    add(t('Reply-to'), str(metadata.replyTo));
   }
 
   if (type === 'email.clicked') {
     const link = str(metadata.link);
     add(
-      'Link',
+      t('Link'),
       link && (
         <a
           href={link}
@@ -359,37 +360,37 @@ function getDetails(activity: Activity): {label: string; value: ReactNode}[] {
   if (type === 'email.bounced') {
     const bounceType = str(metadata.bounceType);
     add(
-      'Bounce',
+      t('Bounce'),
       bounceType === 'Permanent'
-        ? 'Hard bounce: the address does not exist or refuses mail. The contact was unsubscribed.'
+        ? t('Hard bounce: the address does not exist or refuses mail. The contact was unsubscribed.')
         : bounceType
-          ? `${bounceType} bounce. The contact was unsubscribed to be safe.`
+          ? t('{bounceType} bounce. The contact was unsubscribed to be safe.', {bounceType: bounceType})
           : undefined,
     );
-    add('Error', str(metadata.error));
+    add(t('Error'), str(metadata.error));
   }
 
   if (type === 'email.complaint') {
-    add('Complaint', 'The recipient marked this email as spam. The contact was unsubscribed.');
+    add(t('Complaint'), t('The recipient marked this email as spam. The contact was unsubscribed.'));
   }
 
   if (type === 'workflow.started' || type === 'workflow.completed') {
-    add('Status', str(metadata.status)?.toLowerCase());
-    add('Exit reason', str(metadata.exitReason));
+    add(t('Status'), str(metadata.status)?.toLowerCase());
+    add(t('Exit reason'), str(metadata.exitReason));
   }
 
   if (type === 'contact.subscribed' || type === 'contact.unsubscribed') {
-    add('Reason', getSubscriptionReason(metadata));
-    add('From email', str(metadata.sourceSubject));
+    add(t('Reason'), getSubscriptionReason(metadata));
+    add(t('From email'), str(metadata.sourceSubject));
   }
 
   if (type === 'campaign.scheduled' || type === 'workflow.email.scheduled') {
-    add('Sends', dayjs(activity.timestamp).format('ddd, MMM D, YYYY [at] HH:mm'));
-    add('Subject', str(metadata.subject));
+    add(t('Sends'), dayjs(activity.timestamp).format('ddd, MMM D, YYYY [at] HH:mm'));
+    add(t('Subject'), str(metadata.subject));
   }
 
   if (type === SCHEDULED_EMAIL) {
-    add('Sends', dayjs(activity.timestamp).format('ddd, MMM D, YYYY [at] HH:mm'));
+    add(t('Sends'), dayjs(activity.timestamp).format('ddd, MMM D, YYYY [at] HH:mm'));
   }
 
   return rows;
@@ -428,10 +429,10 @@ export const ActivityItem = memo(function ActivityItem({activity, status = 'comp
   const cancelScheduled = async () => {
     try {
       await network.fetch('POST', `/emails/${String(activity.metadata.emailId)}/cancel`);
-      toast.success('Scheduled email canceled');
+      toast.success(t('Scheduled email canceled'));
       onChange?.();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Could not cancel this email');
+      toast.error(error instanceof Error ? error.message : t('Could not cancel this email'));
       // It may have gone out meanwhile; reloading shows where it is now
       onChange?.();
       throw error;
@@ -523,7 +524,7 @@ export const ActivityItem = memo(function ActivityItem({activity, status = 'comp
             onClick={() => setOpen(o => !o)}
             aria-expanded={open}
             aria-controls={detailsId}
-            aria-label={open ? 'Hide details' : 'Show details'}
+            aria-label={open ? t('Hide details') : t('Show details')}
             className="flex h-6 w-6 items-center justify-center rounded text-neutral-400 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
           >
             <ChevronRight
@@ -560,20 +561,20 @@ export const ActivityItem = memo(function ActivityItem({activity, status = 'comp
               {canPreview && (
                 <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setShowPreview(true)}>
                   <Eye className="h-3 w-3" />
-                  Preview email
+                  {t('Preview email')}
                 </Button>
               )}
               {canCancel && (
                 <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setConfirmCancel(true)}>
                   <CalendarX className="h-3 w-3" />
-                  Cancel send
+                  {t('Cancel send')}
                 </Button>
               )}
             </div>
           )}
 
           {details.length === 0 && !eventData && !canPreview && (
-            <p className="text-xs text-neutral-500">Nothing more was recorded for this activity.</p>
+            <p className="text-xs text-neutral-500">{t('Nothing more was recorded for this activity.')}</p>
           )}
         </div>
       )}
@@ -583,10 +584,10 @@ export const ActivityItem = memo(function ActivityItem({activity, status = 'comp
           open={confirmCancel}
           onOpenChange={setConfirmCancel}
           onConfirm={cancelScheduled}
-          title="Cancel this scheduled email?"
-          description={`It will not be sent to ${activity.contactEmail ?? 'this contact'} and is not billed. To send it later, send it again from your code.`}
-          cancelText="Keep it scheduled"
-          confirmText="Cancel send"
+          title={t('Cancel this scheduled email?')}
+          description={t('It will not be sent to {value} and is not billed. To send it later, send it again from your code.', {value: activity.contactEmail ?? 'this contact'})}
+          cancelText={t('Keep it scheduled')}
+          confirmText={t('Cancel send')}
           icon={CalendarX}
           variant="destructive"
         />

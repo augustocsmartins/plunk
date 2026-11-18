@@ -5,27 +5,30 @@ import {useState} from 'react';
 import {toast} from 'sonner';
 
 import {network} from '../../lib/network';
+import {t} from '../../lib/i18n';
 
 export const STEP_TYPE_LABELS: Record<WorkflowStep['type'], string> = {
-  TRIGGER:        'Trigger',
-  SEND_EMAIL:     'Send Email',
-  DELAY:          'Delay',
-  WAIT_FOR_EVENT: 'Wait for Event',
-  CONDITION:      'Condition',
-  EXIT:           'Exit',
-  WEBHOOK:        'Webhook',
-  UPDATE_CONTACT: 'Update Contact',
+  TRIGGER:        t('Trigger'),
+  SEND_EMAIL:     t('Send Email'),
+  SEND_WHATSAPP:  t('Send WhatsApp'),
+  DELAY:          t('Delay'),
+  WAIT_FOR_EVENT: t('Wait for Event'),
+  CONDITION:      t('Condition'),
+  EXIT:           t('Exit'),
+  WEBHOOK:        t('Webhook'),
+  UPDATE_CONTACT: t('Update Contact'),
 };
 
 export const STEP_TYPE_DESCRIPTIONS: Record<WorkflowStep['type'], string> = {
-  TRIGGER:        'Starts the workflow when a specific event is received.',
-  SEND_EMAIL:     'Sends an email to the contact using a template you choose.',
-  DELAY:          'Pauses the workflow for a set amount of time before continuing.',
-  WAIT_FOR_EVENT: 'Waits until the contact triggers a specific event, then continues.',
-  CONDITION:      'Splits the flow based on contact data — each path leads to different steps.',
-  EXIT:           'Ends the workflow for the contact.',
-  WEBHOOK:        "Makes an HTTP request to an external URL with the contact's data.",
-  UPDATE_CONTACT: "Sets or updates fields on the contact's profile.",
+  TRIGGER:        t('Starts the workflow when a specific event is received.'),
+  SEND_EMAIL:     t('Sends an email to the contact using a template you choose.'),
+  SEND_WHATSAPP:  t('Sends a transactional WhatsApp message to the contact\'s phone number.'),
+  DELAY:          t('Pauses the workflow for a duration or until a specified date.'),
+  WAIT_FOR_EVENT: t('Waits until the contact triggers a specific event, then continues.'),
+  CONDITION:      t('Splits the flow based on contact data — each path leads to different steps.'),
+  EXIT:           t('Ends the workflow for the contact.'),
+  WEBHOOK:        t('Makes an HTTP request to an external URL with the contact\'s data.'),
+  UPDATE_CONTACT: t('Sets or updates fields on the contact\'s profile.'),
 };
 
 export type StepWithTemplate = WorkflowStep & {
@@ -57,10 +60,10 @@ export function useStepUpdate(workflowId: string, stepId: string) {
         `/workflows/${workflowId}/steps/${stepId}`,
         input as Parameters<typeof network.fetch>[2],
       );
-      toast.success('Step updated');
+      toast.success(t('Step updated'));
       return true;
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t save the step. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t save the step. Try again.'));
       return false;
     } finally {
       setIsSubmitting(false);
@@ -101,21 +104,21 @@ export function StepDialogShell({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit {STEP_TYPE_LABELS[step.type] ?? step.type}</DialogTitle>
+          <DialogTitle>{t('Edit')}{' '}{STEP_TYPE_LABELS[step.type] ?? step.type}</DialogTitle>
           {STEP_TYPE_DESCRIPTIONS[step.type] && (
             <p className="text-sm text-neutral-500 mt-1">{STEP_TYPE_DESCRIPTIONS[step.type]}</p>
           )}
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-5">
           <div>
-            <Label htmlFor="editStepName">Step name</Label>
+            <Label htmlFor="editStepName">{t('Step name')}</Label>
             <Input
               id="editStepName"
               type="text"
               value={name}
               onChange={e => onNameChange(e.target.value)}
               required
-              placeholder="e.g., Send Welcome Email"
+              placeholder={t('e.g., Send Welcome Email')}
               className="mt-1.5"
             />
           </div>
@@ -124,10 +127,10 @@ export function StepDialogShell({
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving…' : 'Save Changes'}
+              {isSubmitting ? t('Saving…') : t('Save Changes')}
             </Button>
           </DialogFooter>
         </form>

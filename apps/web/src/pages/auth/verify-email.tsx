@@ -8,6 +8,7 @@ import {useRouter} from 'next/router';
 import React, {useEffect, useRef, useState} from 'react';
 
 import {network} from '../../lib/network';
+import {t} from '../../lib/i18n';
 
 const dotGrid = {
   backgroundColor: '#fafafa',
@@ -116,15 +117,15 @@ export default function VerifyEmail() {
       const response = await network.fetch<{success: boolean}>('POST', '/auth/request-verification');
 
       if (response.success) {
-        setResendMessage('Verification email sent! Please check your inbox.');
+        setResendMessage(t('Verification email sent! Please check your inbox.'));
         const expiryTime = Date.now() + 60000;
         setCooldownExpiry(expiryTime);
         localStorage.setItem('plunk:email-verification-cooldown', expiryTime.toString());
       } else {
-        setResendMessage('Couldn’t send the verification email. Try again in a moment.');
+        setResendMessage(t('Couldn’t send the verification email. Try again in a moment.'));
       }
     } catch (error) {
-      setResendMessage(error instanceof Error ? error.message : 'Couldn’t send the verification email. Try again in a moment.');
+      setResendMessage(error instanceof Error ? error.message : t('Couldn’t send the verification email. Try again in a moment.'));
       const expiryTime = Date.now() + 60000;
       setCooldownExpiry(expiryTime);
       localStorage.setItem('plunk:email-verification-cooldown', expiryTime.toString());
@@ -135,14 +136,14 @@ export default function VerifyEmail() {
 
   return (
     <>
-      <NextSeo title="Verify email" />
+      <NextSeo title={t('Verify email')} />
       <div className="min-h-screen flex items-center justify-center py-12" style={dotGrid}>
         <div className="flex flex-col gap-6 max-w-md w-full px-4">
           <div className="flex items-center justify-center gap-2.5">
             <div className="h-8 w-8 rounded-lg bg-white shadow-sm border border-neutral-200 flex items-center justify-center p-1">
               <Image src="/assets/logo.svg" alt="" aria-hidden width={24} height={24} />
             </div>
-            <span className="text-lg font-bold tracking-tight text-neutral-900">Plunk</span>
+            <span className="text-lg font-bold tracking-tight text-neutral-900">{t('Plunk')}</span>
           </div>
 
           <Card>
@@ -169,19 +170,19 @@ export default function VerifyEmail() {
                         </svg>
                       </div>
                       <div className="flex flex-col gap-1.5">
-                        <h1 className="text-xl font-bold tracking-tight">Check your email</h1>
+                        <h1 className="text-xl font-bold tracking-tight">{t('Check your email')}</h1>
                         <p className="text-sm text-neutral-500">
-                          We sent a verification link to your inbox. Click it to verify your account.
+                          {t('We sent a verification link to your inbox. Click it to verify your account.')}
                         </p>
                       </div>
 
                       <div className="flex flex-col gap-2 w-full mt-2">
                         <Button onClick={handleResend} disabled={isResending || cooldownExpiry !== null} className="w-full">
                           {isResending
-                            ? 'Sending…'
+                            ? t('Sending…')
                             : cooldownExpiry !== null
-                              ? `Resend in ${remainingSeconds}s`
-                              : 'Resend verification email'}
+                              ? t('Resend in {remainingSeconds}s', {remainingSeconds: remainingSeconds})
+                              : t('Resend verification email')}
                         </Button>
 
                         {resendMessage && (
@@ -191,7 +192,7 @@ export default function VerifyEmail() {
                         )}
 
                         <Button asChild variant="outline" className="w-full">
-                          <Link href="/auth/login">Back to login</Link>
+                          <Link href="/auth/login">{t('Back to login')}</Link>
                         </Button>
                       </div>
                     </motion.div>
@@ -210,8 +211,8 @@ export default function VerifyEmail() {
                         <IconSpinner size="sm" />
                       </div>
                       <div className="flex flex-col gap-1.5">
-                        <h1 className="text-xl font-bold tracking-tight">Verifying…</h1>
-                        <p className="text-sm text-neutral-500">Please wait a moment.</p>
+                        <h1 className="text-xl font-bold tracking-tight">{t('Verifying…')}</h1>
+                        <p className="text-sm text-neutral-500">{t('Please wait a moment.')}</p>
                       </div>
                     </motion.div>
                   )}
@@ -231,8 +232,8 @@ export default function VerifyEmail() {
                         </svg>
                       </div>
                       <div className="flex flex-col gap-1.5">
-                        <h1 className="text-xl font-bold tracking-tight">Email verified</h1>
-                        <p className="text-sm text-neutral-500">Redirecting to your dashboard...</p>
+                        <h1 className="text-xl font-bold tracking-tight">{t('Email verified')}</h1>
+                        <p className="text-sm text-neutral-500">{t('Redirecting to your dashboard...')}</p>
                       </div>
                     </motion.div>
                   )}
@@ -252,17 +253,17 @@ export default function VerifyEmail() {
                         </svg>
                       </div>
                       <div className="flex flex-col gap-1.5">
-                        <h1 className="text-xl font-bold tracking-tight">Verification failed</h1>
-                        <p className="text-sm text-neutral-500">{errorMessage}</p>
+                        <h1 className="text-xl font-bold tracking-tight">{t('Verification failed')}</h1>
+                        <p className="text-sm text-neutral-500">{t(errorMessage)}</p>
                       </div>
 
                       <div className="flex flex-col gap-2 w-full mt-2">
                         <Button onClick={handleResend} disabled={isResending || cooldownExpiry !== null} className="w-full">
                           {isResending
-                            ? 'Sending…'
+                            ? t('Sending…')
                             : cooldownExpiry !== null
-                              ? `Resend in ${remainingSeconds}s`
-                              : 'Resend verification email'}
+                              ? t('Resend in {remainingSeconds}s', {remainingSeconds: remainingSeconds})
+                              : t('Resend verification email')}
                         </Button>
 
                         {resendMessage && (
@@ -272,7 +273,7 @@ export default function VerifyEmail() {
                         )}
 
                         <Button asChild variant="outline" className="w-full">
-                          <Link href="/auth/login">Back to login</Link>
+                          <Link href="/auth/login">{t('Back to login')}</Link>
                         </Button>
                       </div>
                     </motion.div>

@@ -1,12 +1,13 @@
 import {Button} from '@plunk/ui';
 import type {ProjectSecurityMetrics, SecurityLevel} from '@plunk/types';
-import {AlertTriangle, Ban, MailCheck, Sparkles} from 'lucide-react';
+import {AlertTriangle, Ban, MailCheck} from 'lucide-react';
 import type {LucideIcon} from 'lucide-react';
 import Link from 'next/link';
 import type {ReactNode} from 'react';
 import {useState} from 'react';
 import {toast} from 'sonner';
 import {network} from '../lib/network';
+import {t} from '../lib/i18n';
 
 type Tone = 'critical' | 'warning' | 'neutral';
 
@@ -49,35 +50,35 @@ const TONE_STYLES: Record<Tone, {container: string; icon: string; body: string; 
  */
 const DISABLED_COPY: Record<string, {body: string; action: string; href: string}> = {
   CARD_VERIFICATION_FAILED: {
-    body: 'Your card declined the charge we use to confirm it supports monthly billing. This is common with prepaid, virtual and single-use cards. Update your card and sending resumes as soon as it passes.',
-    action: 'Update card',
+    body: t('Your card declined the charge we use to confirm it supports monthly billing. This is common with prepaid, virtual and single-use cards. Update your card and sending resumes as soon as it passes.'),
+    action: t('Update card'),
     href: '/settings?tab=billing',
   },
   CARD_VERIFICATION_REQUIRED: {
-    body: 'We couldn’t confirm your card supports monthly billing. Update your card and sending resumes as soon as it passes.',
-    action: 'Update card',
+    body: t('We couldn’t confirm your card supports monthly billing. Update your card and sending resumes as soon as it passes.'),
+    action: t('Update card'),
     href: '/settings?tab=billing',
   },
   PAYMENT_FAILED: {
-    body: 'Your last payment didn’t go through. Update your payment method and we’ll retry it straight away.',
-    action: 'Update payment method',
+    body: t('Your last payment didn’t go through. Update your payment method and we’ll retry it straight away.'),
+    action: t('Update payment method'),
     href: '/settings?tab=billing',
   },
   EMAIL_REPUTATION: {
-    body: 'Your bounce or complaint rate got too high. Clean your contact list, then contact support to re-enable sending.',
-    action: 'Review deliverability',
+    body: t('Your bounce or complaint rate got too high. Clean your contact list, then contact support to re-enable sending.'),
+    action: t('Review deliverability'),
     href: '/settings?tab=security',
   },
   PHISHING_DETECTED: {
-    body: 'A recent email was flagged as possible phishing. Contact support to review it and re-enable sending.',
-    action: 'View details',
+    body: t('A recent email was flagged as possible phishing. Contact support to review it and re-enable sending.'),
+    action: t('View details'),
     href: '/settings?tab=security',
   },
 };
 
 const DISABLED_FALLBACK = {
-  body: 'Contact support to find out why and to re-enable sending.',
-  action: 'View details',
+  body: t('Contact support to find out why and to re-enable sending.'),
+  action: t('View details'),
   href: '/settings?tab=security',
 };
 
@@ -93,18 +94,18 @@ type Metric = 'bounce' | 'complaint';
 function worstMetric(metrics: ProjectSecurityMetrics) {
   const {levels, status} = metrics;
   const candidates = [
-    {metric: 'bounce' as Metric, level: levels.bounce7Day, rate: status.sevenDay.bounceRate, window: 'over the last 7 days'},
-    {metric: 'complaint' as Metric, level: levels.complaint7Day, rate: status.sevenDay.complaintRate, window: 'over the last 7 days'},
-    {metric: 'bounce' as Metric, level: levels.bounceAllTime, rate: status.allTime.bounceRate, window: 'across all your sends'},
-    {metric: 'complaint' as Metric, level: levels.complaintAllTime, rate: status.allTime.complaintRate, window: 'across all your sends'},
+    {metric: 'bounce' as Metric, level: levels.bounce7Day, rate: status.sevenDay.bounceRate, window: t('over the last 7 days')},
+    {metric: 'complaint' as Metric, level: levels.complaint7Day, rate: status.sevenDay.complaintRate, window: t('over the last 7 days')},
+    {metric: 'bounce' as Metric, level: levels.bounceAllTime, rate: status.allTime.bounceRate, window: t('across all your sends')},
+    {metric: 'complaint' as Metric, level: levels.complaintAllTime, rate: status.allTime.complaintRate, window: t('across all your sends')},
   ];
   const worst = candidates.reduce((best, c) => (LEVEL_RANK[c.level] > LEVEL_RANK[best.level] ? c : best));
   return worst.level === 'healthy' ? null : worst;
 }
 
 const METRIC_ADVICE: Record<Metric, string> = {
-  bounce: 'Remove invalid and inactive addresses before your next send.',
-  complaint: 'Only email contacts who opted in, and make unsubscribing easy.',
+  bounce: t('Remove invalid and inactive addresses before your next send.'),
+  complaint: t('Only email contacts who opted in, and make unsubscribing easy.'),
 };
 
 function securityNotice(metrics: ProjectSecurityMetrics): Notice | null {
@@ -113,20 +114,20 @@ function securityNotice(metrics: ProjectSecurityMetrics): Notice | null {
   if (!isCritical && metrics.status.warnings.length === 0) return null;
 
   const worst = worstMetric(metrics);
-  const consequence = isCritical ? 'Sending may be paused if it stays this high.' : 'It’s above what we consider healthy.';
+  const consequence = isCritical ? t('Sending may be paused if it stays this high.') : t('It’s above what we consider healthy.');
 
   return {
     tone: isCritical ? 'critical' : 'warning',
     icon: AlertTriangle,
     title: worst
-      ? `${worst.metric === 'bounce' ? 'Bounce' : 'Complaint'} rate is ${worst.rate.toFixed(worst.metric === 'bounce' ? 2 : 3)}%`
-      : 'Unusually many bounces or complaints',
+      ? t('{value} rate is {value2}%', {value: worst.metric === 'bounce' ? t('Bounce') : t('Complaint'), value2: worst.rate.toFixed(worst.metric === 'bounce' ? 2 : 3)})
+      : t('Unusually many bounces or complaints'),
     body: worst
       ? `That’s ${worst.window}. ${consequence} ${METRIC_ADVICE[worst.metric]}`
-      : `${isCritical ? 'Sending may be paused if this continues.' : 'Keep an eye on it.'} Check that your contacts opted in and that their addresses are valid.`,
+      : t('{value} Check that your contacts opted in and that their addresses are valid.', {value: isCritical ? t('Sending may be paused if this continues.') : t('Keep an eye on it.')}),
     action: (
       <Button asChild size="sm" variant="outline">
-        <Link href="/settings?tab=security">Review deliverability</Link>
+        <Link href="/settings?tab=security">{t('Review deliverability')}</Link>
       </Button>
     ),
   };
@@ -137,9 +138,9 @@ function disabledNotice(reason: string | null | undefined): Notice {
   return {
     tone: 'critical',
     icon: Ban,
-    title: 'Sending is paused for this project',
+    title: t('Sending is paused for this project'),
     body: copy.body,
-    note: 'You can still view your data, but nothing can be created, changed or sent.',
+    note: t('You can still view your data, but nothing can be created, changed or sent.'),
     action: (
       <Button asChild size="sm" variant="outline">
         <Link href={copy.href}>{copy.action}</Link>
@@ -153,23 +154,11 @@ function verifyEmailNotice(action: ReactNode): Notice {
   return {
     tone: 'warning',
     icon: MailCheck,
-    title: 'Verify your email address',
-    body: 'Click the link we sent to your inbox to unlock all features.',
+    title: t('Verify your email address'),
+    body: t('Click the link we sent to your inbox to unlock all features.'),
     action,
   };
 }
-
-const UPSELL_NOTICE: Notice = {
-  tone: 'neutral',
-  icon: Sparkles,
-  title: 'Send emails without Plunk branding',
-  body: 'Emails on the free plan include a “Powered by Plunk” badge. Upgrade to remove it.',
-  action: (
-    <Button asChild size="sm">
-      <Link href="/settings?tab=billing">Upgrade</Link>
-    </Button>
-  ),
-};
 
 interface HomeNoticeProps {
   project: {disabled: boolean; disabledReason?: string | null; subscription?: string | null} | null | undefined;
@@ -183,7 +172,7 @@ interface HomeNoticeProps {
  * paused project never competes with an upsell and the owner gets one clear next step:
  * disabled → critical rates → unverified email → elevated rates → branding upsell.
  */
-export function HomeNotice({project, securityMetrics, emailVerificationRequired, billingEnabled}: HomeNoticeProps) {
+export function HomeNotice({project, securityMetrics, emailVerificationRequired}: HomeNoticeProps) {
   const [isResending, setIsResending] = useState(false);
 
   async function handleResendVerification() {
@@ -191,12 +180,12 @@ export function HomeNotice({project, securityMetrics, emailVerificationRequired,
     try {
       const response = await network.fetch<{success: boolean}>('POST', '/auth/request-verification');
       if (response.success) {
-        toast.success('Verification email sent. Check your inbox.');
+        toast.success(t('Verification email sent. Check your inbox.'));
       } else {
-        toast.error('Couldn’t send the verification email. Try again in a moment.');
+        toast.error(t('Couldn’t send the verification email. Try again in a moment.'));
       }
     } catch {
-      toast.error('Couldn’t send the verification email. Try again in a moment.');
+      toast.error(t('Couldn’t send the verification email. Try again in a moment.'));
     } finally {
       setIsResending(false);
     }
@@ -214,13 +203,11 @@ export function HomeNotice({project, securityMetrics, emailVerificationRequired,
   } else if (emailVerificationRequired) {
     notice = verifyEmailNotice(
       <Button size="sm" variant="outline" onClick={handleResendVerification} disabled={isResending}>
-        {isResending ? 'Sending…' : 'Resend email'}
+        {isResending ? t('Sending…') : t('Resend email')}
       </Button>,
     );
   } else if (security) {
     notice = security;
-  } else if (!project.subscription && billingEnabled) {
-    notice = UPSELL_NOTICE;
   }
 
   if (!notice) return null;

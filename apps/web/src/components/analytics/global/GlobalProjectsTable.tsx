@@ -6,6 +6,7 @@ import {useMemo} from 'react';
 import {type Column, RateTable} from '../RateTable';
 import {computeDelta, formatCount, formatRate, metric, thresholdTone} from '../metrics';
 import {DeltaLabel, Panel, PanelEmpty, PanelError, RowsSkeleton} from '../primitives';
+import {t} from '../../../lib/i18n';
 
 /** Rates below this volume are greyed out and sorted last, as on the per-project tables */
 const MIN_VOLUME = 100;
@@ -63,7 +64,7 @@ export function GlobalProjectsTable({
   const columns: Column<GlobalAnalyticsProjectRow>[] = [
     {
       key: 'name',
-      label: 'Project',
+      label: t('Project'),
       align: 'left',
       // Fills the spare width but never squeezes the name below a readable size
       className: 'w-full min-w-[14rem] max-w-0',
@@ -79,18 +80,18 @@ export function GlobalProjectsTable({
                     ? 'h-2 w-2 shrink-0 rounded-full bg-red-500'
                     : 'h-2 w-2 shrink-0 rounded-full bg-amber-500'
                 }
-                aria-label={severity === 'critical' ? 'Critical issue' : 'Needs attention'}
+                aria-label={severity === 'critical' ? t('Critical issue') : t('Needs attention')}
               />
             )}
             <span className="truncate font-medium">{row.name}</span>
-            {row.disabled && <Badge variant="destructive">Disabled</Badge>}
+            {row.disabled && <Badge variant="destructive">{t('Disabled')}</Badge>}
           </span>
         );
       },
     },
     {
       key: 'sent',
-      label: 'Sent',
+      label: t('Sent'),
       render: row => (
         <span className="inline-flex flex-col items-end">
           <span>{formatCount(row.current.sent)}</span>
@@ -103,20 +104,20 @@ export function GlobalProjectsTable({
       ),
       sortValue: row => row.current.sent,
     },
-    rateColumn('deliveryRate', 'Delivery'),
-    rateColumn('bounceRate', 'Bounce'),
+    rateColumn('deliveryRate', t('Delivery')),
+    rateColumn('bounceRate', t('Bounce')),
     {
       key: 'complained',
-      label: 'Complaints',
+      label: t('Complaints'),
       render: row => formatCount(row.current.complained),
       sortValue: row => row.current.complained,
       tone: row => thresholdTone(metric('complaintRate'), row.current.complaintRate, row.current.sent),
     },
-    rateColumn('openRate', 'Open'),
-    rateColumn('clickRate', 'Click'),
+    rateColumn('openRate', t('Open')),
+    rateColumn('clickRate', t('Click')),
     {
       key: 'failed',
-      label: 'Failed',
+      label: t('Failed'),
       render: row => formatCount(row.current.failed),
       sortValue: row => row.current.failed,
       tone: row => (row.current.failed > 0 ? 'text-amber-600' : 'text-neutral-400'),
@@ -125,12 +126,10 @@ export function GlobalProjectsTable({
 
   return (
     <Panel
-      title="Projects"
+      title={t('Projects')}
       description={
         rows
-          ? `${visible.length === rows.length ? rows.length : `${visible.length} of ${rows.length}`} ${
-              rows.length === 1 ? 'project' : 'projects'
-            }. Select one to open its analytics.`
+          ? t('{value} {value2}. Select one to open its analytics.', {value: visible.length === rows.length ? rows.length : `${visible.length} of ${rows.length}`, value2: rows.length === 1 ? 'project' : 'projects'})
           : undefined
       }
       actions={
@@ -143,8 +142,8 @@ export function GlobalProjectsTable({
             type="search"
             value={search}
             onChange={event => onSearch(event.target.value)}
-            placeholder="Search projects"
-            aria-label="Search projects by name"
+            placeholder={t('Search projects')}
+            aria-label={t('Search projects by name')}
             className="h-8 pl-8 text-sm"
           />
         </div>
@@ -157,10 +156,10 @@ export function GlobalProjectsTable({
       ) : visible.length === 0 ? (
         <PanelEmpty>
           {search
-            ? `No project matches “${search}”.`
+            ? t('No project matches “{search}”.', {search: search})
             : narrowed
-              ? 'None of the selected projects are available to you. Clear the project filter to see all of them.'
-              : 'No projects to show.'}
+              ? t('None of the selected projects are available to you. Clear the project filter to see all of them.')
+              : t('No projects to show.')}
         </PanelEmpty>
       ) : (
         <div className="overflow-x-auto border-t border-neutral-100">

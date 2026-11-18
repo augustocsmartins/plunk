@@ -72,6 +72,7 @@ import {useEffect, useMemo, useRef, useState} from 'react';
 import {toast} from 'sonner';
 import useSWR from 'swr';
 import dayjs from 'dayjs';
+import {t} from '../../lib/i18n';
 
 type StatusFilter = 'ALL' | ContactSubscriptionStatus;
 
@@ -80,11 +81,11 @@ const COLUMNS_STORAGE_KEY = 'plunk:contacts:columns';
 
 // Fixed-value options for the Status filter pill.
 const STATUS_OPTIONS: FacetedFilterOption[] = [
-  {value: 'subscribed', label: 'Subscribed'},
+  {value: 'subscribed', label: t('Subscribed')},
   // Snoozed contacts are `subscribed = false` and would otherwise hide inside Unsubscribed,
   // where they read as churn rather than as people who are coming back.
-  {value: 'snoozed', label: 'Snoozed'},
-  {value: 'unsubscribed', label: 'Unsubscribed'},
+  {value: 'snoozed', label: t('Snoozed')},
+  {value: 'unsubscribed', label: t('Unsubscribed')},
 ];
 
 // select + email + actions are locked-visible (see lockedColumnIds). `updatedAt`
@@ -307,10 +308,10 @@ export default function ContactsPage() {
 
     try {
       await network.fetch('DELETE', `/contacts/${contactToDelete}`);
-      toast.success('Contact deleted');
+      toast.success(t('Contact deleted'));
       void mutate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t delete the contact. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t delete the contact. Try again.'));
     } finally {
       setContactToDelete(null);
     }
@@ -338,17 +339,17 @@ export default function ContactsPage() {
         id: 'select',
         enableSorting: false,
         enableHiding: false, // Selection column is locked-visible.
-        meta: {label: 'Select', headClassName: 'w-10', cellClassName: 'w-10'} satisfies DataTableColumnMeta,
+        meta: {label: t('Select'), headClassName: 'w-10', cellClassName: 'w-10'} satisfies DataTableColumnMeta,
         header: () => (
           <Checkbox
-            aria-label="Select all contacts on this page"
+            aria-label={t('Select all contacts on this page')}
             checked={allOnPageSelected ? true : contacts.some(c => isContactSelected(c.id)) ? 'indeterminate' : false}
             onCheckedChange={handleSelectAll}
           />
         ),
         cell: ({row}) => (
           <Checkbox
-            aria-label={`Select ${row.original.email}`}
+            aria-label={t('Select {email}', {email: row.original.email})}
             checked={isContactSelected(row.original.id)}
             onClick={e => e.stopPropagation()}
             onCheckedChange={() => handleSelectContact(row.original.id)}
@@ -359,8 +360,8 @@ export default function ContactsPage() {
         id: 'email',
         accessorKey: 'email',
         enableHiding: false, // Email column is locked-visible.
-        meta: {label: 'Email'} satisfies DataTableColumnMeta,
-        header: ({column}) => <DataTableColumnHeader column={column}>Email</DataTableColumnHeader>,
+        meta: {label: t('Email')} satisfies DataTableColumnMeta,
+        header: ({column}) => <DataTableColumnHeader column={column}>{t('Email')}</DataTableColumnHeader>,
         cell: ({row}) => (
           <div className="flex items-center gap-2">
             <ContactStatusIcon contact={row.original} />
@@ -377,12 +378,12 @@ export default function ContactsPage() {
         id: 'status',
         accessorKey: 'subscribed',
         enableSorting: false, // Status is faceted-filtered, not sorted.
-        meta: {label: 'Status'} satisfies DataTableColumnMeta,
+        meta: {label: t('Status')} satisfies DataTableColumnMeta,
         header: ({column}) => (
           <DataTableColumnHeader
             column={column}
           >
-            Status
+            {t('Status')}
           </DataTableColumnHeader>
         ),
         cell: ({row}) => (
@@ -393,8 +394,8 @@ export default function ContactsPage() {
         id: 'createdAt',
         accessorKey: 'createdAt',
         sortDescFirst: true, // First click surfaces the newest contacts.
-        meta: {label: 'Created'} satisfies DataTableColumnMeta,
-        header: ({column}) => <DataTableColumnHeader column={column}>Created</DataTableColumnHeader>,
+        meta: {label: t('Created')} satisfies DataTableColumnMeta,
+        header: ({column}) => <DataTableColumnHeader column={column}>{t('Created')}</DataTableColumnHeader>,
         cell: ({row}) => (
           <div className="group relative inline-block cursor-help text-sm text-neutral-500 whitespace-nowrap">
             {formatRelativeTime(row.original.createdAt)}
@@ -408,8 +409,8 @@ export default function ContactsPage() {
         id: 'updatedAt',
         accessorKey: 'updatedAt',
         enableSorting: false, // No backend sort field for updatedAt.
-        meta: {label: 'Updated'} satisfies DataTableColumnMeta,
-        header: ({column}) => <DataTableColumnHeader column={column}>Updated</DataTableColumnHeader>,
+        meta: {label: t('Updated')} satisfies DataTableColumnMeta,
+        header: ({column}) => <DataTableColumnHeader column={column}>{t('Updated')}</DataTableColumnHeader>,
         cell: ({row}) => (
           <span className="text-sm text-neutral-500 whitespace-nowrap">
             {formatRelativeTime(row.original.updatedAt)}
@@ -420,20 +421,20 @@ export default function ContactsPage() {
         id: 'actions',
         enableSorting: false,
         enableHiding: false, // Actions column is locked-visible.
-        meta: {label: 'Actions', headClassName: 'text-right', cellClassName: 'text-right'} satisfies DataTableColumnMeta,
-        header: () => <span className="flex justify-end">Actions</span>,
+        meta: {label: t('Actions'), headClassName: 'text-right', cellClassName: 'text-right'} satisfies DataTableColumnMeta,
+        header: () => <span className="flex justify-end">{t('Actions')}</span>,
         cell: ({row}) => (
           <div className="flex items-center justify-end gap-1">
-            <Button asChild variant="ghost" size="sm" title="Edit contact">
-              <Link href={`/contacts/${row.original.id}`} aria-label="Edit contact">
+            <Button asChild variant="ghost" size="sm" title={t('Edit contact')}>
+              <Link href={`/contacts/${row.original.id}`} aria-label={t('Edit contact')}>
                 <Edit className="h-4 w-4" />
               </Link>
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              title="Delete contact"
-              aria-label="Delete contact"
+              title={t('Delete contact')}
+              aria-label={t('Delete contact')}
               onClick={() => promptDelete(row.original.id)}
             >
               <Trash2 className="h-4 w-4" />
@@ -463,28 +464,28 @@ export default function ContactsPage() {
 
   return (
     <>
-      <NextSeo title="Contacts" />
+      <NextSeo title={t('Contacts')} />
       <DashboardLayout>
         <div className="space-y-6">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900">Contacts</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900">{t('Contacts')}</h1>
               <p className="text-neutral-500 mt-2 text-sm sm:text-base">
-                Everyone you can send to.{' '}
+                {t('Everyone you can send to.')}{' '}
                 {totalCount > 0 ? `${totalCount.toLocaleString()} ${hasActiveFilters ? 'matching' : 'total'}` : ''}
               </p>
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setShowImportDialog(true)} className="flex-1 sm:flex-none">
                 <Upload className="h-4 w-4" />
-                <span className="hidden sm:inline">Import CSV</span>
-                <span className="sm:hidden">Import</span>
+                <span className="hidden sm:inline">{t('Import CSV')}</span>
+                <span className="sm:hidden">{t('Import')}</span>
               </Button>
               <Button onClick={() => setShowCreateDialog(true)} className="flex-1 sm:flex-none">
                 <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">Add contact</span>
-                <span className="sm:hidden">Add</span>
+                <span className="hidden sm:inline">{t('Add contact')}</span>
+                <span className="sm:hidden">{t('Add')}</span>
               </Button>
             </div>
           </div>
@@ -503,12 +504,12 @@ export default function ContactsPage() {
                 setSearch('');
                 resetPagination();
               }}
-              placeholder="Search by email…"
+              placeholder={t('Search by email…')}
               className="flex-1"
             />
             <div className="flex items-center gap-2 shrink-0">
               <FilterPill
-                title="Status"
+                title={t('Status')}
                 multiple={false}
                 options={STATUS_OPTIONS}
                 selected={statusFilter === 'ALL' ? [] : [statusFilter]}
@@ -537,21 +538,21 @@ export default function ContactsPage() {
                     onClick={handleSelectAllMatching}
                     className="text-sm font-medium text-neutral-600 underline-offset-4 transition-colors hover:text-neutral-900 hover:underline focus-visible:outline-none focus-visible:underline focus-visible:text-neutral-900 whitespace-nowrap rounded-sm tabular-nums"
                   >
-                    Select all {totalCount.toLocaleString()}
-                    {hasActiveFilters ? ' matching' : ''}
+                    {t('Select all')}{' '}{totalCount.toLocaleString()}
+                    {hasActiveFilters ? t(' matching') : ''}
                   </button>
                 ) : selectAllMatching ? (
-                  <span className="text-sm text-neutral-500 whitespace-nowrap">All matching selected</span>
+                  <span className="text-sm text-neutral-500 whitespace-nowrap">{t('All matching selected')}</span>
                 ) : null
               }
             >
               <Button variant="outline" size="sm" onClick={() => handleBulkAction('subscribe')}>
                 <MailCheck className="h-4 w-4" />
-                Subscribe
+                {t('Subscribe')}
               </Button>
               <Button variant="outline" size="sm" onClick={() => handleBulkAction('unsubscribe')}>
                 <MailX className="h-4 w-4" />
-                Unsubscribe
+                {t('Unsubscribe')}
               </Button>
               <Button
                 variant="outline"
@@ -560,7 +561,7 @@ export default function ContactsPage() {
                 className="text-neutral-700 transition-colors hover:bg-red-50 hover:text-red-700 hover:border-red-200"
               >
                 <Trash2 className="h-4 w-4" />
-                Delete
+                {t('Delete')}
               </Button>
             </BulkActionBar>
           )}
@@ -586,12 +587,12 @@ export default function ContactsPage() {
                     // Genuinely empty project — first-run state.
                     <EmptyState
                       icon={Mail}
-                      title="No contacts yet"
-                      description="Add contacts to start tracking engagement."
+                      title={t('No contacts yet')}
+                      description={t('Add contacts to start tracking engagement.')}
                       action={
                         <Button onClick={() => setShowCreateDialog(true)}>
                           <Plus className="h-4 w-4" />
-                          Add contact
+                          {t('Add contact')}
                         </Button>
                       }
                     />
@@ -615,7 +616,7 @@ export default function ContactsPage() {
                             className="mt-0.5 shrink-0"
                             checked={selected}
                             onCheckedChange={() => handleSelectContact(contact.id)}
-                            aria-label={`Select ${contact.email}`}
+                            aria-label={t('Select {email}', {email: contact.email})}
                           />
                           <div className="min-w-0 flex-1">
                             <div className="flex items-start justify-between gap-3">
@@ -633,23 +634,23 @@ export default function ContactsPage() {
                             <div className="mt-3 flex items-center justify-between">
                               <div className="group relative inline-block cursor-help">
                                 <span className="text-xs text-neutral-400">
-                                  Added {formatRelativeTime(contact.createdAt)}
+                                  {t('Added')}{' '}{formatRelativeTime(contact.createdAt)}
                                 </span>
                                 <div className="hidden group-hover:block absolute z-10 w-48 p-2 bg-neutral-900 text-white text-xs rounded shadow-md bottom-full left-0 mb-1 whitespace-nowrap">
                                   {dayjs(contact.createdAt).format('DD MMMM YYYY, hh:mm')}
                                 </div>
                               </div>
                               <div className="flex items-center gap-1">
-                                <Button asChild variant="ghost" size="sm" title="Edit contact">
-                                  <Link href={`/contacts/${contact.id}`} aria-label="Edit contact">
+                                <Button asChild variant="ghost" size="sm" title={t('Edit contact')}>
+                                  <Link href={`/contacts/${contact.id}`} aria-label={t('Edit contact')}>
                                     <Edit className="h-4 w-4" />
                                   </Link>
                                 </Button>
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  title="Delete contact"
-                                  aria-label="Delete contact"
+                                  title={t('Delete contact')}
+                                  aria-label={t('Delete contact')}
                                   onClick={() => promptDelete(contact.id)}
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -666,7 +667,7 @@ export default function ContactsPage() {
                 {(currentPage > 0 || data?.hasMore) && (
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6">
                     <p className="text-sm text-neutral-500 tabular-nums">
-                      Showing {(currentPage * pageSize + 1).toLocaleString()} to{' '}
+                      {t('Showing')}{' '}{(currentPage * pageSize + 1).toLocaleString()} to{' '}
                       {(currentPage * pageSize + contacts.length).toLocaleString()}
                       {totalCount > 0 ? ` of ${totalCount.toLocaleString()}` : ''}
                     </p>
@@ -678,7 +679,7 @@ export default function ContactsPage() {
                         disabled={currentPage === 0 || isLoading}
                       >
                         <ChevronLeft className="h-4 w-4" />
-                        <span className="hidden sm:inline">Previous</span>
+                        <span className="hidden sm:inline">{t('Previous')}</span>
                       </Button>
                       <Button
                         variant="outline"
@@ -686,7 +687,7 @@ export default function ContactsPage() {
                         onClick={handleNextPage}
                         disabled={!data?.hasMore || isLoading}
                       >
-                        <span className="hidden sm:inline">Next</span>
+                        <span className="hidden sm:inline">{t('Next')}</span>
                         <ChevronRight className="h-4 w-4" />
                       </Button>
                     </div>
@@ -705,7 +706,7 @@ export default function ContactsPage() {
                 {(currentPage > 0 || data?.hasMore) && (
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6">
                     <p className="text-sm text-neutral-500 tabular-nums">
-                      Showing {(currentPage * pageSize + 1).toLocaleString()} to{' '}
+                      {t('Showing')}{' '}{(currentPage * pageSize + 1).toLocaleString()} to{' '}
                       {(currentPage * pageSize + contacts.length).toLocaleString()}
                       {totalCount > 0 ? ` of ${totalCount.toLocaleString()}` : ''}
                     </p>
@@ -717,7 +718,7 @@ export default function ContactsPage() {
                         disabled={currentPage === 0 || isLoading}
                       >
                         <ChevronLeft className="h-4 w-4" />
-                        <span className="hidden sm:inline">Previous</span>
+                        <span className="hidden sm:inline">{t('Previous')}</span>
                       </Button>
                       <Button
                         variant="outline"
@@ -725,7 +726,7 @@ export default function ContactsPage() {
                         onClick={handleNextPage}
                         disabled={!data?.hasMore || isLoading}
                       >
-                        <span className="hidden sm:inline">Next</span>
+                        <span className="hidden sm:inline">{t('Next')}</span>
                         <ChevronRight className="h-4 w-4" />
                       </Button>
                     </div>
@@ -760,9 +761,9 @@ export default function ContactsPage() {
           open={showDeleteDialog}
           onOpenChange={setShowDeleteDialog}
           onConfirm={handleDelete}
-          title="Delete this contact?"
-          description="Their events and email history are deleted too. This can't be undone."
-          confirmText="Delete contact"
+          title={t('Delete this contact?')}
+          description={t('Their events and email history are deleted too. This can\'t be undone.')}
+          confirmText={t('Delete contact')}
           variant="destructive"
         />
       </DashboardLayout>
@@ -797,9 +798,9 @@ function CreateContactDialog({open, onOpenChange, onSuccess}: CreateContactDialo
 
       // Show appropriate message based on whether contact was new or updated
       if (response._meta?.isUpdate) {
-        toast.success(`Contact ${response.email} already existed and was updated with new data`);
+        toast.success(t('Contact {email} already existed and was updated with new data', {email: response.email}));
       } else {
-        toast.success('Contact created');
+        toast.success(t('Contact created'));
       }
 
       setEmail('');
@@ -808,7 +809,7 @@ function CreateContactDialog({open, onOpenChange, onSuccess}: CreateContactDialo
       onOpenChange(false);
       onSuccess();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Couldn’t save the contact. Try again.');
+      toast.error(error instanceof Error ? error.message : t('Couldn’t save the contact. Try again.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -818,11 +819,11 @@ function CreateContactDialog({open, onOpenChange, onSuccess}: CreateContactDialo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create new contact</DialogTitle>
+          <DialogTitle>{t('Create new contact')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="email">Email address
+            <Label htmlFor="email">{t('Email address')}
             <span className="text-red-500"> *</span>
           </Label>
             <Input
@@ -838,10 +839,10 @@ function CreateContactDialog({open, onOpenChange, onSuccess}: CreateContactDialo
           <div className="flex items-center justify-between gap-4">
             <div>
               <Label htmlFor="subscribed" className="font-medium cursor-pointer">
-                Subscribed
+                {t('Subscribed')}
               </Label>
               <p className="text-xs text-neutral-500 mt-0.5">
-                Receive emails from campaigns and workflows.
+                {t('Receive emails from campaigns and workflows.')}
               </p>
             </div>
             <Switch id="subscribed" checked={subscribed} onCheckedChange={setSubscribed} />
@@ -851,10 +852,10 @@ function CreateContactDialog({open, onOpenChange, onSuccess}: CreateContactDialo
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating…' : 'Create Contact'}
+              {isSubmitting ? t('Creating…') : t('Create Contact')}
             </Button>
           </DialogFooter>
         </form>
@@ -927,13 +928,13 @@ function ImportContactsDialog({open, onOpenChange, onSuccess}: ImportContactsDia
     if (selectedFile) {
       // Validate file type
       if (!selectedFile.name.endsWith('.csv')) {
-        toast.error('Please select a CSV file');
+        toast.error(t('Please select a CSV file'));
         return;
       }
 
       // Validate file size (5MB max)
       if (selectedFile.size > 5 * 1024 * 1024) {
-        toast.error('File size must be less than 5MB');
+        toast.error(t('File size must be less than 5MB'));
         return;
       }
 
@@ -970,7 +971,7 @@ function ImportContactsDialog({open, onOpenChange, onSuccess}: ImportContactsDia
           if (updatedCount > 0) parts.push(`${updatedCount} updated`);
           if (failureCount > 0) parts.push(`${failureCount} failed`);
 
-          toast.success(`Import completed: ${parts.join(', ')}`);
+          toast.success(t('Import completed: {parts}', {parts: parts.join(', ')}));
         }
 
         onSuccess();
@@ -981,7 +982,7 @@ function ImportContactsDialog({open, onOpenChange, onSuccess}: ImportContactsDia
           pollIntervalRef.current = null;
         }
         // Store and show the specific error message if available, otherwise show generic error
-        const errorMsg = response.failedReason || 'Import failed. Please check your CSV file and try again.';
+        const errorMsg = response.failedReason || t('Import failed. Please check your CSV file and try again.');
         setErrorMessage(errorMsg);
         toast.error(errorMsg);
       } else if (response.state === 'active') {
@@ -994,13 +995,13 @@ function ImportContactsDialog({open, onOpenChange, onSuccess}: ImportContactsDia
         pollIntervalRef.current = null;
       }
       setStatus('failed');
-      toast.error('Lost track of the import. Reopen this dialog to check on it.');
+      toast.error(t('Lost track of the import. Reopen this dialog to check on it.'));
     }
   };
 
   const handleUpload = async () => {
     if (!file) {
-      toast.error('Please select a file to upload');
+      toast.error(t('Please select a file to upload'));
       return;
     }
 
@@ -1021,7 +1022,7 @@ function ImportContactsDialog({open, onOpenChange, onSuccess}: ImportContactsDia
         void pollJobStatus(data.jobId);
       }, 1000); // Poll every second
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Couldn’t upload the file. Try again.';
+      const errorMsg = error instanceof Error ? error.message : t('Couldn’t upload the file. Try again.');
       setErrorMessage(errorMsg);
       toast.error(errorMsg);
       setStatus('failed');
@@ -1047,19 +1048,19 @@ function ImportContactsDialog({open, onOpenChange, onSuccess}: ImportContactsDia
       <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Import contacts from CSV</DialogTitle>
+            <DialogTitle>{t('Import contacts from CSV')}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
             {/* Instructions */}
             <div className="text-sm text-neutral-500 space-y-1">
-              <p>Required column: <code className="text-neutral-700 bg-neutral-100 px-1 py-0.5 rounded text-xs">email</code>. Optional: <code className="text-neutral-700 bg-neutral-100 px-1 py-0.5 rounded text-xs">subscribed</code> (true/false) and any custom fields. Max 5MB.</p>
+              <p>{t('Required column:')}{' '}<code className="text-neutral-700 bg-neutral-100 px-1 py-0.5 rounded text-xs">email</code>{t('. Optional:')}{' '}<code className="text-neutral-700 bg-neutral-100 px-1 py-0.5 rounded text-xs">subscribed</code> {t('(true/false) and any custom fields. Max 5MB.')}</p>
             </div>
 
             {/* File Upload */}
             {status === 'idle' || status === 'failed' ? (
               <div>
-                <Label htmlFor="csv-file">Select CSV file</Label>
+                <Label htmlFor="csv-file">{t('Select CSV file')}</Label>
                 <div className="mt-2">
                   <input
                     ref={fileInputRef}
@@ -1076,7 +1077,7 @@ function ImportContactsDialog({open, onOpenChange, onSuccess}: ImportContactsDia
                     type="button"
                   >
                     <FileUp className="h-4 w-4 mr-2" />
-                    {file ? truncateFileName(file.name) : 'Choose CSV File'}
+                    {file ? truncateFileName(file.name) : t('Choose CSV File')}
                   </Button>
                 </div>
               </div>
@@ -1087,7 +1088,7 @@ function ImportContactsDialog({open, onOpenChange, onSuccess}: ImportContactsDia
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-neutral-600">
-                    {status === 'uploading' ? 'Uploading file…' : 'Processing contacts…'}
+                    {status === 'uploading' ? t('Uploading file…') : t('Processing contacts…')}
                   </span>
                   <span className="text-neutral-900 font-medium">{progress}%</span>
                 </div>
@@ -1106,11 +1107,11 @@ function ImportContactsDialog({open, onOpenChange, onSuccess}: ImportContactsDia
                 <div className="flex items-center gap-1.5 text-sm text-neutral-600">
                   <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
                   <span>
-                    <span className="font-medium text-neutral-900">{result.totalRows}</span> processed —{' '}
-                    <span className="text-neutral-900">{result.createdCount}</span> created,{' '}
-                    <span className="text-neutral-900">{result.updatedCount}</span> updated
+                    <span className="font-medium text-neutral-900">{result.totalRows}</span> {t('processed —')}{' '}
+                    <span className="text-neutral-900">{result.createdCount}</span> {t('created,')}{' '}
+                    <span className="text-neutral-900">{result.updatedCount}</span> {t('updated')}
                     {result.failureCount > 0 && (
-                      <>, <span className="text-red-600">{result.failureCount}</span> failed</>
+                      <>, <span className="text-red-600">{result.failureCount}</span> {t('failed')}</>
                     )}
                   </span>
                 </div>
@@ -1121,13 +1122,13 @@ function ImportContactsDialog({open, onOpenChange, onSuccess}: ImportContactsDia
                     <div className="space-y-0 text-xs text-neutral-600">
                       {result.errors.slice(0, 10).map((error, idx) => (
                         <div key={idx} className="flex gap-3 px-3 py-2 border-b border-neutral-100 last:border-0">
-                          <span className="font-mono text-neutral-400 flex-shrink-0">Row {error.row}</span>
-                          <span className="text-red-600">{error.email || 'N/A'} — {error.error}</span>
+                          <span className="font-mono text-neutral-400 flex-shrink-0">{t('Row')}{' '}{error.row}</span>
+                          <span className="text-red-600">{error.email || t('N/A')} — {error.error}</span>
                         </div>
                       ))}
                       {result.errors.length > 10 && (
                         <div className="px-3 py-2 text-neutral-500">
-                          +{result.errors.length - 10} more errors
+                          +{result.errors.length - 10} {t('more errors')}
                         </div>
                       )}
                     </div>
@@ -1139,7 +1140,7 @@ function ImportContactsDialog({open, onOpenChange, onSuccess}: ImportContactsDia
             {status === 'failed' && (
               <div className="flex items-start gap-2 text-sm">
                 <XCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                <p className="text-red-600">{errorMessage || 'Please check your CSV file and try again.'}</p>
+                <p className="text-red-600">{errorMessage || t('Please check your CSV file and try again.')}</p>
               </div>
             )}
           </div>
@@ -1148,19 +1149,19 @@ function ImportContactsDialog({open, onOpenChange, onSuccess}: ImportContactsDia
             {status === 'idle' || status === 'failed' ? (
               <>
                 <Button type="button" variant="outline" onClick={handleClose}>
-                  Cancel
+                  {t('Cancel')}
                 </Button>
                 <Button type="button" onClick={handleUpload} disabled={!file || isUploading}>
-                  {isUploading ? 'Uploading…' : 'Import Contacts'}
+                  {isUploading ? t('Uploading…') : t('Import Contacts')}
                 </Button>
               </>
             ) : status === 'completed' ? (
               <Button type="button" onClick={handleClose}>
-                Close
+                {t('Close')}
               </Button>
             ) : (
               <Button type="button" variant="outline" onClick={handleClose}>
-                Close
+                {t('Close')}
               </Button>
             )}
           </DialogFooter>
@@ -1171,10 +1172,10 @@ function ImportContactsDialog({open, onOpenChange, onSuccess}: ImportContactsDia
         open={showCloseConfirmDialog}
         onOpenChange={setShowCloseConfirmDialog}
         onConfirm={confirmClose}
-        title="Close while the import is running?"
-        description="The import keeps running in the background. You just won't see the result here."
-        cancelText="Keep watching"
-        confirmText="Close anyway"
+        title={t('Close while the import is running?')}
+        description={t('The import keeps running in the background. You just won\'t see the result here.')}
+        cancelText={t('Keep watching')}
+        confirmText={t('Close anyway')}
         icon={EyeOff}
       />
     </>
@@ -1260,7 +1261,7 @@ function BulkActionsDialog({open, onOpenChange, operation, selector, targetCount
           clearInterval(pollIntervalRef.current);
           pollIntervalRef.current = null;
         }
-        const errorMsg = response.failedReason || 'Operation failed';
+        const errorMsg = response.failedReason || t('Operation failed');
         setErrorMessage(errorMsg);
         toast.error(errorMsg);
       } else if (response.state === 'active') {
@@ -1273,7 +1274,7 @@ function BulkActionsDialog({open, onOpenChange, operation, selector, targetCount
         pollIntervalRef.current = null;
       }
       setStatus('failed');
-      toast.error('Lost track of the job. It may still be running.');
+      toast.error(t('Lost track of the job. It may still be running.'));
     }
   };
 
@@ -1298,7 +1299,7 @@ function BulkActionsDialog({open, onOpenChange, operation, selector, targetCount
         void pollJobStatus(data.jobId);
       }, 1000);
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Couldn’t start the job. Try again.';
+      const errorMsg = error instanceof Error ? error.message : t('Couldn’t start the job. Try again.');
       setErrorMessage(errorMsg);
       toast.error(errorMsg);
       setStatus('failed');
@@ -1351,7 +1352,7 @@ function BulkActionsDialog({open, onOpenChange, operation, selector, targetCount
                 <p className="text-sm text-neutral-700 leading-relaxed">
                   {copy.confirmVerb}{' '}
                   <span className="font-medium text-neutral-900 tabular-nums">
-                    {targetCount.toLocaleString()} contact{targetCount !== 1 ? 's' : ''}
+                    {targetCount.toLocaleString()} {t('contact')}{targetCount !== 1 ? 's' : ''}
                   </span>
                   ?
                   {copy.skipNote && <span className="text-neutral-500"> {copy.skipNote}</span>}
@@ -1360,13 +1361,13 @@ function BulkActionsDialog({open, onOpenChange, operation, selector, targetCount
                   <div className="flex items-start gap-2.5 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700">
                     <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0" strokeWidth={2.25} />
                     <p className="leading-relaxed">
-                      <span className="font-medium">This action cannot be undone.</span> Contacts and their event history will be permanently removed.
+                      <span className="font-medium">{t('This action cannot be undone.')}</span> {t('Contacts and their event history will be permanently removed.')}
                     </p>
                   </div>
                 )}
                 {selector.mode === 'query' && (
                   <p className="text-xs text-neutral-500 leading-relaxed">
-                    Contacts are evaluated when the job runs — any added in the meantime may also be included.
+                    {t('Contacts are evaluated when the job runs — any added in the meantime may also be included.')}
                   </p>
                 )}
               </div>
@@ -1379,8 +1380,8 @@ function BulkActionsDialog({open, onOpenChange, operation, selector, targetCount
                     {isQueueing && <Loader2 className="h-3.5 w-3.5 animate-spin text-neutral-400" />}
                     <span>
                       {isQueueing
-                        ? 'Queued — starting up…'
-                        : `${copy.processingLabel} ${targetCount.toLocaleString()} contact${targetCount !== 1 ? 's' : ''}`}
+                        ? t('Queued — starting up…')
+                        : t('{processingLabel} {targetCount} contact{value}', {processingLabel: copy.processingLabel, targetCount: targetCount.toLocaleString(), value: targetCount !== 1 ? 's' : ''})}
                     </span>
                   </span>
                   <span
@@ -1409,7 +1410,7 @@ function BulkActionsDialog({open, onOpenChange, operation, selector, targetCount
             {status === 'failed' && (
               <div className="flex items-start gap-2.5 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700 motion-safe:animate-in motion-safe:fade-in-50 motion-safe:duration-200">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.25} />
-                <p className="leading-relaxed">{errorMessage || 'Something went wrong. Please try again.'}</p>
+                <p className="leading-relaxed">{errorMessage || t('Something went wrong. Please try again.')}</p>
               </div>
             )}
           </div>
@@ -1418,7 +1419,7 @@ function BulkActionsDialog({open, onOpenChange, operation, selector, targetCount
             {status === 'idle' ? (
               <>
                 <Button type="button" variant="outline" onClick={handleClose}>
-                  Cancel
+                  {t('Cancel')}
                 </Button>
                 <Button
                   type="button"
@@ -1426,16 +1427,16 @@ function BulkActionsDialog({open, onOpenChange, operation, selector, targetCount
                   disabled={isProcessing}
                   variant={operation === 'delete' ? 'destructive' : 'default'}
                 >
-                  {isProcessing ? 'Starting…' : copy.confirmButton}
+                  {isProcessing ? t('Starting…') : copy.confirmButton}
                 </Button>
               </>
             ) : status === 'failed' ? (
               <>
                 <Button type="button" variant="outline" onClick={handleClose}>
-                  Close
+                  {t('Close')}
                 </Button>
                 <Button type="button" onClick={handleRetry} variant={operation === 'delete' ? 'destructive' : 'default'}>
-                  Try again
+                  {t('Try again')}
                 </Button>
               </>
             ) : (
@@ -1444,7 +1445,7 @@ function BulkActionsDialog({open, onOpenChange, operation, selector, targetCount
                 onClick={handleClose}
                 variant={status === 'completed' ? 'default' : 'outline'}
               >
-                {status === 'completed' ? 'Done' : 'Hide'}
+                {status === 'completed' ? t('Done') : t('Hide')}
               </Button>
             )}
           </DialogFooter>
@@ -1455,10 +1456,10 @@ function BulkActionsDialog({open, onOpenChange, operation, selector, targetCount
         open={showCloseConfirmDialog}
         onOpenChange={setShowCloseConfirmDialog}
         onConfirm={confirmClose}
-        title="Hide this dialog?"
-        description="The job keeps running and your contacts are still updated. You just won't see the result here."
-        cancelText="Keep watching"
-        confirmText="Hide"
+        title={t('Hide this dialog?')}
+        description={t('The job keeps running and your contacts are still updated. You just won\'t see the result here.')}
+        cancelText={t('Keep watching')}
+        confirmText={t('Hide')}
         icon={EyeOff}
       />
     </>
@@ -1487,41 +1488,41 @@ function getOperationCopy(operation: 'subscribe' | 'unsubscribe' | 'delete' | nu
   switch (operation) {
     case 'subscribe':
       return {
-        title: 'Subscribe contacts',
-        progressTitle: 'Subscribing…',
-        completedTitle: 'Subscribed',
-        failedTitle: "Couldn't subscribe contacts",
-        confirmVerb: 'Subscribe',
-        confirmButton: 'Subscribe',
-        processingLabel: 'Subscribing',
+        title: t('Subscribe contacts'),
+        progressTitle: t('Subscribing…'),
+        completedTitle: t('Subscribed'),
+        failedTitle: t('Couldn\'t subscribe contacts'),
+        confirmVerb: t('Subscribe'),
+        confirmButton: t('Subscribe'),
+        processingLabel: t('Subscribing'),
         changedVerb: 'subscribed',
         summaryNoun: 'subscribed',
         alreadyState: 'already subscribed',
-        skipNote: 'Already-subscribed contacts will be skipped.',
+        skipNote: t('Already-subscribed contacts will be skipped.'),
       };
     case 'unsubscribe':
       return {
-        title: 'Unsubscribe contacts',
-        progressTitle: 'Unsubscribing…',
-        completedTitle: 'Unsubscribed',
-        failedTitle: "Couldn't unsubscribe contacts",
-        confirmVerb: 'Unsubscribe',
-        confirmButton: 'Unsubscribe',
-        processingLabel: 'Unsubscribing',
+        title: t('Unsubscribe contacts'),
+        progressTitle: t('Unsubscribing…'),
+        completedTitle: t('Unsubscribed'),
+        failedTitle: t('Couldn\'t unsubscribe contacts'),
+        confirmVerb: t('Unsubscribe'),
+        confirmButton: t('Unsubscribe'),
+        processingLabel: t('Unsubscribing'),
         changedVerb: 'unsubscribed',
         summaryNoun: 'unsubscribed',
         alreadyState: 'already unsubscribed',
-        skipNote: 'Already-unsubscribed contacts will be skipped.',
+        skipNote: t('Already-unsubscribed contacts will be skipped.'),
       };
     case 'delete':
       return {
-        title: 'Delete contacts',
-        progressTitle: 'Deleting…',
-        completedTitle: 'Deleted',
-        failedTitle: "Couldn't delete contacts",
-        confirmVerb: 'Permanently delete',
-        confirmButton: 'Delete',
-        processingLabel: 'Deleting',
+        title: t('Delete contacts'),
+        progressTitle: t('Deleting…'),
+        completedTitle: t('Deleted'),
+        failedTitle: t('Couldn\'t delete contacts'),
+        confirmVerb: t('Permanently delete'),
+        confirmButton: t('Delete'),
+        processingLabel: t('Deleting'),
         changedVerb: 'deleted',
         summaryNoun: 'removed',
         alreadyState: null,
@@ -1529,13 +1530,13 @@ function getOperationCopy(operation: 'subscribe' | 'unsubscribe' | 'delete' | nu
       };
     default:
       return {
-        title: 'Process contacts',
-        progressTitle: 'Processing…',
-        completedTitle: 'Done',
-        failedTitle: 'Operation failed',
-        confirmVerb: 'Process',
-        confirmButton: 'Process',
-        processingLabel: 'Processing',
+        title: t('Process contacts'),
+        progressTitle: t('Processing…'),
+        completedTitle: t('Done'),
+        failedTitle: t('Operation failed'),
+        confirmVerb: t('Process'),
+        confirmButton: t('Process'),
+        processingLabel: t('Processing'),
         changedVerb: 'processed',
         summaryNoun: 'processed',
         alreadyState: null,
@@ -1552,7 +1553,7 @@ function buildToastSummary(result: BulkActionResult): string {
     parts.push(`${result.unchangedCount.toLocaleString()} ${copy.alreadyState}`);
   }
   if (result.failureCount > 0) parts.push(`${result.failureCount.toLocaleString()} failed`);
-  if (parts.length === 0) return 'No contacts to update';
+  if (parts.length === 0) return t('No contacts to update');
   return parts.join(' · ');
 }
 
@@ -1583,7 +1584,7 @@ function BulkResultSummary({result}: {result: BulkActionResult}) {
     }
   }
   if (failureCount > 0) {
-    rows.push({key: 'failed', label: 'Failed', count: failureCount, tone: 'danger'});
+    rows.push({key: 'failed', label: t('Failed'), count: failureCount, tone: 'danger'});
   }
 
   return (
@@ -1643,7 +1644,7 @@ function BulkResultSummary({result}: {result: BulkActionResult}) {
 
       {total > 1 && rows.length > 1 && (
         <div className="px-4 flex items-baseline justify-between text-xs text-neutral-500">
-          <span>Total processed</span>
+          <span>{t('Total processed')}</span>
           <span className="tabular-nums font-medium text-neutral-700">{total.toLocaleString()}</span>
         </div>
       )}
@@ -1651,7 +1652,7 @@ function BulkResultSummary({result}: {result: BulkActionResult}) {
       {result.errors && result.errors.length > 0 && (
         <details className="group">
           <summary className="cursor-pointer text-xs text-neutral-500 hover:text-neutral-700 select-none px-4">
-            Show error details ({result.errors.length.toLocaleString()})
+            {t('Show error details (')}{result.errors.length.toLocaleString()})
           </summary>
           <div className="mt-2 max-h-40 overflow-y-auto rounded-md border border-neutral-200 divide-y divide-neutral-100 text-xs">
             {result.errors.slice(0, 10).map((error, idx) => (
@@ -1661,7 +1662,7 @@ function BulkResultSummary({result}: {result: BulkActionResult}) {
             ))}
             {result.errors.length > 10 && (
               <div className="px-3 py-2 text-neutral-500">
-                +{(result.errors.length - 10).toLocaleString()} more
+                +{(result.errors.length - 10).toLocaleString()} {t('more')}
               </div>
             )}
           </div>
